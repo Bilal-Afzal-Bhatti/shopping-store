@@ -1,4 +1,4 @@
-import vector from "../assets/vector.png";
+import search from "../assets/search.png";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -155,7 +155,7 @@ function Navbar() {
           className="bg-transparent outline-none text-black flex-1 placeholder-gray-600 text-sm"
         />
         <img
-          src={vector}
+          src={search}
           alt="search"
           className="w-5 h-5 cursor-pointer object-contain"
         />

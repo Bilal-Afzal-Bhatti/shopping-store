@@ -13,7 +13,7 @@ function Signup() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://192.168.18.40:5731/api/auth/register", {
+      const res = await fetch("https://shopping-backend-nine.vercel.app/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, emailOrPhone, password }),

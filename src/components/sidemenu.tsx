@@ -75,7 +75,7 @@ function SideMenu() {
           ))}
 
           {/* ↑ Vertical line extended upward */}
-          <div className="absolute left-full -top-3.5 md:mt-5 h-[calc(100%+53px)] w-px bg-gray-300"></div>
+          <div className="absolute left-full -top-3.5 md:mt-0 h-[calc(100%+53px)] w-px bg-gray-300"></div>
         </ul>
       </div>
 

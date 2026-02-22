@@ -17,7 +17,7 @@ function Login() {
   setLoading(true);
 
   try {
-    const res = await fetch("http://192.168.18.40:5731/api/auth/login", {
+    const res = await fetch("https://shopping-backend-nine.vercel.app/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ emailOrPhone, password }),

@@ -1,4 +1,4 @@
-import vector from "../assets/Vector.png";
+import vector from "../assets/vector.png";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {

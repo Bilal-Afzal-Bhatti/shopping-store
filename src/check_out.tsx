@@ -43,7 +43,7 @@ const Checkout: React.FC = () => {
         if (!token || !userId) return navigate("/login");
 
         const res = await fetch(
-          `http://192.168.18.40:5731/api/cart/showcart/?userId=${userId}`,     //192.168.18.40
+          `https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`,     //192.168.18.40
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : "",

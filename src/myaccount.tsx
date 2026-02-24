@@ -18,7 +18,7 @@ function Account() {
   const token = localStorage.getItem("token");
    console.log("Token:", token); // Debug: Check if token is retrieved
     try {
-      const res = await fetch("http://192.168.18.40:5731/api/auth/update", {
+      const res = await fetch("https://shoppingstore-backend.vercel.app/api/auth/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

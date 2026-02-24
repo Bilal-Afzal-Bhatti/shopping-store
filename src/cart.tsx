@@ -87,7 +87,7 @@ const Cart: React.FC = () => {
     console.warn(" DELETE ITEM ID", itemId);
     try {
       const res = await fetch(
-        `http://10.16.21.240:5731/api/cart/delete/${userId}/${itemId}`,
+        `https://shoppingstore-backend.vercel.app/api/cart/delete/${userId}/${itemId}`,
         {
           method: "DELETE",
           headers: {
@@ -128,7 +128,7 @@ const Cart: React.FC = () => {
       };
 
       const res = await fetch(
-        `http://192.168.18.40:5731/api/cart/update/${userId}/${itemId}`,
+        `https://shoppingstore-backend.vercel.app/api/cart/update/${userId}/${itemId}`,
         {
           method: "PUT",
           headers: {

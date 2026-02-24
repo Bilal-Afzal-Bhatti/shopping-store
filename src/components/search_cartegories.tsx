@@ -63,7 +63,7 @@ export default function BrowseByCategory() {
         </h2>
         
         {/* Arrows forced to the right side of the container */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <SliderArrows
             onPrev={() => sliderRef.current?.slickPrev()}
             onNext={() => sliderRef.current?.slickNext()}

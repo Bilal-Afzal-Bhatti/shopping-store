@@ -22,6 +22,7 @@ function Navbar() {
   const [cartCount, setCartCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState(""); // Add search state
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -85,6 +86,47 @@ function Navbar() {
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  
+
+
+  // Logic to handle the search action
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const query = searchQuery.toLowerCase().trim();
+
+    if (!query) return;
+
+    // Mapping search terms to Section IDs
+    const sectionMap: Record<string, string> = {
+      "flash": "flash-sales",
+      "sale": "flash-sales",
+      "best": "best-selling",
+      "selling": "best-selling",
+      "new": "new-arrivals",
+      "arrival": "new-arrivals",
+      "view":"view_item",
+      "browse":"search_cartegories"
+    };
+
+    const targetId = Object.keys(sectionMap).find(key => query.includes(key));
+
+    if (targetId) {
+      const element = document.getElementById(sectionMap[targetId]);
+      if (element) {
+        // Option A: If on Home Page, Scroll
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        // Option B: If on another page, navigate to home with hash
+        navigate(`/#${sectionMap[targetId]}`);
+      }
+    } else {
+      // Fallback: Normal search results page (if you have one)
+      console.log("Searching for:", query);
+      // navigate(`/search?q=${query}`);
+    }
+    
+    setSearchQuery(""); // Clear search
+  };
 
   return (
   <nav
@@ -147,16 +189,20 @@ function Navbar() {
         ))}
       </ul>
 
-      {/* Search Bar (Visible on large screens) */}
-      <div className="hidden lg:flex  items-center bg-[#F5F5F5] rounded-md w-60 xl:w-72 h-10 px-3">
+ {/* 🔍 Search Bar Updated */}
+      <div className="hidden lg:flex items-center bg-[#F5F5F5] rounded-md w-60 xl:w-72 h-10 px-3">
         <input
           type="text"
-          placeholder="What are you looking for?"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()} // Enter Key Support
+          placeholder="Search (flash, best, new...)"
           className="bg-transparent outline-none text-black flex-1 placeholder-gray-600 text-sm"
         />
         <img
           src={search}
           alt="search"
+          onClick={() => handleSearch()} // Click Icon Support
           className="w-5 h-5 cursor-pointer object-contain"
         />
       </div>

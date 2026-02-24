@@ -31,7 +31,7 @@ function New_arrival() {
             alt="PlayStation 5"
             className="w-full h-full object-contain md:object-cover mt-10 md:mt-0 transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full bg-gradient-to-t from-black/80 to-transparent">
+          <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full bg-linear-to-t from-black/80 to-transparent">
            
             <Link to="/shop" className="text-white font-medium underline underline-offset-8 hover:text-gray-300 transition-colors">
            
@@ -43,13 +43,13 @@ function New_arrival() {
         <div className="flex flex-col gap-6">
           
           {/* Top: Women Collection */}
-          <div className="relative group bg-[#0D0D0D] rounded-md overflow-hidden h-[250px] md:h-[288px]">
+          <div className="relative group bg-[#0D0D0D] rounded-md overflow-hidden h-[250px] md:h-72">
             <img
               src={women_collection}
               alt="Women's Collection"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-            <div className="absolute bottom-0 left-0 p-6 w-full bg-gradient-to-t from-black/80 to-transparent">
+            <div className="absolute bottom-0 left-0 p-6 w-full bg-linear-to-t from-black/80 to-transparent">
              
               <Link to="/shop" className="text-white font-medium underline underline-offset-8 hover:text-gray-300 transition-colors">
               
@@ -60,13 +60,13 @@ function New_arrival() {
           {/* Bottom Row: Speaker + Perfume */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 h-full">
             {/* Speaker */}
-            <div className="relative group bg-[#0D0D0D] rounded-md overflow-hidden h-[250px] md:h-[288px] flex items-center justify-center">
+            <div className="relative group bg-[#0D0D0D] rounded-md overflow-hidden h-[250px] md:h-72 flex items-center justify-center">
               <img
                 src={speaker}
                 alt="Speakers"
                 className="w-3/4 h-3/4 object-contain transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute bottom-0 left-0 p-6 w-full bg-gradient-to-t from-black/60 to-transparent">
+              <div className="absolute bottom-0 left-0 p-6 w-full bg-linear-to-t from-black/60 to-transparent">
               
                 <Link to="/shop" className="text-white text-sm font-medium underline underline-offset-4 hover:text-gray-300 transition-colors">
                 
@@ -75,13 +75,13 @@ function New_arrival() {
             </div>
 
             {/* Perfume */}
-            <div className="relative group bg-[#0D0D0D] rounded-md overflow-hidden h-[250px] md:h-[288px] flex items-center justify-center">
+            <div className="relative group bg-[#0D0D0D] rounded-md overflow-hidden h-[250px] md:h-72 flex items-center justify-center">
               <img
                 src={gucci_perfume}
                 alt="Perfume"
                 className="w-3/4 h-3/4 object-contain transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute bottom-0 left-0 p-6 w-full bg-gradient-to-t from-black/60 to-transparent">
+              <div className="absolute bottom-0 left-0 p-6 w-full bg-linear-to-t from-black/60 to-transparent">
                 <h3 className="text-white text-lg font-bold mb-1">Perfume</h3>
                 <p className="text-[#FAFAFA] text-[10px] mb-3">GUCCI INTENSE TUDUD</p>
                 <Link to="/shop" className="text-white text-sm font-medium underline underline-offset-4 hover:text-gray-300 transition-colors">

@@ -157,13 +157,17 @@ export default function Flash_sales() {
                   alt={product.name}
                   className="w-[120px] sm:w-[150px] md:w-[180px] lg:w-[200px] xl:w-[220px] h-full object-contain rounded-lg transition-transform duration-300 group-hover:scale-95"
                 />
-                <div className="absolute inset-0 flex justify-center items-center opacity-0 group-hover:opacity-100 transition bg-black/50 rounded-lg">
-                  <button
-                    onClick={() => handleAddToCart(product)}
-                    className="bg-amber-600 text-white px-2 py-1 text-xs sm:text-sm rounded-md hover:bg-amber-700 transition"
-                  >
-                    Add to Cart
-                  </button>
+             <div className="absolute inset-0 flex justify-center items-center transition bg-black/50 rounded-lg
+                opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100
+                md:group-hover:opacity-100
+                sm:flex sm:justify-center sm:items-center">
+  <button
+    onClick={() => handleAddToCart(product)}
+    className="bg-amber-600 text-white px-2 py-1 text-xs sm:text-sm rounded-md hover:bg-amber-700 transition"
+  >
+    Add to Cart
+  </button>
+
                 </div>
               </div>
 

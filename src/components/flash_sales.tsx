@@ -46,7 +46,7 @@ saleEndDate.setDate(saleEndDate.getDate() + 3); // ⏳ 3 days from now
   }, []);
 
   const products = [
-    { id: 1, name: "Wireless Headphones", price: "$120", rating: 4, discount: "40% OFF", image: joystick },
+    { id: 1, name: "Wireless Headphones", price: "$120", rating: 4, discount: "20% OFF", image: joystick },
     { id: 2, name: "Smart Watch", price: "$80", rating: 5, discount: "40% OFF", image: key_board },
     { id: 3, name: "Gaming Mouse", price: "$40", rating: 3, discount: "40% OFF", image: led },
     { id: 4, name: "Bluetooth Speaker", price: "$90", rating: 4, discount: "40% OFF", image: bluetooth },
@@ -109,32 +109,7 @@ const handleAddToCart = async (product: any) => {
   }
 };
 
-const settings = {
-  dots: false,
-  infinite: true,
-  speed: 600,
-  slidesToShow: 3, // desktop default
-  slidesToScroll: 1,
-  arrows: false,   // using custom arrows
-  responsive: [
-    {
-      breakpoint: 1024, // tablet
-      settings: {
-        slidesToShow: 2,
-        slidesToScroll: 1,
-      },
-    },
-    {
-      breakpoint:768, // mobile
-      settings: {
-        slidesToShow: 1,      // ✅ show 1 slide
-        slidesToScroll: 1,
-        centerMode: true,     // center the slide
-        centerPadding: "20px", // padding on sides
-      },
-    },
-  ],
-};
+
 
 
 
@@ -184,7 +159,7 @@ const settings = {
   </div>
 </div>
 
-<Slider ref={sliderRef} {...settings}>
+<Slider ref={sliderRef} >
   {products.map((product, index) => (
     <div
       key={product.id}

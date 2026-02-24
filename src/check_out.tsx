@@ -107,7 +107,7 @@ const Checkout: React.FC = () => {
 
   if (paymentMethod === "cod") {
     // ✅ CASH ON DELIVERY
-    const res = await fetch("http://192.168.18.40:5713/api/orders/cod", {
+    const res = await fetch("https://shoppingstore-backend.vercel.app/api/orders/cod", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -127,7 +127,7 @@ const Checkout: React.FC = () => {
     // 💳 STRIPE PAYMENT
     try {
       console.log("Initiating Stripe payment...");
-      const res = await fetch("http://192.168.18.40:5713/api/orders/create-checkout-session", {
+      const res = await fetch("https://shoppingstore-backend.vercel.app/api/orders/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

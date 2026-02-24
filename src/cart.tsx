@@ -25,7 +25,7 @@ const Cart: React.FC = () => {
         }
         console.warn(" USER ID", userId);
         const res = await fetch(
-          `http://192.168.18.40:5731/api/cart/showcart/?userId=${userId}`,
+          `https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`,
           {
             method: "GET",
             headers: {

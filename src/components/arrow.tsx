@@ -3,17 +3,17 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface SliderArrowsProps {
   onPrev: () => void;
   onNext: () => void;
-  margin?: string; // optional: margin control
+  margin?: string; // optional: custom margin classes
+  position?: string; // optional: custom position classes
 }
 
-export default function SliderArrows({ onPrev, onNext, margin }: SliderArrowsProps) {
+export default function SliderArrows({ onPrev, onNext, margin = "", position = "" }: SliderArrowsProps) {
   return (
     <div
       className={`
         flex items-center space-x-2
-        absolute top-35 right-2 sm:right-40   // ✅ right edge on mobile, bigger margin on desktop
-        transform -translate-y-1/2
-        ${margin || ""}
+        ${position}   // allows overriding absolute/fixed positioning
+        ${margin}     // allows custom margins from props
       `}
     >
       <button

@@ -19,88 +19,86 @@ export default function BrowseByCategory() {
   const sliderRef = useRef<Slider>(null);
 
   const categories = [
-    { name: "Smartphones", icon: <Smartphone size={40} /> },
+    { name: "Phones", icon: <Smartphone size={40} /> },
     { name: "Monitors", icon: <Monitor size={40} /> },
     { name: "Headphones", icon: <Headphones size={40} /> },
     { name: "Watches", icon: <Watch size={40} /> },
     { name: "Gaming", icon: <Gamepad2 size={40} /> },
-    { name: "Televisions", icon: <Tv size={40} /> },
+    { name: "TVs", icon: <Tv size={40} /> },
     { name: "Keyboards", icon: <Keyboard size={40} /> },
     { name: "Accessories", icon: <MousePointerClick size={40} /> },
   ];
 
-const settings = {
-  dots: false,
-  infinite: true,
-  speed: 500,
-  slidesToShow: 4,
-  slidesToScroll: 1,
-  responsive: [
-    {
-      breakpoint: 1024, // small laptops
-      settings: { slidesToShow: 3 }
-    },
-    {
-      breakpoint: 768, // tablets
-      settings: { slidesToShow: 2 }
-    },
-    {
-      breakpoint: 640, // mobile
-      settings: { slidesToShow: 1 }
-    }
-  ]
-};
-
+  const settings = {
+    dots: false,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 6, // Standard for categories is usually higher
+    slidesToScroll: 1,
+    arrows: false, // We use our custom arrows
+    responsive: [
+      { breakpoint: 1280, settings: { slidesToShow: 5 } },
+      { breakpoint: 1024, settings: { slidesToShow: 4 } },
+      { breakpoint: 768, settings: { slidesToShow: 3 } },
+      { breakpoint: 640, settings: { slidesToShow: 2 } },
+    ],
+  };
 
   return (
-    <div className="p-6 sm:p-8 md:p-10 bg-white relative mt-0 ml-2 sm:ml-4 md:ml-16">
-      {/* 🔴 Label */}
-      <div className="inline-block bg-red-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-md mb-3">
-        Categories
+    /* Standardized padding and max-width to match other components */
+    <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-10 sm:mt-20 relative font-sans">
+      
+      {/* 🔴 Section Label */}
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-5 h-10 bg-[#DB4444] rounded-sm"></div>
+        <span className="text-[#DB4444] font-bold text-sm md:text-base uppercase tracking-wider">
+          Categories
+        </span>
       </div>
 
-      {/* 🛍️ Header + Arrows */}
-      <div className="flex flex-col sm:flex-row  sm:items-center sm:justify-between mb-9 sm:mb-6">
-        {/* Heading */}
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-  Browse By Category
-</h2>
-
- <div className="flex md:-mr-6 sm:ml-4 mr-10  -top-26 sm:-mt-28 md:mt-4 absolute right-10">
-      <SliderArrows
-        onPrev={() => sliderRef.current?.slickPrev()}
-        onNext={() => sliderRef.current?.slickNext()}
-      />
-    </div>
-      </div>
-<div className="max-w-7xl mx-auto px-2 sm:px-4 lg:pr-26">
-  <Slider ref={sliderRef} {...settings}>
-    {categories.map((cat, index) => (
-      <div key={index} className="px-2">
-        <div className="
-          bg-gray-100 hover:bg-[#DB4444] hover:text-white
-          text-black rounded-xl shadow-sm transition-all duration-300
-          h-[120px] sm:h-[140px] md:h-40
-          flex flex-col items-center justify-center
-        ">
-          <div className="text-3xl sm:text-4xl mb-2">
-            {cat.icon}
-          </div>
-          <p className="text-sm sm:text-base font-medium text-center">
-            {cat.name}
-          </p>
+      {/* ⚡ Header Row: Heading and Arrows are INLINE and Arrows are RIGHT */}
+      <div className="flex flex-row items-center justify-between w-full mb-8">
+        <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-black tracking-tight">
+          Browse By Category
+        </h2>
+        
+        {/* Arrows forced to the right side of the container */}
+        <div className="flex-shrink-0">
+          <SliderArrows
+            onPrev={() => sliderRef.current?.slickPrev()}
+            onNext={() => sliderRef.current?.slickNext()}
+          />
         </div>
       </div>
-    ))}
-  </Slider>
-</div>
 
-      {/* 🔶 Line under section */}
+      {/* 🛍️ Category Slider */}
+      <div className="w-full">
+        <Slider ref={sliderRef} {...settings}>
+          {categories.map((cat, index) => (
+            <div key={index} className="px-2 sm:px-4">
+              <div className="
+                border border-gray-200 bg-white hover:bg-[#DB4444] hover:text-white
+                text-black rounded-md transition-all duration-300 group
+                aspect-square flex flex-col items-center justify-center cursor-pointer
+              ">
+                <div className="mb-2 transition-colors duration-300">
+                  {cat.icon}
+                </div>
+                <p className="text-xs sm:text-sm md:text-base font-medium text-center">
+                  {cat.name}
+                </p>
+              </div>
+            </div>
+          ))}
+        </Slider>
+      </div>
+
+      {/* 🔶 Standardized Line */}
       <Line
-        color="bg-gray-300"
-        width="w-[320px] sm:w-[640px] md:w-[900px] lg:w-[1210px]"
+        color="bg-gray-200"
+        width="w-full"
         height="h-[1px]"
-        margin="mt-10 ml-3 sm:mt-16 sm:ml-5"
+        margin="mt-16"
       />
     </div>
   );

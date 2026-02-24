@@ -6,34 +6,42 @@ import Our_products from './components/our_products'
 import frame_600 from './assets/frame_600.png'
 import New_arrival from './components/new_arrival'
 
-
 function Home() {
   return (
-    <div className='m-0 p-0'>
+    // Changed to overflow-x-hidden to prevent accidental horizontal scroll
+    <div className='m-0 p-0 overflow-x-hidden bg-white'>
 
+      {/* Hero Section */}
       <SideMenu />
-      <Flash_sales />
-      <BrowseByCategory />
-      <Bestselling />
-      <div className="relative group flex justify-center items-center bg-white ml-1 w-full mt-36 mr-0 sm:-ml-10 md:mr-20 lg:mr-16">
-        <img
-          src={frame_600} // use imported variable
-          alt="frame_600"
-          className="w-full max-w-[350px] sm:max-w-[200px] md:max-w-[800px] lg:max-w-[1200px] h-auto sm:h-[250px] md:h-[400px] lg:h-[650px] cursor-pointer object-contain transition-transform duration-300 group-hover:scale-90 filter brightness-105 contrast-95"
-        />
+
+      {/* Sections Wrapper to maintain consistent padding */}
+      <div className="space-y-10 md:space-y-20">
+        
+        <Flash_sales />
+        
+        <BrowseByCategory />
+        
+        <Bestselling />
+
+        {/* 🖼️ Big Promo Banner Section */}
+        <div className="w-full flex justify-center items-center px-4 sm:px-10 md:px-16">
+          <div className="relative group overflow-hidden w-full max-w-7xl flex justify-center">
+            <img
+              src={frame_600}
+              alt="Promotion Banner"
+              className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+        </div>
+
+        <Our_products />
+        
+        <New_arrival />
+        
+        {/* Added a little bottom padding for cleaner finish */}
+        <div className="pb-10 md:pb-20"></div>
       </div>
-
-
-
-      <Our_products />
-      <New_arrival />
-
-
-
     </div>
-
-
-
   )
 }
 

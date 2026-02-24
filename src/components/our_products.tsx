@@ -8,9 +8,9 @@ import SliderArrows from "../components/arrow";
 import { Link } from "react-router-dom";
 
 export default function Our_products() {
-  const [liked, setLiked] = useState<boolean[]>([]);
+  const [liked, setLiked] = useState<Record<number, boolean>>({});
   const [currentPage, setCurrentPage] = useState(0);
-  const productsPerPage = 8; // 4 cols x 2 rows
+  const productsPerPage = 8; 
 
   const products = [
     { id: 1, name: "Wireless Headphones", price: "$120", rating: 4, discount: "40% OFF", image: joystick },
@@ -21,133 +21,109 @@ export default function Our_products() {
     { id: 6, name: "LED Monitor", price: "$200", rating: 4, discount: "40% OFF", image: led },
     { id: 7, name: "VR Headset", price: "$250", rating: 5, discount: "40% OFF", image: joystick },
     { id: 8, name: "Bluetooth Earbuds", price: "$70", rating: 4, discount: "40% OFF", image: bluetooth },
-    { id: 9, name: "Gaming Controller", price: "$110", rating: 5, discount: "40% OFF", image: joystick },
-    { id: 10, name: "Smart Lamp", price: "$60", rating: 4, discount: "40% OFF", image: led },
+    // Adding more random data for Page 2
+    { id: 9, name: "RGB Gaming Chair", price: "$300", rating: 5, discount: "10% OFF", image: joystick },
+    { id: 10, name: "4K Web Camera", price: "$110", rating: 4, discount: "15% OFF", image: led },
+    { id: 11, name: "Noise Cancelling Mic", price: "$85", rating: 4, discount: "20% OFF", image: bluetooth },
+    { id: 12, name: "Gaming Mousepad", price: "$25", rating: 3, discount: "5% OFF", image: key_board },
+    { id: 13, name: "USB-C Hub", price: "$45", rating: 5, discount: "30% OFF", image: led },
+    { id: 14, name: "External SSD 1TB", price: "$130", rating: 5, discount: "25% OFF", image: joystick },
+    { id: 15, name: "Cooling Fan RGB", price: "$35", rating: 4, discount: "40% OFF", image: led },
+    { id: 16, name: "Wired Gaming Headset", price: "$65", rating: 4, discount: "40% OFF", image: bluetooth },
   ];
 
   const totalPages = Math.ceil(products.length / productsPerPage);
 
-  const toggleLike = (index: number) => {
-    setLiked((prev) => {
-      const newLikes = [...prev];
-      newLikes[index] = !newLikes[index];
-      return newLikes;
-    });
+  const toggleLike = (id: number) => {
+    setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Logic for Arrows to switch pages
+  const handleNext = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(prev => prev + 1);
+    }
   };
 
   const handlePrev = () => {
-    setCurrentPage((prev) => (prev > 0 ? prev - 1 : totalPages - 1));
-  };
-
-  const handleNext = () => {
-    setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : 0));
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
+    }
   };
 
   const startIdx = currentPage * productsPerPage;
   const currentProducts = products.slice(startIdx, startIdx + productsPerPage);
 
   return (
-    <div className="p-4 sm:p-6 md:p-10 bg-white mt-10 sm:mt-16 md:mt-20 ml-2 sm:ml-6 md:ml-16 relative">
+    <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-10 sm:mt-20 font-sans">
       
       {/* 🔴 Label */}
-      <div className="inline-block bg-red-500 text-white text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded-md mb-3">
-        Our Products
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-5 h-10 bg-[#DB4444] rounded-sm"></div>
+        <span className="text-[#DB4444] font-bold text-sm md:text-base uppercase tracking-wider">Our Products</span>
       </div>
 
-      {/* Section Header */}
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-sans text-gray-900 tracking-wide mb-4 sm:mb-6">
-        Explore Our Products
-      </h2>
-
-      {/* 🔁 Arrows */}
-      <div className="absolute -top-12 right-4 sm:right-10 md:right[20px]">
-        <SliderArrows onPrev={handlePrev} onNext={handleNext} />
+      {/* ⚡ Header Row: Inline and Arrows on the Right */}
+      <div className="flex flex-row items-center justify-between w-full mb-8">
+        <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-black tracking-tight">
+          Explore Our Products
+        </h2>
+        
+        <div className="shrink-0">
+          <SliderArrows onPrev={handlePrev} onNext={handleNext} />
+        </div>
       </div>
 
-      {/* 🛍️ Product Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-10 sm:mt-16 w-full">
-        {currentProducts.map((product, index) => (
-          <div
-            key={product.id}
-            className="relative bg-gray-50 p-3 sm:p-1 md:w-66 rounded-xl shadow-md transition-transform duration-300 hover:scale-95 h-auto sm:h-80 md:h-auto"
-          >
-            {/* Discount Badge */}
-            <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] sm:text-xs px-2 py-1 rounded-md">
-              {product.discount}
-            </span>
+      {/* 🛍️ Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[800px]">
+        {currentProducts.map((product) => (
+          <div key={product.id} className="group">
+            <div className="relative bg-[#F5F5F5] aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
+              <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded-sm z-10">
+                {product.discount}
+              </span>
 
-        {/* Icons */}
-        <Heart
-          className={`absolute top-3 right-3 cursor-pointer transition-colors ${
-            liked[index] ? "fill-red-500 text-red-500" : "text-gray-400"
-          }`}
-          onClick={() => toggleLike(index)}
-          size={20}
-        />
-
-        <Link
-          to={`/view_item/${product.id}`}
-          className="absolute top-10 right-3 text-gray-500 hover:text-blue-600"
-        >
-          <Eye size={20} />
-        </Link>
-
-            {/* Product Image */}
-            <div className="relative group flex justify-center items-center w-full h-32 sm:h-44 md:h-48">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-28 sm:w-36 md:w-40 h-28 sm:h-36 object-contain rounded-lg transition-transform duration-300 group-hover:scale-90"
-              />
-
-              {/* Hover Overlay */}
-              <div className="absolute inset-0 flex justify-center items-center opacity-0 group-hover:opacity-100 transition bg-black/50 rounded-lg">
-                <button className="bg-amber-600 text-white px-3 py-1 text-xs sm:text-sm rounded-md">
-                  Add to Cart
+              <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
+                <button onClick={() => toggleLike(product.id)} className="p-1.5 bg-white rounded-full shadow-sm">
+                  <Heart size={18} className={liked[product.id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-400"} />
                 </button>
+                <Link to={`/view_item/${product.id}`} className="p-1.5 bg-white rounded-full shadow-sm">
+                  <Eye size={18} className="text-gray-400" />
+                </Link>
               </div>
+
+              <img src={product.image} alt={product.name} className="w-40 h-40 object-contain mix-blend-multiply" />
+
+              <button className="absolute bottom-0 w-full bg-black text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
+                Add to Cart
+              </button>
             </div>
 
-            {/* Product Info */}
-            <h3 className="font-semibold text-gray-800 text-sm sm:text-base md:text-lg mt-3">
-              {product.name}
-            </h3>
-            <p className="text-base sm:text-lg font-bold text-amber-700 mt-1">
-              {product.price}
-            </p>
-
-            {/* ⭐ Rating */}
-            <div className="flex items-center mt-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  size={14}
-                  className={star <= product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
-                />
-              ))}
+            <div className="mt-4 text-left">
+              <h3 className="font-bold text-gray-900 text-base truncate">{product.name}</h3>
+              <div className="flex gap-3 items-center">
+                <p className="text-[#DB4444] font-bold text-lg">{product.price}</p>
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} size={14} className={star <= product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                  ))}
+                  <span className="text-gray-400 text-xs ml-2">(65)</span>
+                </div>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* 🔘 Pagination Indicator */}
-      <div className="flex justify-center mt-6 space-x-2">
+      {/* Pagination Dots */}
+      <div className="flex justify-center mt-10 space-x-3">
         {Array.from({ length: totalPages }).map((_, idx) => (
-          <div
+          <button
             key={idx}
-            className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full cursor-pointer transition ${
-              idx === currentPage ? "bg-[#DB4444]" : "bg-gray-300"
-            }`}
             onClick={() => setCurrentPage(idx)}
-          ></div>
+            className={`w-3 h-3 rounded-full transition-all ${idx === currentPage ? "bg-[#DB4444] scale-125" : "bg-gray-300"}`}
+          />
         ))}
-      </div>
-
-      {/* View All Button */}
-      <div className="flex justify-center mt-8 sm:mt-10">
-        <button className="bg-[#DB4444] text-white px-4 sm:px-6 py-2 text-sm sm:text-base rounded-md cursor-pointer hover:bg-[#c33d3d] transition">
-          View All Products
-        </button>
       </div>
     </div>
   );

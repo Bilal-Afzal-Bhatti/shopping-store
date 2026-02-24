@@ -13,7 +13,7 @@ function Signup() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://shoppingstore-backend.vercel.app//api/auth/register", {
+      const res = await fetch("https://shoppingstore-backend.vercel.app/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, emailOrPhone, password }),

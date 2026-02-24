@@ -84,7 +84,7 @@ const handleAddToCart = async (product: any) => {
     };
 
     // 🔥 API Request
-    const response = await fetch("http://192.168.18.40:5731/api/cart/add", {
+    const response = await fetch("https://shoppingstore-backend.vercel.app/api/cart/add", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

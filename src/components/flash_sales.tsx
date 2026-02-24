@@ -211,7 +211,7 @@ const settings = {
             size={20}
           />
           <Link
-            to={`/view_item/${product.id}`}
+            to={"/view_item"}
             className="absolute top-10 right-0 text-gray-500 hover:text-blue-600 z-10"
           >
             <Eye size={20} />

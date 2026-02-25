@@ -227,7 +227,7 @@ export default function Flash_sales() {
              /* Mobile: Always visible */
              opacity-200 
              /* Laptop/Desktop: Hidden by default, show on hover */
-             landscape:opacity-100
+           
              md:opacity-0 md:group-hover:opacity-100 
              /* Effects */
              transition-opacity duration-300 

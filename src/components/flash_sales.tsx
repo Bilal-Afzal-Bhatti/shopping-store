@@ -215,12 +215,12 @@ export default function Flash_sales() {
           </div>
         ))}
       </Slider>
-
-      <div className="  flex  justify-center mt-12">
-        <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium hover:bg-[#c33d3d] transition-colors active:scale-95">
-          View All Products
-        </button>
-      </div>
+<button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium 
+  hover:bg-[#c33d3d] 
+  active:bg-[#a33333] active:scale-95 
+  transition-colors outline-none">
+  View All Products
+</button>
 
       <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
 

@@ -128,14 +128,22 @@ export default function Bestselling() {
                 </Link>
               </div>
 
-              {/* Add to Cart Button (matches Flash Sales) */}
-              <button 
-                disabled={isAdding}
-                onClick={() => handleAddToCart(product)}
-                className="absolute bottom-0 w-full bg-black text-white py-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 text-sm font-medium disabled:bg-gray-700"
-              >
-                {isAdding ? "Adding..." : "Add To Cart"}
-              </button>
+                  <button 
+  disabled={isAdding}
+  className="absolute bottom-0 w-full bg-black text-white py-2 
+             /* Mobile: Always visible */
+             opacity-200 
+             /* Laptop/Desktop: Hidden by default, show on hover */
+           
+             md:opacity-0 md:group-hover:opacity-100 
+             /* Effects */
+             transition-opacity duration-300 
+             disabled:bg-gray-600 disabled:cursor-not-allowed 
+             active:bg-gray-800 active:scale-95"
+  onClick={() => handleAddToCart(product)}
+>
+  {isAdding ? "Adding..." : "Add To Cart"}
+</button>
             </div>
 
             {/* Product Info */}

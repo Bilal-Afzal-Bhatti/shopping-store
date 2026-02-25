@@ -130,7 +130,7 @@ function Navbar() {
 
   return (
   <nav
-  className={`bg-white z-20 w-full flex items-center justify-between px-4 sm:px-6 lg:px-12 py-4 shadow transition-all duration-300 ${
+  className={`bg-white z-20 w-full   sm:max-w-full flex items-center justify-between px-8 sm:px-6 lg:px-12 py-4 shadow transition-all duration-300 ${
     isSticky ? "fixed top-0 left-0 shadow-md" : "relative"
   }`}
 >

@@ -1,11 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Slider, { type Settings } from "react-slick"; // Import Settings for TS
+import { motion } from "framer-motion"; // Removed unused useAnimation and AnimatePresence
 import { Heart, Eye, Star } from "lucide-react";
-
-// Styles
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 
 // Assets
 import joystick from "../assets/joystick.png";
@@ -28,11 +24,17 @@ export default function Flash_sales() {
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
   const [isAdding, setIsAdding] = useState(false);
 
-  // FIX: Force re-mount to solve "invisible on reload" bug
-  const [isMounted, setIsMounted] = useState(false);
-
-  const sliderRef = useRef<Slider | null>(null);
+  // Framer Motion specific state
+  const [width, setWidth] = useState(0);
+  const carousel = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (carousel.current) {
+      // Calculate total scrollable width minus visible width
+      setWidth(carousel.current.scrollWidth - carousel.current.offsetWidth);
+    }
+  }, []);
 
   // Timer Logic
   useEffect(() => {
@@ -51,17 +53,6 @@ export default function Flash_sales() {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
-
-  // FIX: Trigger layout calculation after mount
-  useEffect(() => {
-    setIsMounted(true);
-    const timer = setTimeout(() => {
-      if (sliderRef.current) {
-        sliderRef.current.slickGoTo(0);
-      }
-    }, 200);
-    return () => clearTimeout(timer);
   }, []);
 
   const products = [
@@ -84,7 +75,6 @@ export default function Flash_sales() {
       setIsModalOpen(true);
       return;
     }
-
     setIsAdding(true);
     try {
       const productData = {
@@ -94,15 +84,12 @@ export default function Flash_sales() {
         image: product.image,
         discount: product.discount,
       };
-
       const res = await fetch("https://shoppingstore-backend.vercel.app/api/cart/add", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(productData),
       });
-
       const data = await res.json();
-
       if (res.ok) {
         setModalConfig({ message: `${product.name} has been added to your cart!`, type: 'success' });
         setIsModalOpen(true);
@@ -111,7 +98,6 @@ export default function Flash_sales() {
         setIsModalOpen(true);
       }
     } catch (err) {
-      console.error("Cart Error:", err);
       setModalConfig({ message: "Network error. Please try again later.", type: 'error' });
       setIsModalOpen(true);
     } finally {
@@ -119,33 +105,22 @@ export default function Flash_sales() {
     }
   };
 
-  // FIX: Explicitly typed settings object
-  const sliderSettings: Settings = {
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    infinite: false,
-    speed: 500,
-    autoplay: false,
-    lazyLoad: 'progressive',
-    adaptiveHeight: false,
-    arrows: false,
-    responsive: [
-      { breakpoint: 1280, settings: { slidesToShow: 3 } },
-      { breakpoint: 1024, settings: { slidesToShow: 2 } },
-      {
-        breakpoint: 640,
-        settings: {
-          slidesToShow: 1,
-          centerMode: true,
-          centerPadding: "30px",
-        }
-      },
-    ],
+  // Improved Arrow Logic for all devices
+  const handleNext = () => {
+    if (carousel.current) {
+      carousel.current.scrollBy({ left: carousel.current.offsetWidth / 2, behavior: "smooth" });
+    }
+  };
+
+  const handlePrev = () => {
+    if (carousel.current) {
+      carousel.current.scrollBy({ left: -carousel.current.offsetWidth / 2, behavior: "smooth" });
+    }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 md:mt-60 lg:mt-20 [@media(orientation:landscape)and(max-width:768px)]:mt-66">
-
+    <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 md:mt-60 lg:mt-20">
+      
       {/* Header Section */}
       <div className="flex items-center gap-4 mb-4">
         <div className="w-5 h-10 bg-[#DB4444] rounded-sm"></div>
@@ -177,94 +152,87 @@ export default function Flash_sales() {
         </div>
 
         <div className="shrink-0 ml-auto">
-          <SliderArrows
-            onPrev={() => sliderRef.current?.slickPrev()}
-            onNext={() => sliderRef.current?.slickNext()}
-          />
+          <SliderArrows onPrev={handlePrev} onNext={handleNext} />
         </div>
       </div>
 
-      {/* Products Slider */}
-      <Slider
-        key={isMounted ? "ready" : "loading"} // FIX: Forces re-calculation
-        ref={sliderRef}
-        {...sliderSettings}
-        className="overflow-visible"
+      {/* Responsive Framer Motion Slider */}
+      <div 
+        className="overflow-hidden cursor-grab active:cursor-grabbing px-0" 
+        ref={carousel}
       >
-        {products.map((product) => (
-          <div key={product.id} className="px-2 sm:px-4 focus:outline-none">
-            <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-6 overflow-hidden">
-              <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded z-10">
-                {product.discount}
-              </span>
+        <motion.div 
+          drag="x" 
+          dragConstraints={{ right: 0, left: -width }}
+          // While dragging, snap is disabled; transition handles the release smoothness
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="flex gap-4 sm:gap-8"
+        >
+          {products.map((product) => (
+            <motion.div 
+              key={product.id} 
+              // Setting width to allow partial visibility of the next slide on mobile
+              className="min-w-[85%] sm:min-w-[300px] md:min-w-[300px] pointer-events-none"
+            >
+              <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-6 overflow-hidden pointer-events-auto">
+                <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded z-10">
+                  {product.discount}
+                </span>
 
-              <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
-                <button
-                  onClick={() => toggleLike(product.id)}
-                  className="p-1.5 bg-white rounded-full shadow-sm transition active:scale-95"
+                <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
+                  <button
+                    onClick={() => toggleLike(product.id)}
+                    className="p-1.5 bg-white rounded-full shadow-sm transition active:scale-95"
+                  >
+                    <Heart
+                      size={18}
+                      className={`${liked[product.id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-600"}`}
+                    />
+                  </button>
+                  <Link to={"/view_item"} className="p-1.5 bg-white rounded-full shadow-sm transition">
+                    <Eye size={18} className="text-gray-600" />
+                  </Link>
+                </div>
+
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
+                />
+
+                <button 
+                  disabled={isAdding}
+                  className="absolute bottom-0 w-full bg-black text-white py-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600"
+                  onClick={() => handleAddToCart(product)}
                 >
-                  <Heart
-                    size={18}
-                    className={`${liked[product.id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-600"}`}
-                  />
+                  {isAdding ? "Adding..." : "Add To Cart"}
                 </button>
-                <Link
-                  to={"/view_item"}
-                  className="p-1.5 bg-white rounded-full shadow-sm transition"
-                >
-                  <Eye size={18} className="text-gray-600" />
-                </Link>
               </div>
 
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
-              />
-           <button 
-  disabled={isAdding}
-  className="absolute bottom-0 w-full bg-black text-white py-2 
-             /* Mobile: Always visible */
-             opacity-200 
-             /* Laptop/Desktop: Hidden by default, show on hover */
-           
-             md:opacity-0 md:group-hover:opacity-100 
-             /* Effects */
-             transition-opacity duration-300 
-             disabled:bg-gray-600 disabled:cursor-not-allowed 
-             active:bg-gray-800 active:scale-95"
-  onClick={() => handleAddToCart(product)}
->
-  {isAdding ? "Adding..." : "Add To Cart"}
-</button>
-</div>
+              <div className="mt-4 text-left pointer-events-auto">
+                <h3 className="font-bold text-gray-900 text-sm md:text-base truncate">{product.name}</h3>
+                <div className="flex gap-3 items-center mt-1">
+                  <span className="text-[#DB4444] font-bold">{product.price}</span>
+                  <span className="text-gray-400 line-through text-xs sm:text-sm">$160</span>
+                </div>
+                <div className="flex items-center gap-1 mt-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={14} className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                  ))}
+                  <span className="text-gray-400 text-xs font-bold ml-1">(88)</span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
 
-            <div className="mt-4 text-left">
-              <h3 className="font-bold text-gray-900 text-sm md:text-base truncate">{product.name}</h3>
-              <div className="flex gap-3 items-center mt-1">
-                <span className="text-[#DB4444] font-bold">{product.price}</span>
-                <span className="text-gray-400 line-through text-xs sm:text-sm">$160</span>
-              </div>
-              <div className="flex items-center gap-1 mt-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={14} className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                ))}
-                <span className="text-gray-400 text-xs font-bold ml-1">(88)</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </Slider>
-    <div className="flex justify-center mt-12">
-  <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium 
-                     transition-all duration-200 
-                     /* This works on Desktop */
-                     hover:bg-[#c33d3d] 
-                     /* This works on Mobile & Desktop */
-                     active:scale-95 active:bg-[#a33333]">
-    View All Products
-  </button>
-</div>
+      <div className="flex justify-center mt-12">
+        <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium transition-all duration-200 hover:bg-[#c33d3d] active:scale-95">
+          View All Products
+        </button>
+      </div>
+      
       <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
 
       <CartModal

@@ -1,15 +1,15 @@
-import { useState, useRef } from "react";
-import Slider from "react-slick";
-import { Heart, Eye, Star } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+import { motion } from "framer-motion";
+import { Heart, Eye, Star } from "lucide-react";
 
+// Assets
 import coat from "../assets/coat.jpg";
 import bag from "../assets/bag.jpg";
 import speaker from "../assets/speaker.jpg";
 import bookshelf from "../assets/bookshelf.jpg";
 
+// Components
 import CartModal from "../components/modal";
 
 export default function Bestselling() {
@@ -18,7 +18,9 @@ export default function Bestselling() {
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
   const [isAdding, setIsAdding] = useState(false);
   
-  const sliderRef = useRef<Slider>(null);
+  // Framer Motion constraints state
+  const [width, setWidth] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const products = [
@@ -26,8 +28,15 @@ export default function Bestselling() {
     { id: 102, name: "Gucci Savoy Bag", price: "$960", oldPrice: "$1160", rating: 4, reviews: 85, image: bag },
     { id: 103, name: "RGB Liquid CPU Cooler", price: "$160", oldPrice: "$170", rating: 4, reviews: 95, image: speaker },
     { id: 104, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
-     { id: 105, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
+    { id: 105, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
   ];
+
+  // Calculate constraints when component mounts or products change
+  useEffect(() => {
+    if (carouselRef.current) {
+      setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+    }
+  }, []);
 
   const toggleLike = (id: number) => {
     setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -72,20 +81,6 @@ export default function Bestselling() {
     }
   };
 
-  const settings = {
-    dots: false,
-    infinite: false,
-    speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    arrows: false,
-    responsive: [
-      { breakpoint: 1280, settings: { slidesToShow: 3 } },
-      { breakpoint: 1024, settings: { slidesToShow: 2 } },
-      { breakpoint: 640, settings: { slidesToShow: 1 } },
-    ],
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 mb-10">
       {/* 🔴 Label */}
@@ -104,68 +99,81 @@ export default function Bestselling() {
         </button>
       </div>
 
-      <Slider ref={sliderRef} {...settings}>
-        {products.map((product) => (
-          <div key={product.id} className="px-3">
-            <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-8 overflow-hidden">
-              
-              {/* Image */}
-              <img
-                src={product.image}
-                alt={product.name}
-           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 brightness-109 contrast-95"
-              />
+      {/* Framer Motion Carousel */}
+      <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={carouselRef}>
+        <motion.div 
+          drag="x"
+          dragConstraints={{ right: 0, left: -width }}
+          className="flex gap-4 sm:gap-6"
+        >
+          {products.map((product) => (
+            <motion.div 
+              key={product.id} 
+              className="min-w-[85%] sm:min-w-[300px] md:min-w-[280px] lg:min-w-[300px] pointer-events-none"
+            >
+              <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
+                
+                {/* Image */}
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
+                />
 
-              {/* Action Icons */}
-              <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
-                <button 
-                  onClick={() => toggleLike(product.id)}
-                  className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition"
-                >
-                  <Heart size={18} fill={liked[product.id] ? "#DB4444" : "none"} className={liked[product.id] ? "text-[#DB4444]" : "text-black"} />
-                </button>
-                <Link to={`/view_item/${product.id}`} className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition">
-                  <Eye size={18} />
-                </Link>
-              </div>
-
+                {/* Action Icons */}
+                <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-100 transition-opacity">
                   <button 
-  disabled={isAdding}
-  className="absolute bottom-0 w-full bg-black text-white py-2 
-             /* Mobile: Always visible */
-             opacity-200 
-             /* Laptop/Desktop: Hidden by default, show on hover */
-           
-             md:opacity-0 md:group-hover:opacity-100 
-             /* Effects */
-             transition-opacity duration-300 
-             disabled:bg-gray-600 disabled:cursor-not-allowed 
-             active:bg-gray-800 active:scale-95"
-  onClick={() => handleAddToCart(product)}
->
-  {isAdding ? "Adding..." : "Add To Cart"}
-</button>
-            </div>
+                    onClick={() => toggleLike(product.id)}
+                    className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition active:scale-90"
+                  >
+                    <Heart 
+                      size={18} 
+                      fill={liked[product.id] ? "#DB4444" : "none"} 
+                      className={liked[product.id] ? "text-[#DB4444]" : "text-black"} 
+                    />
+                  </button>
+                  <Link 
+                    to={`/view_item/${product.id}`} 
+                    className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition"
+                  >
+                    <Eye size={18} />
+                  </Link>
+                </div>
 
-            {/* Product Info */}
-            <div className="mt-4">
-              <h3 className="font-bold text-black text-base truncate">{product.name}</h3>
-              <div className="flex gap-3 items-center mt-1">
-                <span className="text-[#DB4444] font-bold">{product.price}</span>
-                {product.oldPrice && (
-                  <span className="text-gray-400 line-through text-sm">{product.oldPrice}</span>
-                )}
+                {/* Add to Cart Button */}
+                <button 
+                  disabled={isAdding}
+                  className="absolute bottom-0 w-full bg-black text-white py-2 
+                             opacity-100 md:opacity-0 md:group-hover:opacity-100 
+                             transition-opacity duration-300 
+                             disabled:bg-gray-600 disabled:cursor-not-allowed 
+                             active:bg-gray-800 active:scale-95"
+                  onClick={() => handleAddToCart(product)}
+                >
+                  {isAdding ? "Adding..." : "Add To Cart"}
+                </button>
               </div>
-              <div className="flex items-center gap-1 mt-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={14} className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                ))}
-                <span className="text-gray-400 text-xs font-bold ml-1">({product.reviews})</span>
+
+              {/* Product Info */}
+              <div className="mt-4 pointer-events-auto">
+                <h3 className="font-bold text-black text-base truncate">{product.name}</h3>
+                <div className="flex gap-3 items-center mt-1">
+                  <span className="text-[#DB4444] font-bold">{product.price}</span>
+                  {product.oldPrice && (
+                    <span className="text-gray-400 line-through text-sm">{product.oldPrice}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 mt-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={14} className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                  ))}
+                  <span className="text-gray-400 text-xs font-bold ml-1">({product.reviews})</span>
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </Slider>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
 
       <CartModal 
         isOpen={isModalOpen}

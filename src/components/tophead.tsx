@@ -3,7 +3,7 @@ import React from "react";
 const Tophead: React.FC = () => {
   return (
   <header className="bg-black text-white py-2 px-4
-                   w-full max-w-full
+                   w-full  sm:w-full
                    flex flex-col md:flex-row items-center justify-between
                    landscape:flex-row landscape:w-full landscape:justify-between landscape:px-8
                    md:px-10">

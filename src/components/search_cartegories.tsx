@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import Slider from "react-slick";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Monitor,
   Headphones,
@@ -10,13 +10,12 @@ import {
   MousePointerClick,
   Keyboard,
 } from "lucide-react";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 import SliderArrows from "./arrow";
 import Line from "./line";
 
 export default function BrowseByCategory() {
-  const sliderRef = useRef<Slider>(null);
+  const [width, setWidth] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   const categories = [
     { name: "Phones", icon: <Smartphone size={40} /> },
@@ -29,23 +28,27 @@ export default function BrowseByCategory() {
     { name: "Accessories", icon: <MousePointerClick size={40} /> },
   ];
 
-  const settings = {
-    dots: false,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 6, // Standard for categories is usually higher
-    slidesToScroll: 1,
-    arrows: false, // We use our custom arrows
-    responsive: [
-      { breakpoint: 1280, settings: { slidesToShow: 5 } },
-      { breakpoint: 1024, settings: { slidesToShow: 4 } },
-      { breakpoint: 768, settings: { slidesToShow: 3 } },
-      { breakpoint: 640, settings: { slidesToShow: 2 } },
-    ],
+  // Update width for drag constraints
+  useEffect(() => {
+    if (carouselRef.current) {
+      setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+    }
+  }, []);
+
+  // Button logic for horizontal scrolling
+  const handleNext = () => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({ left: 200, behavior: "smooth" });
+    }
+  };
+
+  const handlePrev = () => {
+    if (carouselRef.current) {
+      carouselRef.current.scrollBy({ left: -200, behavior: "smooth" });
+    }
   };
 
   return (
-    /* Standardized padding and max-width to match other components */
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-10 sm:mt-20 relative font-sans">
       
       {/* 🔴 Section Label */}
@@ -56,41 +59,52 @@ export default function BrowseByCategory() {
         </span>
       </div>
 
-      {/* ⚡ Header Row: Heading and Arrows are INLINE and Arrows are RIGHT */}
+      {/* ⚡ Header Row */}
       <div className="flex flex-row items-center justify-between w-full mb-8">
         <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-black tracking-tight">
           Browse By Category
         </h2>
         
-        {/* Arrows forced to the right side of the container */}
         <div className="shrink-0">
           <SliderArrows
-            onPrev={() => sliderRef.current?.slickPrev()}
-            onNext={() => sliderRef.current?.slickNext()}
+            onPrev={handlePrev}
+            onNext={handleNext}
           />
         </div>
       </div>
 
-      {/* 🛍️ Category Slider */}
-      <div className="w-full">
-        <Slider ref={sliderRef} {...settings}>
+      {/* 🛍️ Framer Motion Category Slider */}
+      <div 
+        className="w-full overflow-hidden cursor-grab active:cursor-grabbing" 
+        ref={carouselRef}
+      >
+        <motion.div 
+          drag="x"
+          dragConstraints={{ right: 0, left: -width }}
+          whileTap={{ cursor: "grabbing" }}
+          className="flex gap-4 sm:gap-5"
+        >
           {categories.map((cat, index) => (
-            <div key={index} className="px-2 sm:px-4">
+            <motion.div 
+              key={index} 
+              // Category Card sizing
+              className="min-w-[140px] sm:min-w-[170px] aspect-square pointer-events-none"
+            >
               <div className="
-                border border-gray-200 bg-white hover:bg-[#DB4444] hover:text-white
+                w-full h-full border border-gray-200 bg-white hover:bg-[#DB4444] hover:text-white
                 text-black rounded-md transition-all duration-300 group
-                aspect-square flex flex-col items-center justify-center cursor-pointer
+                flex flex-col items-center justify-center cursor-pointer pointer-events-auto
               ">
-                <div className="mb-2 transition-colors duration-300">
+                <div className="mb-2 transition-colors duration-300 group-hover:text-white">
                   {cat.icon}
                 </div>
                 <p className="text-xs sm:text-sm md:text-base font-medium text-center">
                   {cat.name}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </Slider>
+        </motion.div>
       </div>
 
       {/* 🔶 Standardized Line */}

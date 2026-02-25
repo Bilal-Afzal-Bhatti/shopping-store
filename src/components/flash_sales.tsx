@@ -248,11 +248,15 @@ export default function Flash_sales() {
         ))}
       </Slider>
 <div className="flex justify-center mt-12">
-  <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium hover:bg-[#c33d3d] transition-colors active:scale-95">
+  <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium 
+                     transition-colors duration-200 
+                     /* Hover effect ONLY for mouse-capable devices */
+                     @media(hover:hover){hover:bg-[#c33d3d]} 
+                     /* Visual feedback for touch/click on ALL devices */
+                     active:scale-95 active:bg-[#a33333]">
     View All Products
   </button>
 </div>
-
       <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
 
       <CartModal 

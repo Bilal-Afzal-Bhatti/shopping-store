@@ -26,6 +26,7 @@ export default function Bestselling() {
     { id: 102, name: "Gucci Savoy Bag", price: "$960", oldPrice: "$1160", rating: 4, reviews: 85, image: bag },
     { id: 103, name: "RGB Liquid CPU Cooler", price: "$160", oldPrice: "$170", rating: 4, reviews: 95, image: speaker },
     { id: 104, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
+     { id: 105, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
   ];
 
   const toggleLike = (id: number) => {

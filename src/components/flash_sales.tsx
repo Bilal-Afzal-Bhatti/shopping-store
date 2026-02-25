@@ -224,7 +224,7 @@ export default function Flash_sales() {
               
               <button 
                 disabled={isAdding}
-                className="absolute bottom-0 w-full bg-black text-white py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed active:bg-gray-800"
+                className="absolute bottom-0 w-full bg-black text-white py-2 opacity-100 group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed active:bg-gray-800"
                 onClick={() => handleAddToCart(product)}
               >
                 {isAdding ? "Adding..." : "Add To Cart"}

@@ -221,15 +221,22 @@ export default function Flash_sales() {
                 alt={product.name}
                 className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
               />
-
-              <button
-                disabled={isAdding}
-                className="absolute bottom-0 w-full bg-black text-white py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed active:bg-gray-800"
-                onClick={() => handleAddToCart(product)}
-              >
-                {isAdding ? "Adding..." : "Add To Cart"}
-              </button>
-            </div>
+           <button 
+  disabled={isAdding}
+  className="absolute bottom-0 w-full bg-black text-white py-2 
+             /* Mobile: Always visible */
+             opacity-100 
+             /* Laptop/Desktop: Hidden by default, show on hover */
+             md:opacity-0 md:group-hover:opacity-100 
+             /* Effects */
+             transition-opacity duration-300 
+             disabled:bg-gray-600 disabled:cursor-not-allowed 
+             active:bg-gray-800 active:scale-95"
+  onClick={() => handleAddToCart(product)}
+>
+  {isAdding ? "Adding..." : "Add To Cart"}
+</button>
+</div>
 
             <div className="mt-4 text-left">
               <h3 className="font-bold text-gray-900 text-sm md:text-base truncate">{product.name}</h3>

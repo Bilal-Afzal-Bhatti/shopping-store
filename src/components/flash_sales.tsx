@@ -225,8 +225,9 @@ export default function Flash_sales() {
   disabled={isAdding}
   className="absolute bottom-0 w-full bg-black text-white py-2 
              /* Mobile: Always visible */
-             opacity-100 
+             opacity-200 
              /* Laptop/Desktop: Hidden by default, show on hover */
+             landscape:opacity-200
              md:opacity-0 md:group-hover:opacity-100 
              /* Effects */
              transition-opacity duration-300 

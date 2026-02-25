@@ -113,7 +113,7 @@ export default function Bestselling() {
               <img
                 src={product.image}
                 alt={product.name}
-           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 brightness-105 contrast-95"
+           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 brightness-109 contrast-95"
               />
 
               {/* Action Icons */}

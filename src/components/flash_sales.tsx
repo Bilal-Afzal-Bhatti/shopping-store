@@ -1,20 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Slider from "react-slick";
+import Slider, { type Settings } from "react-slick"; // Import Settings for TS
 import { Heart, Eye, Star } from "lucide-react";
+
+// Styles
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 
+// Assets
 import joystick from "../assets/joystick.png";
 import key_board from "../assets/Key_board.png";
 import led from "../assets/led.png";
 import bluetooth from "../assets/bluetooth.png";
 
+// Components
 import SliderArrows from "../components/arrow";
 import Line from "./line";
 import CartModal from "../components/modal";
 
-// Define outside to prevent the timer from resetting on every render
 const SALE_END_DATE = new Date();
 SALE_END_DATE.setDate(SALE_END_DATE.getDate() + 3);
 
@@ -25,9 +28,13 @@ export default function Flash_sales() {
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
   const [isAdding, setIsAdding] = useState(false);
   
-  const sliderRef = useRef<Slider>(null);
+  // FIX: Force re-mount to solve "invisible on reload" bug
+  const [isMounted, setIsMounted] = useState(false);
+
+  const sliderRef = useRef<Slider | null>(null);
   const navigate = useNavigate();
 
+  // Timer Logic
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date().getTime();
@@ -44,6 +51,17 @@ export default function Flash_sales() {
       }
     }, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  // FIX: Trigger layout calculation after mount
+  useEffect(() => {
+    setIsMounted(true);
+    const timer = setTimeout(() => {
+      if (sliderRef.current) {
+        sliderRef.current.slickGoTo(0); 
+      }
+    }, 200); 
+    return () => clearTimeout(timer);
   }, []);
 
   const products = [
@@ -67,7 +85,7 @@ export default function Flash_sales() {
       return;
     }
 
-    setIsAdding(true); // Start loading state
+    setIsAdding(true);
     try {
       const productData = {
         productId: product.id,
@@ -97,22 +115,31 @@ export default function Flash_sales() {
       setModalConfig({ message: "Network error. Please try again later.", type: 'error' });
       setIsModalOpen(true);
     } finally {
-      setIsAdding(false); // End loading state
+      setIsAdding(false);
     }
   };
 
-  const sliderSettings = {
+  // FIX: Explicitly typed settings object
+  const sliderSettings: Settings = {
     slidesToShow: 4,
     slidesToScroll: 1,
-    arrows: false, // Set to false because we use custom SliderArrows
     infinite: false,
-    dots: false,
     speed: 500,
-    adaptiveHeight: true,
+    autoplay: false,
+    lazyLoad: 'progressive',
+    adaptiveHeight: false, 
+    arrows: false,
     responsive: [
       { breakpoint: 1280, settings: { slidesToShow: 3 } },
       { breakpoint: 1024, settings: { slidesToShow: 2 } },
-      { breakpoint: 640, settings: { slidesToShow: 1, centerMode: true, centerPadding: "40px" } },
+      { 
+        breakpoint: 640, 
+        settings: { 
+          slidesToShow: 1, 
+          centerMode: true, 
+          centerPadding: "30px",
+        } 
+      },
     ],
   };
 
@@ -158,7 +185,12 @@ export default function Flash_sales() {
       </div>
 
       {/* Products Slider */}
-      <Slider ref={sliderRef} {...sliderSettings} className="overflow-visible">
+      <Slider 
+        key={isMounted ? "ready" : "loading"} // FIX: Forces re-calculation
+        ref={sliderRef} 
+        {...sliderSettings} 
+        className="overflow-visible"
+      >
         {products.map((product) => (
           <div key={product.id} className="px-2 sm:px-4 focus:outline-none">
             <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-6 overflow-hidden">
@@ -169,7 +201,7 @@ export default function Flash_sales() {
               <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
                 <button 
                   onClick={() => toggleLike(product.id)}
-                  className="p-1.5 bg-white rounded-full shadow-sm hover:scale-110 transition active:scale-95"
+                  className="p-1.5 bg-white rounded-full shadow-sm transition active:scale-95"
                 >
                   <Heart 
                     size={18} 
@@ -178,7 +210,7 @@ export default function Flash_sales() {
                 </button>
                 <Link 
                   to={"/view_item"}
-                  className="p-1.5 bg-white rounded-full shadow-sm hover:scale-110 transition"
+                  className="p-1.5 bg-white rounded-full shadow-sm transition"
                 >
                   <Eye size={18} className="text-gray-600" />
                 </Link>
@@ -192,7 +224,7 @@ export default function Flash_sales() {
               
               <button 
                 disabled={isAdding}
-                className="absolute bottom-0 w-full bg-black text-white py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                className="absolute bottom-0 w-full bg-black text-white py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed active:bg-gray-800"
                 onClick={() => handleAddToCart(product)}
               >
                 {isAdding ? "Adding..." : "Add To Cart"}
@@ -215,16 +247,16 @@ export default function Flash_sales() {
           </div>
         ))}
       </Slider>
-<button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium 
-  hover:bg-[#c33d3d] 
-  active:bg-[#a33333] active:scale-95 
-  transition-colors outline-none">
-  View All Products
-</button>
+
+      {/* Button with responsive visibility fix */}
+      <div className="flex justify-center mt-12">
+        <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium hover:bg-[#c33d3d] active:bg-[#a33333] transition-colors active:scale-95">
+          View All Products
+        </button>
+      </div>
 
       <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
 
-      {/* Render Modal Component */}
       <CartModal 
         isOpen={isModalOpen}
         type={modalConfig.type}

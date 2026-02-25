@@ -26,11 +26,16 @@
 .custom-scroll::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
-.slick-slide {
-  padding: 0 !important;
+/* Ensure slick track doesn't collapse */
+.slick-track {
+  display: flex !important;
+  align-items: stretch;
 }
-.slick-slide > div {
-  margin: 0 6px;
+
+/* Force images to be visible and have size immediately */
+.slick-slide img {
+  display: block;
+  width: 100%;
 }
 /* ✅ Apply the custom Windows Dark theme to the entire browser window */
 html {

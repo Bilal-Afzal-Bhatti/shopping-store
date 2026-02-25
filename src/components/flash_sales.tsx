@@ -4,7 +4,7 @@ import Slider, { type Settings } from "react-slick"; // Import Settings for TS
 import { Heart, Eye, Star } from "lucide-react";
 
 // Styles
-import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 // Assets
@@ -27,7 +27,7 @@ export default function Flash_sales() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
   const [isAdding, setIsAdding] = useState(false);
-  
+
   // FIX: Force re-mount to solve "invisible on reload" bug
   const [isMounted, setIsMounted] = useState(false);
 
@@ -58,9 +58,9 @@ export default function Flash_sales() {
     setIsMounted(true);
     const timer = setTimeout(() => {
       if (sliderRef.current) {
-        sliderRef.current.slickGoTo(0); 
+        sliderRef.current.slickGoTo(0);
       }
-    }, 200); 
+    }, 200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -127,25 +127,25 @@ export default function Flash_sales() {
     speed: 500,
     autoplay: false,
     lazyLoad: 'progressive',
-    adaptiveHeight: false, 
+    adaptiveHeight: false,
     arrows: false,
     responsive: [
       { breakpoint: 1280, settings: { slidesToShow: 3 } },
       { breakpoint: 1024, settings: { slidesToShow: 2 } },
-      { 
-        breakpoint: 640, 
-        settings: { 
-          slidesToShow: 1, 
-          centerMode: true, 
+      {
+        breakpoint: 640,
+        settings: {
+          slidesToShow: 1,
+          centerMode: true,
           centerPadding: "30px",
-        } 
+        }
       },
     ],
   };
 
-  return (  
+  return (
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 md:mt-60 lg:mt-20 [@media(orientation:landscape)and(max-width:768px)]:mt-66">
-      
+
       {/* Header Section */}
       <div className="flex items-center gap-4 mb-4">
         <div className="w-5 h-10 bg-[#DB4444] rounded-sm"></div>
@@ -155,7 +155,7 @@ export default function Flash_sales() {
       <div className="flex flex-row items-center justify-between mb-8 flex-wrap gap-y-4">
         <div className="flex flex-row items-center gap-6 md:gap-20 flex-wrap">
           <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-black tracking-tight">Flash Sales</h2>
-          
+
           <div className="flex items-center gap-3 sm:gap-6">
             {[
               { label: "Days", value: timeLeft.days },
@@ -185,10 +185,10 @@ export default function Flash_sales() {
       </div>
 
       {/* Products Slider */}
-      <Slider 
+      <Slider
         key={isMounted ? "ready" : "loading"} // FIX: Forces re-calculation
-        ref={sliderRef} 
-        {...sliderSettings} 
+        ref={sliderRef}
+        {...sliderSettings}
         className="overflow-visible"
       >
         {products.map((product) => (
@@ -199,16 +199,16 @@ export default function Flash_sales() {
               </span>
 
               <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
-                <button 
+                <button
                   onClick={() => toggleLike(product.id)}
                   className="p-1.5 bg-white rounded-full shadow-sm transition active:scale-95"
                 >
-                  <Heart 
-                    size={18} 
-                    className={`${liked[product.id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-600"}`} 
+                  <Heart
+                    size={18}
+                    className={`${liked[product.id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-600"}`}
                   />
                 </button>
-                <Link 
+                <Link
                   to={"/view_item"}
                   className="p-1.5 bg-white rounded-full shadow-sm transition"
                 >
@@ -221,8 +221,8 @@ export default function Flash_sales() {
                 alt={product.name}
                 className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
               />
-              
-              <button 
+
+              <button
                 disabled={isAdding}
                 className="absolute bottom-0 w-full bg-black text-white py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed active:bg-gray-800"
                 onClick={() => handleAddToCart(product)}
@@ -247,19 +247,19 @@ export default function Flash_sales() {
           </div>
         ))}
       </Slider>
-<div className="flex justify-center mt-12">
+    <div className="flex justify-center mt-12">
   <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium 
-                     transition-colors duration-200 
-                     /* Hover effect ONLY for mouse-capable devices */
-                     @media(hover:hover){hover:bg-[#c33d3d]} 
-                     /* Visual feedback for touch/click on ALL devices */
+                     transition-all duration-200 
+                     /* This works on Desktop */
+                     hover:bg-[#c33d3d] 
+                     /* This works on Mobile & Desktop */
                      active:scale-95 active:bg-[#a33333]">
     View All Products
   </button>
 </div>
       <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
 
-      <CartModal 
+      <CartModal
         isOpen={isModalOpen}
         type={modalConfig.type}
         message={modalConfig.message}

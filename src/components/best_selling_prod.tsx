@@ -143,7 +143,7 @@ export default function Bestselling() {
                 {/* Add to Cart Button */}
                 <button 
                   disabled={isAdding}
-                  className="absolute bottom-0 w-full bg-black text-white py-2 
+                  className="absolute bottom-0 w-full bg-slate-600 text-white py-2 
                              opacity-100 md:opacity-0 md:group-hover:opacity-100 
                              transition-opacity duration-300 
                              disabled:bg-gray-600 disabled:cursor-not-allowed 

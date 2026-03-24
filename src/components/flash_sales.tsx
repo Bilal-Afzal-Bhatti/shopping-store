@@ -228,7 +228,7 @@ export default function Flash_sales() {
       </div>
 
       <div className="flex justify-center mt-12">
-        <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium transition-all duration-200 hover:bg-[#c33d3d] active:scale-95">
+        <button className=" bg-slate-600 text-white px-10 py-3 rounded-md font-medium transition-all duration-200 hover:bg-[#c33d3d] active:scale-95">
           View All Products
         </button>
       </div>

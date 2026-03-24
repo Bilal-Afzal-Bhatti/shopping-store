@@ -94,7 +94,7 @@ export default function Our_products() {
 
               <img src={product.image} alt={product.name} className="w-40 h-40 object-contain mix-blend-multiply" />
 
-              <button className="absolute bottom-0 w-full bg-black text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
+              <button className="absolute bottom-0 w-full  bg-slate-600 text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
                 Add to Cart
               </button>
             </div>

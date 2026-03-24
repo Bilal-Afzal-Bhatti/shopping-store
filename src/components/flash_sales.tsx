@@ -202,7 +202,7 @@ export default function Flash_sales() {
 
                 <button 
                   disabled={isAdding}
-                  className="absolute bottom-0 w-full bg-black text-white py-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600"
+                  className="absolute bottom-0 w-full  bg-slate-600 text-white py-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600"
                   onClick={() => handleAddToCart(product)}
                 >
                   {isAdding ? "Adding..." : "Add To Cart"}
@@ -228,7 +228,7 @@ export default function Flash_sales() {
       </div>
 
       <div className="flex justify-center mt-12">
-        <button className=" bg-slate-600 text-white px-10 py-3 rounded-md font-medium transition-all duration-200 hover:bg-[#c33d3d] active:scale-95">
+        <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium transition-all duration-200 hover:bg-[#c33d3d] active:scale-95">
           View All Products
         </button>
       </div>

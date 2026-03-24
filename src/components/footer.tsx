@@ -16,7 +16,7 @@ function Footer() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://192.168.137.6:5713/api/useremail/emailsender", {
+      const response = await fetch("https://shoppingstore-backend.vercel.app/api/useremail/emailsender", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -51,7 +51,7 @@ function Footer() {
   };
 
   return (
-    <footer className="bg-black text-white py-12 px-6 md:px-20 w-101 md:max-w-full  sm:w-full">
+    <footer className="bg-black text-white py-12 px-6 md:px-20 w-full md:max-w-full  sm:w-full">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10">
         {/* Loop through footerData object */}
         {Object.entries(footerData).map(([sectionTitle, items]) => (

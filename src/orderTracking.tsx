@@ -1,20 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Check, Truck, Clock, ShieldCheck, MapPin, AlertCircle } from 'lucide-react';
+import { Check, Truck, Clock, ShieldCheck, MapPin, AlertCircle, Package, ArrowLeft } from 'lucide-react';
 
-// --- INTERFACES (Matching your Backend Model) ---
+// --- INTERFACES ---
+interface OrderItem {
+  productId: string | number;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  discount?: string;
+}
+
 interface OrderData {
   _id: string;
   orderStatus: 'processing' | 'shipped' | 'delivered' | 'cancelled';
   paymentMethod: 'cod' | 'stripe';
   totalPrice: number;
-  items: Array<{ name: string; quantity: number; price: number; image?: string }>;
+  items: OrderItem[];
   billingInfo: {
     name: string;
     address: string;
     city: string;
     zipcode: string;
+    email?: string;
+    phone?: string;
   };
   createdAt: string;
 }
@@ -27,145 +38,179 @@ const OrderTracking: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 1. Fetch Logic
   useEffect(() => {
     const fetchOrder = async () => {
       try {
         setLoading(true);
-        // Use your local IP or Environment Variable for the API URL
-        console.log("id****",id);
         const response = await axios.get(`https://shoppingstore-backend.vercel.app/api/orders/track/${id}`);
-        
         if (response.data.success || response.data.order) {
           setOrder(response.data.order);
         }
       } catch (err: any) {
-        setError(err.response?.data?.message || "Failed to locate order");
+        setError(err.response?.data?.message || "Order not found in our records.");
       } finally {
         setLoading(false);
       }
     };
-
     if (id) fetchOrder();
   }, [id]);
 
-  // 2. Stepper Configuration
   const steps = [
-    { id: 'processing', label: 'Order Placed', icon: Clock },
+    { id: 'processing', label: 'Processing', icon: Clock },
     { id: 'shipped', label: 'Shipped', icon: Truck },
     { id: 'delivered', label: 'Delivered', icon: ShieldCheck },
   ];
 
   const currentIdx = order ? steps.findIndex(s => s.id === order.orderStatus) : 0;
 
-  // 3. Loading State (Industry standard Skeleton or Spinner)
   if (loading) return (
-    <div className="h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+    <div className="h-screen flex flex-col items-center justify-center bg-white">
+      <div className="w-16 h-16 border-4 border-gray-100 border-t-red-600 rounded-full animate-spin mb-4"></div>
+      <p className="font-black uppercase tracking-tighter text-sm">Locating Package...</p>
     </div>
   );
 
-  // 4. Error State
   if (error || !order) return (
-    <div className="h-screen flex flex-col items-center justify-center text-center px-4">
-      <AlertCircle size={64} className="text-red-500 mb-4" />
-      <h2 className="text-2xl font-black uppercase">Order Not Found</h2>
-      <p className="text-gray-500 mb-6">{error || "The tracking ID provided is invalid."}</p>
-      <button onClick={() => navigate('/')} className="bg-black text-white px-8 py-3 font-bold uppercase text-sm hover:bg-red-600 transition-colors">
-        Back to Shopping
-      </button>
+    <div className="h-screen flex flex-col items-center justify-center text-center px-4 bg-gray-50">
+      <div className="bg-white p-12 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <AlertCircle size={64} className="text-red-600 mx-auto mb-4" />
+        <h2 className="text-3xl font-black uppercase tracking-tighter">404: Order Not Found</h2>
+        <p className="text-gray-500 my-4 max-w-xs mx-auto font-medium">{error}</p>
+        <button 
+          onClick={() => navigate('/')} 
+          className="flex items-center gap-2 mx-auto bg-black text-white px-6 py-3 font-bold uppercase text-sm hover:bg-red-600 transition-all"
+        >
+          <ArrowLeft size={16}/> Back to Shop
+        </button>
+      </div>
     </div>
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12 font-sans bg-white animate-in fade-in duration-700">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start border-b pb-6 mb-10">
-        <div>
-          <h1 className="text-4xl font-black uppercase tracking-tighter text-black">Track Order</h1>
-          <p className="text-gray-400 mt-1 font-medium italic">ID: #{order._id.toUpperCase()}</p>
-        </div>
-        <div className="mt-4 md:mt-0 text-right">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Order Date</p>
-          <p className="text-xl font-bold text-black">{new Date(order.createdAt).toLocaleDateString()}</p>
-        </div>
-      </div>
-
-      {/* Stepper Logic */}
-      <div className="relative flex justify-between items-center mb-24 px-2 md:px-10">
-        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-100 -translate-y-1/2 -z-10" />
+    <div className="min-h-screen bg-[#fafafa] py-12 px-4 md:px-6">
+      <div className="max-w-5xl mx-auto">
         
-        {steps.map((step, index) => {
-          const Icon = step.icon;
-          const isActive = index <= currentIdx;
-          const isCurrent = index === currentIdx;
+        {/* TOP NAVIGATION */}
+        <button onClick={() => navigate('/')} className="mb-8 flex items-center gap-2 font-bold uppercase text-xs tracking-widest hover:text-red-600 transition-colors">
+          <ArrowLeft size={14}/> Back to Store
+        </button>
 
-          return (
-            <div key={step.id} className="flex flex-col items-center relative">
-               {index > 0 && (
-                <div className={`absolute top-1/2 right-1/2 w-full h-[3px] -translate-y-1/2 -z-10 transition-all duration-1000 
-                  ${isActive ? 'bg-red-500' : 'bg-transparent'}`} 
-                />
-              )}
-              <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center border-4 transition-all duration-700
-                ${isActive ? 'bg-red-600 border-red-100 text-white' : 'bg-white border-gray-100 text-gray-300'}
-                ${isCurrent ? 'ring-8 ring-red-50 scale-110' : ''}`}>
-                {isActive && index < currentIdx ? <Check size={28} strokeWidth={3} /> : <Icon size={24} />}
+        {/* HEADER */}
+        <div className="bg-white border-2 border-black p-6 md:p-10 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+          <div className="flex flex-col md:flex-row justify-between md:items-end gap-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 uppercase tracking-widest">
+                  {order.orderStatus}
+                </span>
+                <span className="text-gray-400 font-bold text-xs">/ PLACED {new Date(order.createdAt).toLocaleDateString()}</span>
               </div>
-              <div className="absolute -bottom-10 w-32 text-center">
-                <p className={`text-[10px] md:text-xs font-black uppercase tracking-tighter 
-                  ${isActive ? 'text-black' : 'text-gray-400'}`}>
-                  {step.label}
-                </p>
-              </div>
+              <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">Track Order</h1>
+              <p className="text-gray-500 font-mono text-sm mt-2 font-bold underline">ID: {order._id}</p>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-16">
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-lg font-bold uppercase italic border-l-4 border-red-600 pl-3 mb-6">Package Content</h3>
-          {order.items.map((item, i) => (
-            <div key={i} className="flex items-center justify-between p-4 border rounded-sm bg-gray-50/50">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-white border flex items-center justify-center font-bold text-gray-400">
-                   {item.quantity}x
-                </div>
-                <div>
-                  <p className="font-bold text-black uppercase">{item.name}</p>
-                  <p className="text-xs text-gray-500 font-bold">UNIT PRICE: ${item.price}</p>
-                </div>
-              </div>
-              <p className="font-black text-lg text-black">${item.price * item.quantity}</p>
+            <div className="text-left md:text-right">
+                <p className="text-xs font-black text-gray-400 uppercase">Estimated Total</p>
+                <p className="text-4xl font-black text-black">${order.totalPrice.toFixed(2)}</p>
             </div>
-          ))}
-          
-          <div className="flex justify-between items-center p-6 bg-black text-white rounded-sm mt-4">
-            <span className="font-bold uppercase tracking-widest text-xs text-gray-400">Grand Total</span>
-            <span className="text-3xl font-black text-red-500">${order.totalPrice}</span>
           </div>
         </div>
 
-        {/* Shipping Summary */}
-        <div className="bg-white border-2 border-black p-8 rounded-sm self-start shadow-[8px_8px_0px_0px_rgba(0,0,0,0.05)]">
-          <div className="flex items-center gap-2 mb-6 text-red-600 font-black uppercase italic underline decoration-2">
-            <MapPin size={20} strokeWidth={3}/>
-            <h3>Shipping To</h3>
-          </div>
-          <div className="space-y-1 text-gray-800">
-            <p className="text-black font-black text-xl mb-2 uppercase">{order.billingInfo.name}</p>
-            <p className="text-sm font-medium">{order.billingInfo.address}</p>
-            <p className="text-sm font-black">{order.billingInfo.city}, {order.billingInfo.zipcode}</p>
-          </div>
-          <div className="mt-8 pt-6 border-t border-black border-dashed">
-            <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Payment</p>
-            <span className="text-xs font-black uppercase text-black border border-black px-2 py-1">
-               {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Paid via Card'}
-            </span>
+        {/* STEPPER */}
+        <div className="bg-white border-2 border-black p-8 md:p-12 mb-8 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-2 h-full bg-red-600"></div>
+          <div className="relative flex justify-between items-center max-w-3xl mx-auto">
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -translate-y-1/2 z-0" />
+            <div 
+                className="absolute top-1/2 left-0 h-1 bg-red-600 -translate-y-1/2 transition-all duration-1000 ease-out"
+                style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}
+            />
+            
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = index <= currentIdx;
+              const isCurrent = index === currentIdx;
+
+              return (
+                <div key={step.id} className="flex flex-col items-center relative z-10">
+                  <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center border-4 transition-all duration-500
+                    ${isActive ? 'bg-black border-black text-white' : 'bg-white border-gray-200 text-gray-300'}
+                    ${isCurrent ? 'ring-4 ring-red-100 scale-110' : ''}`}>
+                    {isActive && index < currentIdx ? <Check size={28} strokeWidth={4} /> : <Icon size={24} />}
+                  </div>
+                  <div className="absolute -bottom-8 w-24 text-center">
+                    <p className={`text-[10px] font-black uppercase tracking-tighter leading-none ${isActive ? 'text-black' : 'text-gray-400'}`}>
+                      {step.label}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* ITEMS LIST */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+               <Package size={20} className="text-red-600"/>
+               <h3 className="text-xl font-black uppercase tracking-tighter">Your Package</h3>
+            </div>
+            
+            {order.items.map((item, i) => (
+              <div key={i} className="group flex items-center justify-between p-4 bg-white border-2 border-black hover:translate-x-1 transition-transform">
+                <div className="flex items-center gap-5">
+                  <div className="relative w-20 h-20 bg-gray-50 border border-gray-100 shrink-0 overflow-hidden">
+                    <img 
+                       src={item.image.startsWith('http') ? item.image : `https://shopping-store-blond-one.vercel.app${item.image}`}
+                       alt={item.name}
+                       className="w-full h-full object-contain p-2"
+                       onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/150?text=No+Image" }}
+                    />
+                    <div className="absolute top-0 right-0 bg-black text-white text-[10px] font-black px-1.5 py-0.5">
+                        x{item.quantity}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-black text-lg uppercase leading-none mb-1 group-hover:text-red-600 transition-colors">{item.name}</h4>
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs font-bold text-gray-400 tracking-widest">${item.price} PER UNIT</p>
+                        {item.discount && <span className="text-[10px] font-black bg-red-600 text-white px-2 py-0.5 rounded-full">{item.discount}</span>}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xl font-black tracking-tighter">${(item.price * item.quantity).toFixed(2)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* SIDEBAR INFO */}
+          <div className="space-y-6">
+             <div className="bg-black text-white p-6 border-2 border-black shadow-[6px_6px_0px_0px_rgba(220,38,38,1)]">
+                <div className="flex items-center gap-2 mb-4 border-b border-gray-800 pb-4">
+                    <MapPin size={18} className="text-red-500"/>
+                    <h3 className="font-black uppercase tracking-widest text-sm">Delivery Address</h3>
+                </div>
+                <div className="space-y-1">
+                    <p className="text-lg font-black uppercase text-red-500">{order.billingInfo.name}</p>
+                    <p className="text-sm font-bold text-gray-300">{order.billingInfo.address}</p>
+                    <p className="text-sm font-black uppercase italic">{order.billingInfo.city}, {order.billingInfo.zipcode}</p>
+                </div>
+             </div>
+
+             <div className="bg-white p-6 border-2 border-black">
+                <p className="text-[10px] font-black text-gray-400 uppercase mb-3 tracking-[.2em]">Payment Summary</p>
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold uppercase">Method</span>
+                    <span className="text-xs font-black uppercase bg-gray-100 px-2 py-1">{order.paymentMethod}</span>
+                </div>
+                <div className="flex justify-between items-center pt-4 border-t border-dashed border-gray-200">
+                    <span className="text-sm font-black uppercase">Final Total</span>
+                    <span className="text-2xl font-black text-black">${order.totalPrice}</span>
+                </div>
+             </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

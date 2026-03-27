@@ -114,22 +114,24 @@ const MyOrders: React.FC = () => {
                     </div>
 
                     {/* Preview Images of Items */}
-                    <div className="flex gap-2 mb-4">
-                      {order.items.slice(0, 4).map((item, idx) => (
-                        <div key={idx} className="w-12 h-12 border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden">
-                          <img 
-                            src={item.image.startsWith('http') ? item.image : `https://shopping-store-blond-one.vercel.app${item.image}`} 
-                            alt={item.name} 
-                            className="object-contain w-full h-full p-1"
-                          />
-                        </div>
-                      ))}
-                      {order.items.length > 4 && (
-                        <div className="w-12 h-12 border border-black bg-black text-white flex items-center justify-center text-[10px] font-black">
-                          +{order.items.length - 4}
-                        </div>
-                      )}
-                    </div>
+                  {/* Preview Images of Items with Safety Check */}
+<div className="flex gap-2 mb-4">
+  {order.items.slice(0, 4).map((item, idx) => (
+    <div key={idx} className="w-12 h-12 border border-gray-100 bg-gray-50 flex items-center justify-center overflow-hidden">
+      <img 
+        // ✅ The fix: Check if item.image exists before calling startsWith
+        src={item.image && item.image.startsWith('http') 
+          ? item.image 
+          : item.image 
+            ? `https://shopping-store-blond-one.vercel.app${item.image}` 
+            : '/assets/placeholder.png' // Fallback if image is missing
+        } 
+        alt={item.name} 
+        className="object-contain w-full h-full p-1"
+      />
+    </div>
+  ))}
+</div>
 
                     <p className="text-sm font-black uppercase italic">
                       Placed on {new Date(order.createdAt).toLocaleDateString('en-GB')}

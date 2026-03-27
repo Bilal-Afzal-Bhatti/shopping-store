@@ -18,6 +18,7 @@ const Checkout: React.FC = () => {
     city: "",
     phone: "",
     email: "",
+    zipcode:"",
     saveInfo: false,
   });
   const [, setStripe] = useState<any>(null);
@@ -171,6 +172,7 @@ const Checkout: React.FC = () => {
             { label: "Town/City", name: "city" },
             { label: "Phone Number", name: "phone" },
             { label: "Email Address", name: "email", type: "email" },
+            { label: "Zip Code", name: "zipcode", type: "text" },
           ].map((field) => (
             <div key={field.name}>
               <label className="block text-sm font-medium mb-1">{field.label}</label>
@@ -179,6 +181,7 @@ const Checkout: React.FC = () => {
                 name={field.name}
                 value={(billing as any)[field.name]}
                 onChange={handleChange}
+               
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -191,6 +194,7 @@ const Checkout: React.FC = () => {
               checked={billing.saveInfo}
               disabled={!isFormComplete}
               onChange={handleChange}
+             
               className="mr-2"
             />
             <span className={`text-sm ${!isFormComplete ? "text-gray-400" : ""}`}>

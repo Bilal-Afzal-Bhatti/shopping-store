@@ -35,7 +35,7 @@ export default function App() {
         <Route path="/check_out" element={<Checkout />} />
         <Route path="/view_item" element={<Viewitem />} />
         <Route path="/success" element={<PaymentSuccess />} />
-        <Route path="/orderTracking/:id" element ={<OrderTracking/>}/>
+        <Route path="/orderTracking" element ={<OrderTracking/>}/>
 
       </Routes>
       <ScrollToTop />

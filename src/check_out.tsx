@@ -81,7 +81,7 @@ const Checkout: React.FC = () => {
     (field) => (billing as any)[field]?.trim() !== ""
   );
 
-  const handlePlaceOrder = async () => {
+const handlePlaceOrder = async () => {
   if (!isFormComplete) {
     alert("Please fill all required fields.");
     return;
@@ -95,57 +95,63 @@ const Checkout: React.FC = () => {
     return navigate("/login");
   }
 
+  // ✅ MAP DATA TO MATCH YOUR SCHEMA
   const orderData = {
     items: cartItems.map((item) => ({
+      // Ensuring productId and image are included as per your screenshot
+      productId: String(item.productId || item._id), 
       name: item.name,
       price: item.price,
       quantity: item.quantity,
+      image: item.image, // e.g., "/assets/Key_board-BsY_Z0HS.png"
+      discount: item.discount || "" 
     })),
-    billingInfo: billing, // ✅ directly use billing state
+    billingInfo: billing, 
     totalPrice: total,
     userId,
   };
 
   if (paymentMethod === "cod") {
-    // ✅ CASH ON DELIVERY
-    const res = await fetch("https://shoppingstore-backend.vercel.app/api/orders/cod", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
-      },
-      body: JSON.stringify(orderData),
-    });
+    try {
+      const res = await fetch("https://shoppingstore-backend.vercel.app/api/orders/cod", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderData),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      alert("✅ Order placed with Cash on Delivery!");
-      navigate("/");
-    } else {
-      alert("❌ Failed: " + data.message);
+      const data = await res.json();
+      if (res.ok && data.order?._id) {
+        alert("✅ Order placed successfully!");
+        navigate(`/orderTracking/${data.order._id}`); 
+      } else {
+        alert("❌ Failed: " + (data.message || "Could not place order"));
+      }
+    } catch (err) {
+      alert("❌ Connection error. Please try again.");
     }
   } else {
-    // 💳 STRIPE PAYMENT
+    // 💳 STRIPE LOGIC
     try {
-      console.log("Initiating Stripe payment...");
       const res = await fetch("https://shoppingstore-backend.vercel.app/api/orders/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(orderData),
       });
 
       const data = await res.json();
       if (res.ok && data.url) {
-        window.location.href = data.url; // ✅ direct redirect to Stripe checkout
+        window.location.href = data.url; 
       } else {
-        alert("❌ Stripe session creation failed.");
+        alert("❌ Stripe session failed.");
       }
     } catch (error) {
-      console.error("Payment error:", error);
-      alert("❌ Payment failed. Try again later.");
+      alert("❌ Payment error.");
     }
   }
 };

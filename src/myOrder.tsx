@@ -27,11 +27,12 @@ const MyOrders: React.FC = () => {
   
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
-
+   console.log("id***",userId);
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
+     
         // Ensure this endpoint matches your backend route exactly
         const res = await axios.get(`https://shoppingstore-backend.vercel.app/api/orders/user/${userId}`);
         

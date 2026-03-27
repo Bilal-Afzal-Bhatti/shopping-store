@@ -106,25 +106,24 @@ const Checkout: React.FC = () => {
     userId,
   };
 
- if (paymentMethod === "cod") {
+  if (paymentMethod === "cod") {
+    // ✅ CASH ON DELIVERY
     const res = await fetch("https://shoppingstore-backend.vercel.app/api/orders/cod", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: token ? `Bearer ${token}` : "",
       },
       body: JSON.stringify(orderData),
     });
 
     const data = await res.json();
-    if (res.ok && data.order?._id) {
-      // ✅ Redirect to the Tracking page with the new Order ID
-      alert("✅ Order placed successfully!");
-      navigate(`/orderTracking/${data.order._id}`); 
+    if (res.ok) {
+      alert("✅ Order placed with Cash on Delivery!");
+      navigate("/");
     } else {
       alert("❌ Failed: " + data.message);
     }
-
   } else {
     // 💳 STRIPE PAYMENT
     try {

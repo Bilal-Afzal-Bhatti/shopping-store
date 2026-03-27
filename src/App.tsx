@@ -14,7 +14,7 @@ import Cart from "./cart"
 import Checkout from "./check_out"
 import Viewitem from "./view_item";
 import PaymentSuccess from "./paymentsuccess";
-import OrderTracking from "./orderTracking";
+import MyOrders from "./myOrder";
 export default function App() {
   return (
     <Router>
@@ -35,7 +35,7 @@ export default function App() {
         <Route path="/check_out" element={<Checkout />} />
         <Route path="/view_item" element={<Viewitem />} />
         <Route path="/success" element={<PaymentSuccess />} />
-        <Route path="/orderTracking" element ={<OrderTracking/>}/>
+        <Route path="/myOrder" element ={<MyOrders/>}/>
 
       </Routes>
       <ScrollToTop />

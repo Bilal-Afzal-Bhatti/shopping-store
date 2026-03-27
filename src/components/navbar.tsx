@@ -239,7 +239,7 @@ function Navbar() {
             <div className="absolute right-0 mt-4 w-56 border border-gray-200 shadow-lg rounded-md py-2 bg-white">
               {[
                 { icon: Settings, label: "Manage My Account", path: "/myaccount" },
-                { icon: Package, label: "My Orders", path: "/orderTracking" },
+                { icon: Package, label: "My Orders", path: "/myOrder" },
                 { icon: XCircle, label: "My Cancellations", path: "/cancellations" },
                 { icon: Star, label: "My Reviews", path: "/reviews" },
               ].map(({ icon: Icon, label, path }) => (

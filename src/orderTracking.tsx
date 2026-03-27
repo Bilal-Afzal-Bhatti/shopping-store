@@ -33,6 +33,7 @@ const OrderTracking: React.FC = () => {
       try {
         setLoading(true);
         // Use your local IP or Environment Variable for the API URL
+        console.log("id****",id);
         const response = await axios.get(`https://shoppingstore-backend.vercel.app/api/orders/track/${id}`);
         
         if (response.data.success || response.data.order) {

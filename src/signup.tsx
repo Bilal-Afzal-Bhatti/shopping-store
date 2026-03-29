@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { FcGoogle } from "react-icons/fc";
 import { useNavigate, Link } from "react-router-dom";
 import Side_image from "./assets/Side_Image.png";
-import { useGoogleLogin } from "@react-oauth/google"; // 1. Import the hook
-import axios from "axios"; // 2. Ensure axios is installed
+import axios, { AxiosError } from "axios";
 import { GoogleLogin } from '@react-oauth/google';
+
 function Signup() {
   const [name, setName] = useState("");
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -12,40 +11,7 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-//   // --- GOOGLE OAUTH LOGIC ---
-// const loginWithGoogle = useGoogleLogin({
-//     onSuccess: async (tokenResponse) => {
-//       setLoading(true);
-//       try {
-//         // 1. Ensure your .env has VITE_BACKEND_URL=https://your-backend.vercel.app
-//         const backendUrl = import.meta.env.VITE_BACKEND_URL;
-        
-//         console.log("Token Response:", tokenResponse);
-
-//         // 2. KEY CHANGE: Send 'token' to match your backend's req.body destructuring
-//         const res = await axios.post(`${backendUrl}/api/auth/google`, {
-//           token: tokenResponse.access_token, 
-//         });
-
-//         if (res.data.success) {
-//           localStorage.setItem("token", res.data.token);
-//           localStorage.setItem("userId", res.data.user._id);
-//           alert("Authentication Successful!");
-//           navigate("/"); 
-//         }
-//       } catch (error) {
-//         console.error("Connection Error:", error);
-//         // This was the confusing error message! Let's make it more accurate:
-//         const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message : "Google Authentication Failed at Backend";
-//         alert(errorMessage || "Google Authentication Failed at Backend");
-//       } finally {
-//         setLoading(false);
-//       }
-//     },
-//     onError: () => alert("Google Login Failed"),
-//   });
-  // --- MANUAL SIGNUP LOGIC ---
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -77,102 +43,63 @@ function Signup() {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen animate-in fade-in duration-700">
-
       {/* Left Image Section */}
       <div className="hidden md:block w-full md:w-[55%] bg-[#CBE4E8]">
-        <img
-          src={Side_image}
-          alt="Create Account"
-          className="w-full h-full max-h-[800px] object-contain pt-20"
-        />
+        <img src={Side_image} alt="Signup" className="w-full h-full max-h-[800px] object-contain pt-20" />
       </div>
 
       {/* Right Form Section */}
       <div className="w-full md:w-[45%] flex items-center justify-center bg-white p-6 sm:p-12 lg:p-20">
         <div className="w-full max-w-[400px]">
-
           <div className="mb-8">
-            <h1 className="text-3xl font-medium mb-3 tracking-tight">Create an account</h1>
-            <p className="text-black text-sm">Enter your details below</p>
+            <h1 className="text-3xl font-medium mb-3">Create an account</h1>
+            <p className="text-sm">Enter your details below</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full border-b border-gray-300 py-3 outline-none focus:border-black transition-colors"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Email or Phone Number"
-                value={emailOrPhone}
-                onChange={(e) => setEmailOrPhone(e.target.value)}
-                className="w-full border-b border-gray-300 py-3 outline-none focus:border-black transition-colors"
-                required
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border-b border-gray-300 py-3 outline-none focus:border-black transition-colors"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#DB4444] text-white py-4 rounded font-medium hover:bg-red-700 transition-all active:scale-[0.98] mt-4"
-              disabled={loading}
-            >
+            <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full border-b py-3 outline-none focus:border-black" required />
+            <input type="text" placeholder="Email or Phone" value={emailOrPhone} onChange={(e) => setEmailOrPhone(e.target.value)} className="w-full border-b py-3 outline-none focus:border-black" required />
+            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full border-b py-3 outline-none focus:border-black" required />
+            <button type="submit" className="w-full bg-[#DB4444] text-white py-4 rounded font-medium hover:bg-red-700 transition-all" disabled={loading}>
               {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
-          {/* 3. UPDATED GOOGLE BUTTON */}
-         <div className="w-full flex justify-center mt-4">
-  <GoogleLogin
-    onSuccess={async (credentialResponse) => {
-      setLoading(true);
-      try {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
-        
-        // credentialResponse.credential is the ID Token (JWT) your backend needs
-        const res = await axios.post(`${backendUrl}/api/auth/google`, {
-          token: credentialResponse.credential, 
-        });
+          <div className="w-full flex flex-col items-center mt-4">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                setLoading(true);
+                try {
+                  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+                  const res = await axios.post(`${backendUrl}/api/auth/google`, {
+                    token: credentialResponse.credential, 
+                  });
 
-        if (res.data.success) {
-          localStorage.setItem("token", res.data.token);
-          localStorage.setItem("userId", res.data.user._id);
-          alert("Authentication Successful!");
-          navigate("/"); 
-        }
-      } catch (error) {
-        const axiosError = axios.isAxiosError(error) ? error : null;
-        console.error("Auth Error:", axiosError?.response?.data);
-        alert(axiosError?.response?.data?.message || "Invalid Token - check Backend Client ID");
-      } finally {
-        setLoading(false);
-      }
-    }}
-    onError={() => {
-      alert("Google Login Failed");
-    }}
-    useOneTap // Optional: shows a small "login as" popup for returning users
-  />
-</div>
+                  if (res.data.success) {
+                    localStorage.setItem("token", res.data.token);
+                    localStorage.setItem("userId", res.data.user._id);
+                    navigate("/"); 
+                  }
+                } catch (error) {
+                  const axiosError = error as AxiosError;
+                  console.error("Auth Error:", axiosError.response?.data);
+                  alert((axiosError.response?.data as any)?.message || "Google Auth Failed");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              onError={() => alert("Google Login Failed")}
+              useOneTap
+            />
+            
+            <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-tighter">
+              Identity verified via Google OAuth 2.0
+            </p>
+          </div>
 
           <div className="text-center mt-8">
             <p className="text-gray-600 text-sm">
-              Already have an account?{" "}
-              <Link to="/login" className="font-medium border-b border-gray-500 pb-0.5 ml-3 hover:text-black transition">
-                Log in
-              </Link>
+              Already have an account? <Link to="/login" className="font-medium border-b border-gray-500 ml-2">Log in</Link>
             </p>
           </div>
         </div>

@@ -110,10 +110,12 @@ const clearDatabaseCart = async () => {
     ), { duration: 6000, position: "top-center", style: { padding: '16px', borderRadius: '16px' } });
   };
 
-  const executeOrderAPI = async () => {
+ const executeOrderAPI = async () => {
     setIsProcessing(true);
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
+    
+    // 1. Start the loading toast
     const loadId = toast.loading("Processing your request...");
 
     const orderData = {
@@ -137,20 +139,31 @@ const clearDatabaseCart = async () => {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(orderData),
       });
+      
       const data = await res.json();
       
       if (res.ok) {
-        await clearDatabaseCart();
+        // 2. Clear Backend Database Cart
+        await clearDatabaseCart(); 
+
+        // 3. Clear UI / Navbar Icon
+        resetGlobalCartUI(); 
+        
         toast.success("Order Placed Successfully!", { id: loadId });
-        resetGlobalCartUI();
+
+        // 4. Handle Redirection based on payment method
         if (paymentMethod === "bank" && data.url) {
+          // If Stripe, redirect to Stripe page
           window.location.href = data.url;
         } else {
+          // If COD, clear local items and go to Tracking
           setCartItems([]);
-          navigate("/orderTracking");
+          setTimeout(() => {
+            navigate("/orderTracking");
+          }, 1500); // Small delay so they see the success toast
         }
       } else {
-        throw new Error("Failed");
+        throw new Error("Server responded with an error");
       }
     } catch (err) {
       toast.error("Execution failed. Please try again.", { id: loadId });
@@ -163,7 +176,21 @@ const clearDatabaseCart = async () => {
     setBilling(prev => ({ ...prev, [name]: value }));
   };
 
-  if (loading) return <div className="flex justify-center items-center h-screen font-medium">Loading Checkout...</div>;
+  // Inside your return, before the main grid
+if (!loading && cartItems.length === 0 && !isProcessing) {
+  return (
+    <div className="flex flex-col items-center justify-center h-screen space-y-4">
+      <ShoppingBag size={64} className="text-gray-300" />
+      <h2 className="text-xl font-bold">Your cart is empty</h2>
+      <button 
+        onClick={() => navigate("/shop")}
+        className="bg-blue-600 text-white px-6 py-2 rounded-lg"
+      >
+        Go Shopping
+      </button>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 md:px-20 py-10 text-gray-800">

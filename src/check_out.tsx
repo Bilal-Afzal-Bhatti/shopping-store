@@ -76,31 +76,74 @@ await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear/${userId}`,
   }, [navigate]);
 
   // --- 5. Separate Logic: Cash on Delivery ---
-  const handleCODOrder = async (orderData: any, token: string, loadId: string) => {
-    try {
-      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/cod`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(orderData),
-      });
+interface OrderItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
 
-      if (res.ok) {
-        // First clear database, then show success, then navigate
-        await clearDatabaseCart(); 
-        toast.success("Order Placed Successfully!", { id: loadId });
-      // We use a slightly longer delay to ensure the state updates finish
-      setTimeout(() => {
-        console.log("Navigating to tracking...");
-        navigate("/orderTracking");
-      }, 2000);
-      } else {
-        throw new Error("COD failed");
-      }
-    } catch (err) {
-      toast.error("Could not process COD. Try again.", { id: loadId });
-      setIsProcessing(false);
-    }
+interface BillingInfo {
+  name: string;
+  company: string;
+  address: string;
+  apartment: string;
+  city: string;
+  phone: string;
+  email: string;
+  zipcode: string;
+  saveInfo?: boolean;
+}
+
+interface OrderData {
+  items: OrderItem[];
+  billingInfo: BillingInfo;
+  totalPrice: number;
+  userId: string;
+  paymentMethod: "bank" | "cod";
+}
+
+interface CODOrderResponse {
+  order?: {
+    _id: string;
   };
+  _id?: string;
+}
+
+const handleCODOrder = async (orderData: OrderData, token: string, loadId: string): Promise<void> => {
+  try {
+    const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/cod`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(orderData),
+    });
+
+    if (res.ok) {
+      const data: CODOrderResponse = await res.json();
+      const orderId = data.order?._id || data._id;
+
+      if (!orderId) {
+        throw new Error("Order created but no ID returned from server");
+      }
+
+      await clearDatabaseCart(); 
+
+      toast.success("Order Placed Successfully!", { id: loadId });
+
+      setTimeout(() => {
+        navigate(`/orderTracking/${orderId}`);
+      }, 1500);
+      
+    } else {
+      throw new Error("COD API failed");
+    }
+  } catch (err) {
+    console.error("Navigation Error:", err);
+    toast.error("Order failed. Please try again.", { id: loadId });
+    setIsProcessing(false);
+  }
+};
 
   // --- 6. Separate Logic: Online Payment ---
   const handleOnlineOrder = async (orderData: any, token: string, loadId: string) => {
@@ -131,7 +174,13 @@ await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear/${userId}`,
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
 
-    const orderData = {
+    if (!userId || !token) {
+      toast.error("Session expired. Please login again.", { id: loadId });
+      setIsProcessing(false);
+      return;
+    }
+
+    const orderData: OrderData = {
       items: cartItems.map((item) => ({
         productId: item.productId || item._id,
         name: item.name,
@@ -146,9 +195,9 @@ await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear/${userId}`,
     };
 
     if (paymentMethod === "cod") {
-      await handleCODOrder(orderData, token!, loadId);
+      await handleCODOrder(orderData, token, loadId);
     } else {
-      await handleOnlineOrder(orderData, token!, loadId);
+      await handleOnlineOrder(orderData, token, loadId);
     }
   }, [cartItems, billing, saveInfo, subtotal, paymentMethod, clearDatabaseCart]);
 

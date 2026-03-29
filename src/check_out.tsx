@@ -42,10 +42,11 @@ const Checkout: React.FC = () => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
     try {
-      await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear?userId=${userId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+     // Change from ?userId= to /${userId}
+await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear/${userId}`, {
+  method: "DELETE",
+  headers: { Authorization: `Bearer ${token}` },
+});
       resetGlobalCartUI();
     } catch (err) {
       console.error("Clear Cart Error:", err);

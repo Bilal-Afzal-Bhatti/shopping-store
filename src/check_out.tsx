@@ -158,7 +158,7 @@ const handlePlaceOrder = async () => {
       alert("❌ Payment error.");
     }
   }
-};
+
 
   if (loading) {
     return (
@@ -167,7 +167,7 @@ const handlePlaceOrder = async () => {
       </div>
     );
   }
-
+};
   return (
     <div className="min-h-screen bg-white px-6 md:px-20 py-16 text-gray-800">
       <h1 className="text-2xl font-semibold mb-8">Billing Details</h1>

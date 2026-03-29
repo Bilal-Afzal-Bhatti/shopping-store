@@ -16,6 +16,7 @@ import Viewitem from "./view_item";
 import PaymentSuccess from "./paymentsuccess";
 import OrderTracking from "./orderTracking";
 import MyOrders from "./myOrder";
+import OAuthLogin from "./OAuthLogin";
 export default function App() {
   return (
     <Router>
@@ -37,10 +38,11 @@ export default function App() {
         <Route path="/view_item" element={<Viewitem />} />
         <Route path="/success" element={<PaymentSuccess />} />
         <Route path="/orderTracking/:id" element ={<OrderTracking/>}/>
-           <Route path="/myOrder" element ={<MyOrders/>}/>
+        <Route path="/myOrder" element ={<MyOrders/>}/>
+        <Route path="/OAuthLogin" element={<OAuthLogin/>}/>
       </Routes>
       <ScrollToTop />
       <Footer />
-    </Router>
+    </Router >
   );
 }

@@ -22,7 +22,21 @@ const Checkout: React.FC = () => {
     localStorage.setItem("cartCount", "0");
     window.dispatchEvent(new Event("cartUpdated"));
   };
+const clearDatabaseCart = async () => {
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
 
+  try {
+    await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clearcart?userId=${userId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (err) {
+    console.error("Failed to clear backend cart:", err);
+  }
+};
   useEffect(() => {
     const fetchCart = async () => {
       try {
@@ -126,6 +140,7 @@ const Checkout: React.FC = () => {
       const data = await res.json();
       
       if (res.ok) {
+        await clearDatabaseCart();
         toast.success("Order Placed Successfully!", { id: loadId });
         resetGlobalCartUI();
         if (paymentMethod === "bank" && data.url) {

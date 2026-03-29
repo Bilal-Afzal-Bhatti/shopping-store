@@ -110,7 +110,7 @@ const clearDatabaseCart = async () => {
     ), { duration: 6000, position: "top-center", style: { padding: '16px', borderRadius: '16px' } });
   };
 
- const executeOrderAPI = async () => {
+const executeOrderAPI = async () => {
   setIsProcessing(true);
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
@@ -141,25 +141,27 @@ const clearDatabaseCart = async () => {
     const data = await res.json();
     
     if (res.ok) {
-      // 1. DELETE THE CART FROM DB IMMEDIATELY
-      // This runs for both COD and Bank to ensure database is clean
+      // --- IMPORTANT: Run these BEFORE the If/Else to ensure they hit both methods ---
+      
+      // 1. Clear Database
       await clearDatabaseCart(); 
 
-      // 2. RESET NAVBAR ICON (Sets localStorage to 0 and triggers event)
+      // 2. Update Navbar UI immediately
       resetGlobalCartUI(); 
-      
+
+      // 3. Clear the local state so the "Cart is Empty" screen shows
+      setCartItems([]); 
+
       if (paymentMethod === "cod") {
-        // COD SPECIFIC SUCCESS FLOW
-        toast.success("Order Placed! Your cart has been cleared.", { id: loadId });
-        setCartItems([]); // Clear local UI state
-         await clearDatabaseCart();
-        // Navigate to tracking after a short delay
+        toast.success("Order Placed! Your cart is now empty.", { id: loadId });
+        
+        // Wait 1.5 seconds so they see the success toast before moving
         setTimeout(() => {
           navigate("/orderTracking");
-        }, 2000);
+        }, 1500);
       } else {
-        // BANK/STRIPE FLOW
-        toast.success("Redirecting to secure payment...", { id: loadId });
+        // Online Payment logic
+        toast.success("Redirecting to payment...", { id: loadId });
         if (data.url) {
           window.location.href = data.url;
         }
@@ -168,7 +170,8 @@ const clearDatabaseCart = async () => {
       throw new Error(data.message || "Server error");
     }
   } catch (err) {
-    toast.error("Failed to process order. Cart remains saved.", { id: loadId });
+    console.error("Order error:", err);
+    toast.error("Failed to process order.", { id: loadId });
     setIsProcessing(false);
   }
 };
@@ -184,7 +187,7 @@ if (!loading && cartItems.length === 0 && !isProcessing) {
       <ShoppingBag size={64} className="text-gray-300" />
       <h2 className="text-xl font-bold">Your cart is empty</h2>
       <button 
-        onClick={() => navigate("/shop")}
+        onClick={() => navigate("/home")}
         className="bg-blue-600 text-white px-6 py-2 rounded-lg"
       >
         Go Shopping

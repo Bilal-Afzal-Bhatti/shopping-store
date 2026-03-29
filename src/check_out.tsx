@@ -148,30 +148,38 @@ await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear/${userId}`,
     }
   }, [cartItems, billing, saveInfo, subtotal, paymentMethod, clearDatabaseCart]);
 
-  const handlePlaceOrder = () => {
-    if (!isFormComplete) return toast.error("Please fill all shipping details.");
-    
-    toast((t) => (
-      <div className="flex flex-col gap-3 p-1">
-        <p className="font-bold text-gray-800">Confirm purchase of ${subtotal}?</p>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => { toast.dismiss(t.id); executeOrderAPI(); }} 
-            className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold"
-          >
-            Confirm
-          </button>
-          <button 
-            onClick={() => toast.dismiss(t.id)} 
-            className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-xs font-bold"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    ), { duration: 5000 });
-  };
+ const handlePlaceOrder = () => {
+  // 1. Check if form is incomplete OR if we are already processing
+  // This || operator prevents the function from running a second time
+  if (!isFormComplete || isProcessing) {
+    if (!isFormComplete) toast.error("Please fill all shipping details.");
+    return; // Stop here
+  }
 
+  toast((t) => (
+    <div className="flex flex-col gap-3 p-1">
+      <p className="font-bold text-gray-800">Confirm purchase of ${subtotal}?</p>
+      <div className="flex gap-2">
+        <button 
+          onClick={() => { 
+            toast.dismiss(t.id); 
+            // Double check inside the click too
+            if (!isProcessing) executeOrderAPI(); 
+          }} 
+          className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold"
+        >
+          Confirm
+        </button>
+        <button 
+          onClick={() => toast.dismiss(t.id)} 
+          className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-xs font-bold"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  ), { duration: 5000 });
+};
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBilling(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };

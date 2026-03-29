@@ -7,7 +7,12 @@ import toast from "react-hot-toast";
 const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(true);
-
+// --- ADD THIS HELPER ---
+  const resetLocalCartIcon = () => {
+    localStorage.setItem("cartCount", "0");
+    // This triggers the listener in your Navbar/Header to update the UI
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
   const updatePaymentStatus = async () => {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
@@ -30,6 +35,7 @@ const PaymentSuccess: React.FC = () => {
       });
 
       if (res.ok) {
+        resetLocalCartIcon();
         const data = await res.json();
         const orderId = data.order?._id; // Get ID from your backend response
 

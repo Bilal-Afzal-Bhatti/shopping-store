@@ -110,7 +110,7 @@ const MyOrders: React.FC = () => {
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Total Amount</p>
                         <p className="text-2xl font-black text-black">${order.totalPrice}</p>
                       </div>
-                      console.log("id ",_id);
+                  
                       <button 
                       
                         onClick={() => navigate(`/orderTracking/${order._id}`)}

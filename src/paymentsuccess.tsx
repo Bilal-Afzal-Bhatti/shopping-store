@@ -16,7 +16,7 @@ const PaymentSuccess: React.FC = () => {
 
      if (!sessionId || !userId) return;
 
-  await fetch("https://shoppingstore-backend.vercel.app/orders/update-payment", {
+  await fetch("https://shoppingstore-backend.vercel.app/api/orders/update-payment", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, userId }),

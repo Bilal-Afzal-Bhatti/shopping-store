@@ -19,7 +19,7 @@ const Checkout: React.FC = () => {
     city: "", phone: "", email: "", zipcode: "",
   });
 
-  // 1. Optimized Calculations
+  // --- 1. Optimized Calculations ---
   const subtotal = useMemo(() => 
     cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0), 
   [cartItems]);
@@ -30,27 +30,29 @@ const Checkout: React.FC = () => {
     ), 
   [billing]);
 
-  // 2. Optimized UI Reset
+  // --- 2. Global UI Reset ---
   const resetGlobalCartUI = useCallback(() => {
     localStorage.setItem("cartCount", "0");
     window.dispatchEvent(new Event("cartUpdated"));
+    setCartItems([]);
   }, []);
 
-  // 3. Optimized Database Clear
+  // --- 3. Database Cart Clear ---
   const clearDatabaseCart = useCallback(async () => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
     try {
-      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear?userId=${userId}`, {
+      await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear?userId=${userId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      return await res.json();
+      resetGlobalCartUI();
     } catch (err) {
       console.error("Clear Cart Error:", err);
     }
-  }, []);
+  }, [resetGlobalCartUI]);
 
+  // --- 4. Fetch Cart on Load ---
   useEffect(() => {
     const fetchCart = async () => {
       try {
@@ -72,7 +74,52 @@ const Checkout: React.FC = () => {
     fetchCart();
   }, [navigate]);
 
-  // 4. Main Order Logic
+  // --- 5. Separate Logic: Cash on Delivery ---
+  const handleCODOrder = async (orderData: any, token: string, loadId: string) => {
+    try {
+      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/cod`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(orderData),
+      });
+
+      if (res.ok) {
+        // First clear database, then show success, then navigate
+        await clearDatabaseCart(); 
+        toast.success("Order Placed Successfully!", { id: loadId });
+        setTimeout(() => navigate("/orderTracking"), 1500);
+      } else {
+        throw new Error("COD failed");
+      }
+    } catch (err) {
+      toast.error("Could not process COD. Try again.", { id: loadId });
+      setIsProcessing(false);
+    }
+  };
+
+  // --- 6. Separate Logic: Online Payment ---
+  const handleOnlineOrder = async (orderData: any, token: string, loadId: string) => {
+    try {
+      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(orderData),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        toast.success("Redirecting to Secure Payment...", { id: loadId });
+        if (data.url) window.location.href = data.url;
+      } else {
+        throw new Error("Online payment session failed");
+      }
+    } catch (err) {
+      toast.error("Payment redirect failed. Try again.", { id: loadId });
+      setIsProcessing(false);
+    }
+  };
+
+  // --- 7. Main Execution Flow ---
   const executeOrderAPI = useCallback(async () => {
     setIsProcessing(true);
     const loadId = toast.loading("Finalizing your order...");
@@ -93,37 +140,12 @@ const Checkout: React.FC = () => {
       paymentMethod,
     };
 
-    try {
-      const endpoint = paymentMethod === "cod" ? "cod" : "create-checkout-session";
-      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(orderData),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        
-        // Wait for Database to clear BEFORE moving
-        await clearDatabaseCart(); 
-        resetGlobalCartUI();
-        setCartItems([]);
-
-        if (paymentMethod === "cod") {
-          toast.success("Order Placed Successfully!", { id: loadId });
-          setTimeout(() => navigate("/orderTracking"), 1500);
-        } else {
-          toast.success("Redirecting to Secure Payment...", { id: loadId });
-          if (data.url) window.location.href = data.url;
-        }
-      } else {
-        throw new Error("Order failed");
-      }
-    } catch (err) {
-      toast.error("Could not process order. Try again.", { id: loadId });
-      setIsProcessing(false);
+    if (paymentMethod === "cod") {
+      await handleCODOrder(orderData, token!, loadId);
+    } else {
+      await handleOnlineOrder(orderData, token!, loadId);
     }
-  }, [cartItems, billing, saveInfo, subtotal, paymentMethod, navigate, clearDatabaseCart, resetGlobalCartUI]);
+  }, [cartItems, billing, saveInfo, subtotal, paymentMethod, clearDatabaseCart]);
 
   const handlePlaceOrder = () => {
     if (!isFormComplete) return toast.error("Please fill all shipping details.");
@@ -174,7 +196,6 @@ const Checkout: React.FC = () => {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* LEFT: FORM */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white p-8 rounded-4xl shadow-sm border border-gray-100">
               <div className="flex items-center gap-2 mb-8">
@@ -207,7 +228,6 @@ const Checkout: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT: SUMMARY */}
           <div className="lg:col-span-1">
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-50 sticky top-10">
               <h2 className="font-bold text-xl mb-6">Order Summary</h2>
@@ -229,7 +249,7 @@ const Checkout: React.FC = () => {
 
               <div className="space-y-3 py-6 border-t border-gray-50">
                 <div className="flex justify-between text-sm text-gray-500 font-medium"><span>Subtotal</span><span>${subtotal}</span></div>
-                <div className="flex justify-between text-sm text-green-600 font-bold"><span>Shipping</span><span>Calculated at next step</span></div>
+                <div className="flex justify-between text-sm text-green-600 font-bold"><span>Shipping</span><span>Free</span></div>
                 <div className="flex justify-between text-2xl font-black pt-2 text-gray-900"><span>Total</span><span>${subtotal}</span></div>
               </div>
 

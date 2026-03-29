@@ -32,24 +32,64 @@ function Navbar() {
     sessionStorage.clear();
     setDropdownOpen(false);
     navigate("/", { replace: true });
+    localStorage.clear();
+
+  // 2. Trigger the event (Optional, but good for other components)
+  window.dispatchEvent(new Event("cartUpdated"));
+
+  // 3. Show a quick toast or alert if you want, then reload
+  // Using window.location.href forces a full browser refresh to the login page
+  window.location.href = "/login";
   };
 
   const fetchCartCount = async () => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    if (!token || !userId) { setCartCount(0); return; }
-    try {
-      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`, {
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch cart");
-      const data = await res.json();
-      setCartCount(data.items.length);
-    } catch (err) { setCartCount(0); }
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
+
+  // If no user, reset to 0 immediately
+  if (!token || !userId) {
+    setCartCount(0);
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    if (!res.ok) throw new Error("Failed to fetch cart");
+    const data = await res.json();
+    
+    // Set the count and sync localStorage for backup
+    const count = data.items?.length || 0;
+    setCartCount(count);
+    localStorage.setItem("cartCount", count.toString());
+  } catch (err) {
+    setCartCount(0);
+  }
+};
+
+useEffect(() => {
+  // 1. Run immediately when Chrome loads/refreshes the page
+  fetchCartCount();
+
+  // 2. Listen for the "cartUpdated" event we trigger in Checkout.tsx
+  window.addEventListener("cartUpdated", fetchCartCount);
+
+  // 3. Listen for "storage" changes (e.g., user logs out or clears data)
+  window.addEventListener("storage", fetchCartCount);
+
+  // Cleanup listeners when component unmounts
+  return () => {
+    window.removeEventListener("cartUpdated", fetchCartCount);
+    window.removeEventListener("storage", fetchCartCount);
   };
-
-  useEffect(() => { fetchCartCount(); }, []);
-
+}, []);
   useEffect(() => {
     const handleScroll = () => setIsSticky(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);

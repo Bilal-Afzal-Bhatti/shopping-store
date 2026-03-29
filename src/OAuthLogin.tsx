@@ -2,17 +2,34 @@ import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { motion } from 'framer-motion';
 import { ShieldCheck, LayoutGrid, ArrowRight } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const OAuthLogin: React.FC = () => {
-  
+  const navigate = useNavigate();
+
   const handleSuccess = async (credentialResponse: any) => {
-    console.log("Token Received:", credentialResponse.credential);
     try {
-      // Logic for backend update will go here later
-      // const res = await axios.post('.../api/auth/google', { token: credentialResponse.credential });
-      alert("Login Success! Backend sync coming next.");
-    } catch (err) {
-      console.error("Auth Error", err);
+      // 1. Send the Google Token to your Backend
+      const res = await axios.post('http://localhost:4000/api/user/google', { 
+        token: credentialResponse.credential 
+      });
+
+      if (res.data.success) {
+        // 2. Save your custom JWT to local storage
+        localStorage.setItem('token', res.data.token);
+        
+        // 3. Optional: Save user info if your backend sends it
+        // localStorage.setItem('user', JSON.stringify(res.data.user));
+
+        alert("Login Successful! Welcome to Vault.");
+        
+        // 4. Redirect to Home or Dashboard
+        navigate('/'); 
+      }
+    } catch (err: any) {
+      console.error("Auth Error", err.response?.data || err.message);
+      alert("Authentication failed. Please check the console.");
     }
   };
 
@@ -44,7 +61,6 @@ const OAuthLogin: React.FC = () => {
             </p>
           </div>
 
-          {/* Decorative Background Element */}
           <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-600 rounded-full blur-[100px] opacity-50" />
         </div>
 
@@ -55,7 +71,6 @@ const OAuthLogin: React.FC = () => {
             <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] mt-3">Enter the store ecosystem</p>
           </div>
 
-          {/* Google Button Wrapper - Custom Styled to match theme */}
           <div className="space-y-6">
             <div className="relative group">
                <div className="absolute -inset-1 bg-blue-500 rounded-none opacity-25 group-hover:opacity-100 transition duration-200 blur"></div>
@@ -78,7 +93,6 @@ const OAuthLogin: React.FC = () => {
               <div className="h-0.5 bg-gray-100 grow" />
             </div>
 
-            {/* Manual Email Placeholder (Optional/Visual) */}
             <div className="space-y-4">
                <input 
                  type="email" 

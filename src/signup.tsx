@@ -17,8 +17,10 @@ function Signup() {
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       try {
-        // Industry Standard: Send the access_token to your backend
-        const res = await axios.post("https://shoppingstore-backend.vercel.app/api/auth/google", {
+        // Use Vite Environment Variable for the URL
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+        const res = await axios.post(`${backendUrl}/api/auth/google`, {
           access_token: tokenResponse.access_token,
         });
 
@@ -71,7 +73,7 @@ function Signup() {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen animate-in fade-in duration-700">
-      
+
       {/* Left Image Section */}
       <div className="hidden md:block w-full md:w-[55%] bg-[#CBE4E8]">
         <img
@@ -84,7 +86,7 @@ function Signup() {
       {/* Right Form Section */}
       <div className="w-full md:w-[45%] flex items-center justify-center bg-white p-6 sm:p-12 lg:p-20">
         <div className="w-full max-w-[400px]">
-          
+
           <div className="mb-8">
             <h1 className="text-3xl font-medium mb-3 tracking-tight">Create an account</h1>
             <p className="text-black text-sm">Enter your details below</p>
@@ -129,9 +131,9 @@ function Signup() {
 
           {/* 3. UPDATED GOOGLE BUTTON */}
           <div className="w-full">
-            <button 
+            <button
               type="button" // Important to prevent form submission
-              onClick={() => loginWithGoogle()} 
+              onClick={() => loginWithGoogle()}
               disabled={loading}
               className="w-full border-4 border-black flex items-center justify-center gap-3 py-4 rounded-none mt-4 
                          bg-white text-black font-black uppercase italic text-sm
@@ -142,19 +144,19 @@ function Signup() {
               <FcGoogle size={24} />
               <span>{loading ? "Verifying..." : "Sign up with Google"}</span>
             </button>
-            
+
             <p className="text-[9px] text-center mt-4 font-bold text-gray-400 uppercase tracking-widest">
               Identity verified via Google OAuth 2.0
             </p>
           </div>
 
           <div className="text-center mt-8">
-             <p className="text-gray-600 text-sm">
-                Already have an account?{" "}
-                <Link to="/login" className="font-medium border-b border-gray-500 pb-0.5 ml-3 hover:text-black transition">
-                  Log in
-                </Link>
-             </p>
+            <p className="text-gray-600 text-sm">
+              Already have an account?{" "}
+              <Link to="/login" className="font-medium border-b border-gray-500 pb-0.5 ml-3 hover:text-black transition">
+                Log in
+              </Link>
+            </p>
           </div>
         </div>
       </div>

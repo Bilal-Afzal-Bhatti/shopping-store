@@ -111,66 +111,67 @@ const clearDatabaseCart = async () => {
   };
 
  const executeOrderAPI = async () => {
-    setIsProcessing(true);
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    
-    // 1. Start the loading toast
-    const loadId = toast.loading("Processing your request...");
+  setIsProcessing(true);
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
+  const loadId = toast.loading("Processing your request...");
 
-    const orderData = {
-      items: cartItems.map((item) => ({
-        productId: item.productId || item._id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        image: item.image,
-      })),
-      billingInfo: { ...billing, saveInfo },
-      totalPrice: subtotal,
-      userId,
-      paymentMethod,
-    };
-
-    try {
-      const endpoint = paymentMethod === "cod" ? "cod" : "create-checkout-session";
-      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(orderData),
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        // 2. Clear Backend Database Cart
-        await clearDatabaseCart(); 
-
-        // 3. Clear UI / Navbar Icon
-        resetGlobalCartUI(); 
-        
-        toast.success("Order Placed Successfully!", { id: loadId });
-
-        // 4. Handle Redirection based on payment method
-        if (paymentMethod === "bank" && data.url) {
-          // If Stripe, redirect to Stripe page
-          window.location.href = data.url;
-        } else {
-          // If COD, clear local items and go to Tracking
-          setCartItems([]);
-          setTimeout(() => {
-            navigate("/orderTracking");
-          }, 1500); // Small delay so they see the success toast
-        }
-      } else {
-        throw new Error("Server responded with an error");
-      }
-    } catch (err) {
-      toast.error("Execution failed. Please try again.", { id: loadId });
-      setIsProcessing(false);
-    }
+  const orderData = {
+    items: cartItems.map((item) => ({
+      productId: item.productId || item._id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      image: item.image,
+    })),
+    billingInfo: { ...billing, saveInfo },
+    totalPrice: subtotal,
+    userId,
+    paymentMethod,
   };
 
+  try {
+    const endpoint = paymentMethod === "cod" ? "cod" : "create-checkout-session";
+    const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(orderData),
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      // 1. DELETE THE CART FROM DB IMMEDIATELY
+      // This runs for both COD and Bank to ensure database is clean
+      await clearDatabaseCart(); 
+
+      // 2. RESET NAVBAR ICON (Sets localStorage to 0 and triggers event)
+      resetGlobalCartUI(); 
+      
+      if (paymentMethod === "cod") {
+        // COD SPECIFIC SUCCESS FLOW
+        toast.success("Order Placed! Your cart has been cleared.", { id: loadId });
+        setCartItems([]); // Clear local UI state
+        
+        // Navigate to tracking after a short delay
+        setTimeout(() => {
+          navigate("/orderTracking");
+        }, 2000);
+      } else {
+        // BANK/STRIPE FLOW
+        toast.success("Redirecting to secure payment...", { id: loadId });
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      }
+    } else {
+      throw new Error(data.message || "Server error");
+    }
+  } catch (err) {
+    toast.error("Failed to process order. Cart remains saved.", { id: loadId });
+    setIsProcessing(false);
+  }
+};
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setBilling(prev => ({ ...prev, [name]: value }));

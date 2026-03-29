@@ -231,7 +231,7 @@ const Cart: React.FC = () => {
   <img
     src={item.image}
     alt={item.name}
-    className="w-full max-w-[150px]  h-auto md:w-20 md:h-20 object-cover rounded-md mx-auto md:mx-0"
+    className="w-20 h-20 object-contain bg-gray-50 rounded-md mx-auto md:mx-0"
   />
                       <div className="flex flex-col">
                         <span className="font-medium">{item.name}</span>

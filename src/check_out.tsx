@@ -81,6 +81,16 @@ const Checkout: React.FC = () => {
     (field) => (billing as any)[field]?.trim() !== ""
   );
 
+// Helper function to clear cart
+const clearUserCart = async () => {
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
+  await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear/${userId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
 const handlePlaceOrder = async () => {
   if (!isFormComplete) {
     alert("Please fill all required fields.");
@@ -90,25 +100,19 @@ const handlePlaceOrder = async () => {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
 
-  if (!token || !userId) {
-    alert("Please login first!");
-    return navigate("/login");
-  }
-
-  // ✅ MAP DATA TO MATCH YOUR SCHEMA
   const orderData = {
     items: cartItems.map((item) => ({
-      // Ensuring productId and image are included as per your screenshot
       productId: String(item.productId || item._id), 
       name: item.name,
       price: item.price,
       quantity: item.quantity,
-      image: item.image, // e.g., "/assets/Key_board-BsY_Z0HS.png"
+      image: item.image,
       discount: item.discount || "" 
     })),
     billingInfo: billing, 
     totalPrice: total,
     userId,
+    paymentMethod, // Make sure to send this to backend
   };
 
   if (paymentMethod === "cod") {
@@ -123,14 +127,14 @@ const handlePlaceOrder = async () => {
       });
 
       const data = await res.json();
-      if (res.ok && data.order?._id) {
-        alert("✅ Order placed successfully!");
+      if (res.ok) {
+        // FOR COD: We DO NOT clear the cart here yet. 
+        // The backend will clear it when the admin marks it as "Shipped".
+        alert("✅ Order placed (COD)! It is now processing.");
         navigate(`/orderTracking/${data.order._id}`); 
-      } else {
-        alert("❌ Failed: " + (data.message || "Could not place order"));
       }
     } catch (err) {
-      alert("❌ Connection error. Please try again.");
+      alert("❌ Connection error.");
     }
   } else {
     // 💳 STRIPE LOGIC
@@ -146,9 +150,9 @@ const handlePlaceOrder = async () => {
 
       const data = await res.json();
       if (res.ok && data.url) {
+        // FOR STRIPE: Clear cart now because payment is about to be final
+        await clearUserCart(); 
         window.location.href = data.url; 
-      } else {
-        alert("❌ Stripe session failed.");
       }
     } catch (error) {
       alert("❌ Payment error.");

@@ -39,7 +39,7 @@ function Navbar() {
     const userId = localStorage.getItem("userId");
     if (!token || !userId) { setCartCount(0); return; }
     try {
-      const res = await fetch(`http://192.168.18.40:5731/api/cart/showcart/?userId=${userId}`, {
+      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch cart");

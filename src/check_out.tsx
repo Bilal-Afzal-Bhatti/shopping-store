@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, DollarSign, Clock, CheckCircle2 } from "lucide-react";
+import { CreditCard, DollarSign, AlertCircle, CheckCircle2, ShoppingBag, Circle } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
 const Checkout: React.FC = () => {
@@ -9,7 +9,6 @@ const Checkout: React.FC = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"bank" | "cod">("bank");
   const [isProcessing, setIsProcessing] = useState(false);
-  const timerRef = useRef<any>(null);
 
   const [billing, setBilling] = useState({
     name: "", company: "", address: "", apartment: "",
@@ -18,6 +17,7 @@ const Checkout: React.FC = () => {
   
   const [saveInfo, setSaveInfo] = useState(false);
 
+  // Sync Navbar UI
   const resetGlobalCartUI = () => {
     localStorage.setItem("cartCount", "0");
     window.dispatchEvent(new Event("cartUpdated"));
@@ -31,7 +31,7 @@ const Checkout: React.FC = () => {
         if (!token || !userId) return navigate("/login");
 
         const res = await fetch(`https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
         setCartItems(data.items || []);
@@ -46,50 +46,61 @@ const Checkout: React.FC = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   
-  // Validation: Checking if required fields are filled
   const isFormComplete = ["name", "address", "city", "phone", "email", "zipcode"].every(
     (f) => (billing as any)[f]?.trim() !== ""
   );
 
+  // THE NEW CONFIRMATION TOAST
   const handlePlaceOrder = () => {
     if (!isFormComplete) {
       toast.error("Please fill all required billing fields first.");
       return;
     }
 
-    setIsProcessing(true);
     toast((t) => (
-      <div className="flex flex-col items-center p-2 gap-3 min-w-[250px]">
-        <div className="flex items-center gap-2 font-bold text-blue-600">
-          <Clock size={20} className="animate-pulse" />
-          Processing Order...
+      <div className="flex flex-col p-1 min-w-[280px]">
+        <div className="flex items-center gap-3 mb-3 text-blue-700">
+          <ShoppingBag size={24} />
+          <span className="font-bold text-lg">Confirm Your Order</span>
         </div>
-        <p className="text-xs text-gray-500 text-center">
-          Finalizing in 20s. You can still cancel.
+        
+        <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+          Are you sure you want to place this order? 
+          <span className="block mt-2 font-bold text-red-500 items-center gap-1">
+            <AlertCircle size={14} /> 
+            Note: No cancellations once shipping begins.
+          </span>
         </p>
-        <button
-          onClick={() => {
-            if (timerRef.current) clearTimeout(timerRef.current);
-            toast.dismiss(t.id);
-            setIsProcessing(false);
-            toast.error("Order Cancelled");
-          }}
-          className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-full text-xs font-bold transition-all shadow-md"
-        >
-          CANCEL SHOPPING
-        </button>
-      </div>
-    ), { duration: 20000, position: "top-center" });
 
-    timerRef.current = setTimeout(() => {
-      executeOrderAPI();
-    }, 20000);
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              executeOrderAPI();
+            }}
+            className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition-all text-sm"
+          >
+            CONFIRM
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              toast.error("Order Cancelled");
+            }}
+            className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold hover:bg-gray-200 transition-all text-sm"
+          >
+            CANCEL
+          </button>
+        </div>
+      </div>
+    ), { duration: 6000, position: "top-center", style: { padding: '16px', borderRadius: '16px' } });
   };
 
   const executeOrderAPI = async () => {
+    setIsProcessing(true);
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
-    const loadId = toast.loading("Sending to server...");
+    const loadId = toast.loading("Processing your request...");
 
     const orderData = {
       items: cartItems.map((item) => ({
@@ -115,7 +126,7 @@ const Checkout: React.FC = () => {
       const data = await res.json();
       
       if (res.ok) {
-        toast.success("Order Successful!", { id: loadId });
+        toast.success("Order Placed Successfully!", { id: loadId });
         resetGlobalCartUI();
         if (paymentMethod === "bank" && data.url) {
           window.location.href = data.url;
@@ -123,9 +134,11 @@ const Checkout: React.FC = () => {
           setCartItems([]);
           navigate("/orderTracking");
         }
+      } else {
+        throw new Error("Failed");
       }
     } catch (err) {
-      toast.error("Network error occurred.", { id: loadId });
+      toast.error("Execution failed. Please try again.", { id: loadId });
       setIsProcessing(false);
     }
   };
@@ -140,104 +153,105 @@ const Checkout: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 px-4 md:px-20 py-10 text-gray-800">
       <Toaster position="top-center" />
-      <h1 className="text-2xl font-bold mb-8 flex items-center gap-2">
-        Checkout Information
-      </h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* LEFT: FORM */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold mb-6">Billing Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {Object.keys(billing).map((key) => (
-              <div key={key} className={key === 'address' ? 'md:col-span-2' : ''}>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">{key}</label>
-                <input
-                  type="text"
-                  name={key}
-                  value={(billing as any)[key]}
-                  onChange={handleChange}
-                  placeholder={`Enter ${key}...`}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                />
-              </div>
-            ))}
-          </div>
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-black mb-2">Checkout</h1>
+        <p className="text-gray-500 mb-8 font-medium">Complete your details to finish the purchase.</p>
 
-          {/* SAVE INFO SECTION */}
-          <div className="mt-8 p-4 bg-gray-50 rounded-xl flex items-center gap-3">
-            <input 
-                type="checkbox" 
-                id="saveInfo"
-                disabled={!isFormComplete} 
-                checked={saveInfo}
-                onChange={(e) => setSaveInfo(e.target.checked)}
-                className="w-5 h-5 cursor-pointer accent-blue-600 disabled:opacity-30"
-            />
-            <label htmlFor="saveInfo" className={`text-sm font-medium ${!isFormComplete ? 'text-gray-400' : 'text-gray-700 cursor-pointer'}`}>
-              Save this information for faster checkout next time
-            </label>
-            {!isFormComplete && <span className="text-[10px] text-red-400 font-bold uppercase ml-auto">Fill fields to enable</span>}
-            {isFormComplete && <CheckCircle2 size={18} className="text-green-500 ml-auto" />}
-          </div>
-        </div>
-
-        {/* RIGHT: SUMMARY & CUSTOM SLIDER */}
-        <div className="bg-white p-6 rounded-2xl shadow-xl h-fit border border-gray-100">
-          <h2 className="font-bold text-lg mb-4">Order Summary</h2>
-          
-          {/* CUSTOM ITEM SLIDER AREA */}
-          <div className="max-h-80 overflow-y-auto pr-2 space-y-4 mb-6 custom-scrollbar">
-            {cartItems.map((item) => (
-              <div key={item._id} className="flex gap-4 items-center bg-gray-50 p-2 rounded-lg">
-                <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-md" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{item.name}</p>
-                  <p className="text-xs text-gray-500">Qty: {item.quantity} × ${item.price}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* BILLING FORM */}
+          <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+            <h2 className="text-xl font-bold mb-6">1. Shipping Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Object.keys(billing).map((key) => (
+                <div key={key} className={key === 'address' ? 'md:col-span-2' : ''}>
+                  <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">{key}</label>
+                  <input
+                    type="text"
+                    name={key}
+                    value={(billing as any)[key]}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                    placeholder={`Your ${key}...`}
+                  />
                 </div>
-                <span className="font-bold text-sm">${item.price * item.quantity}</span>
+              ))}
+            </div>
+
+            <div className="mt-8 p-5 bg-blue-50 rounded-2xl flex items-center gap-4 border border-blue-100">
+              <input 
+                  type="checkbox" 
+                  id="saveInfo"
+                  disabled={!isFormComplete} 
+                  checked={saveInfo}
+                  onChange={(e) => setSaveInfo(e.target.checked)}
+                  className="w-6 h-6 cursor-pointer accent-blue-600"
+              />
+              <label htmlFor="saveInfo" className={`text-sm font-bold ${!isFormComplete ? 'text-gray-400' : 'text-blue-900 cursor-pointer'}`}>
+                Save info for next time
+              </label>
+              {!isFormComplete && <span className="text-[10px] text-red-500 font-black ml-auto bg-white px-3 py-1 rounded-full border border-red-100">FORM INCOMPLETE</span>}
+            </div>
+          </div>
+
+          {/* ORDER SUMMARY */}
+          <div className="space-y-6">
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+              <h2 className="font-bold text-xl mb-6">Order Summary</h2>
+              
+              <div className="max-h-64 overflow-y-auto pr-2 space-y-4 mb-6 custom-scrollbar">
+                {cartItems.map((item) => (
+                  <div key={item._id} className="flex gap-4 items-center border-b border-gray-50 pb-4">
+                    <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-2xl" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black truncate">{item.name}</p>
+                      <p className="text-xs font-bold text-gray-400">Qty: {item.quantity}</p>
+                    </div>
+                    <span className="font-black text-sm text-blue-600">${item.price * item.quantity}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="border-t pt-4 space-y-3">
-            <div className="flex justify-between text-gray-500"><span>Subtotal</span><span className="font-semibold">${subtotal}</span></div>
-            <div className="flex justify-between text-green-600"><span>Shipping</span><span className="font-bold">FREE</span></div>
-            <div className="flex justify-between text-xl font-black border-t pt-3"><span>Total</span><span>${subtotal}</span></div>
-          </div>
+              <div className="space-y-3 pt-4 border-t border-dashed">
+                <div className="flex justify-between text-gray-500 font-bold"><span>Subtotal</span><span>${subtotal}</span></div>
+                <div className="flex justify-between text-green-600 font-bold"><span>Shipping</span><span>FREE</span></div>
+                <div className="flex justify-between text-2xl font-black pt-3"><span>Total</span><span>${subtotal}</span></div>
+              </div>
 
-          <div className="mt-6 space-y-3">
-             <button 
-              onClick={() => setPaymentMethod('bank')}
-              className={`w-full flex items-center justify-between p-4 border rounded-xl transition-all ${paymentMethod === 'bank' ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-gray-100 hover:bg-gray-50'}`}
-             >
-               <div className="flex items-center gap-3"><CreditCard size={20} /> <span className="text-sm font-bold">Online Payment</span></div>
-               {paymentMethod === 'bank' && <CheckCircle2 size={16} className="text-blue-600" />}
-             </button>
-             <button 
-              onClick={() => setPaymentMethod('cod')}
-              className={`w-full flex items-center justify-between p-4 border rounded-xl transition-all ${paymentMethod === 'cod' ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-gray-100 hover:bg-gray-50'}`}
-             >
-               <div className="flex items-center gap-3"><DollarSign size={20} /> <span className="text-sm font-bold">Cash on Delivery</span></div>
-               {paymentMethod === 'cod' && <CheckCircle2 size={16} className="text-blue-600" />}
-             </button>
-          </div>
+              <div className="mt-8 space-y-3">
+                 <button onClick={() => setPaymentMethod('bank')} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${paymentMethod === 'bank' ? 'border-blue-600 bg-blue-50' : 'border-gray-50 bg-gray-50'}`}>
+                   <div className="flex items-center gap-3"><CreditCard className={paymentMethod === 'bank' ? 'text-blue-600' : 'text-gray-400'} /> <span className="font-bold">Online Card</span></div>
+                   {paymentMethod === 'bank' && <CheckCircle2 size={18} className="text-blue-600" />}
+                 </button>
+                 <button onClick={() => setPaymentMethod('cod')} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${paymentMethod === 'cod' ? 'border-blue-600 bg-blue-50' : 'border-gray-50 bg-gray-50'}`}>
+                   <div className="flex items-center gap-3"><DollarSign className={paymentMethod === 'cod' ? 'text-blue-600' : 'text-gray-400'} /> <span className="font-bold">Cash Delivery</span></div>
+                   {paymentMethod === 'cod' && <CheckCircle2 size={18} className="text-blue-600" />}
+                 </button>
+              </div>
 
-          <button
-            disabled={isProcessing || cartItems.length === 0}
-            onClick={handlePlaceOrder}
-            className={`w-full mt-6 py-4 rounded-xl font-black text-white shadow-lg transition-all ${isProcessing ? 'bg-gray-300' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'}`}
-          >
-            {isProcessing ? "SECURELY PROCESSING..." : "COMPLETE ORDER"}
-          </button>
+              <button
+                disabled={isProcessing || cartItems.length === 0}
+                onClick={handlePlaceOrder}
+                className={`w-full mt-8 py-5 rounded-2xl font-black text-white shadow-xl transition-all tracking-widest ${isProcessing ? 'bg-gray-200 cursor-not-allowed' : 'bg-black hover:bg-blue-700'}`}
+              >
+                {isProcessing ? "PROCESSING..." : "PLACE ORDER"}
+              </button>
+              
+              {/* POLICY MESSAGE */}
+              <div className="mt-6 p-4 bg-orange-50 rounded-2xl border border-orange-100 flex gap-3">
+                 <AlertCircle className="text-orange-500 shrink-0" size={18} />
+                 <p className="text-[11px] font-bold text-orange-800 leading-tight">
+                   Once your order is processed and the shipping cycle starts, cancellation is no longer possible. Please verify your details.
+                 </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
       `}</style>
     </div>
   );

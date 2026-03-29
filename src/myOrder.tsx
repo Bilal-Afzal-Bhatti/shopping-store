@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Package, ChevronRight, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Package, ChevronRight, ArrowLeft,  } from 'lucide-react';
 
 const MyOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -110,7 +110,9 @@ const MyOrders: React.FC = () => {
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Total Amount</p>
                         <p className="text-2xl font-black text-black">${order.totalPrice}</p>
                       </div>
+                      console.log("id ",_id);
                       <button 
+                      
                         onClick={() => navigate(`/orderTracking/${order._id}`)}
                         className="bg-black text-white px-6 py-3 rounded-lg font-bold uppercase text-xs flex items-center gap-2 hover:bg-blue-600 transition-colors"
                       >

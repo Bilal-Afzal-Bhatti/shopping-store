@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, DollarSign, AlertCircle, CheckCircle2, ShoppingBag, Circle } from "lucide-react";
+import { CreditCard, DollarSign, AlertCircle, CheckCircle2, ShoppingBag } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
 const Checkout: React.FC = () => {
@@ -17,26 +17,26 @@ const Checkout: React.FC = () => {
   
   const [saveInfo, setSaveInfo] = useState(false);
 
-  // Sync Navbar UI
   const resetGlobalCartUI = () => {
     localStorage.setItem("cartCount", "0");
     window.dispatchEvent(new Event("cartUpdated"));
   };
-const clearDatabaseCart = async () => {
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
 
-  try {
-    await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clearcart?userId=${userId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  } catch (err) {
-    console.error("Failed to clear backend cart:", err);
-  }
-};
+  const clearDatabaseCart = async () => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    try {
+      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clearcart?userId=${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.ok;
+    } catch (err) {
+      console.error("Failed to clear backend cart:", err);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const fetchCart = async () => {
       try {
@@ -59,246 +59,161 @@ const clearDatabaseCart = async () => {
   }, [navigate]);
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  
   const isFormComplete = ["name", "address", "city", "phone", "email", "zipcode"].every(
     (f) => (billing as any)[f]?.trim() !== ""
   );
 
-  // THE NEW CONFIRMATION TOAST
-  const handlePlaceOrder = () => {
-    if (!isFormComplete) {
-      toast.error("Please fill all required billing fields first.");
-      return;
+  const executeOrderAPI = async () => {
+    setIsProcessing(true);
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    const loadId = toast.loading("Processing your request...");
+
+    const orderData = {
+      items: cartItems.map((item) => ({
+        productId: item.productId || item._id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+      })),
+      billingInfo: { ...billing, saveInfo },
+      totalPrice: subtotal,
+      userId,
+      paymentMethod,
+    };
+
+    try {
+      const endpoint = paymentMethod === "cod" ? "cod" : "create-checkout-session";
+      const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(orderData),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        // ALWAYS clear database first
+        await clearDatabaseCart(); 
+        resetGlobalCartUI(); 
+
+        if (paymentMethod === "cod") {
+          toast.success("Order Placed Successfully!", { id: loadId });
+          setCartItems([]); // Clears local view
+          // Immediate navigation after clearing
+          navigate("/orderTracking");
+        } else {
+          toast.success("Redirecting to payment...", { id: loadId });
+          if (data.url) window.location.href = data.url;
+        }
+      } else {
+        throw new Error(data.message || "Order failed");
+      }
+    } catch (err) {
+      toast.error("Process failed. Try again.", { id: loadId });
+      setIsProcessing(false);
     }
+  };
 
+  const handlePlaceOrder = () => {
+    if (!isFormComplete) return toast.error("Please fill required fields.");
     toast((t) => (
-      <div className="flex flex-col p-1 min-w-[280px]">
-        <div className="flex items-center gap-3 mb-3 text-blue-700">
-          <ShoppingBag size={24} />
-          <span className="font-bold text-lg">Confirm Your Order</span>
-        </div>
-        
-        <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-          Are you sure you want to place this order? 
-          <span className="block mt-2 font-bold text-red-500 items-center gap-1">
-            <AlertCircle size={14} /> 
-            Note: No cancellations once shipping begins.
-          </span>
-        </p>
-
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={() => {
-              toast.dismiss(t.id);
-              executeOrderAPI();
-            }}
-            className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition-all text-sm"
-          >
-            CONFIRM
-          </button>
-          <button
-            onClick={() => {
-              toast.dismiss(t.id);
-              toast.error("Order Cancelled");
-            }}
-            className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold hover:bg-gray-200 transition-all text-sm"
-          >
-            CANCEL
-          </button>
+      <div className="text-sm">
+        <p className="font-bold mb-2">Confirm Order?</p>
+        <div className="flex gap-2">
+          <button onClick={() => { toast.dismiss(t.id); executeOrderAPI(); }} className="bg-blue-600 text-white px-3 py-1 rounded">Confirm</button>
+          <button onClick={() => toast.dismiss(t.id)} className="bg-gray-200 px-3 py-1 rounded">Cancel</button>
         </div>
       </div>
-    ), { duration: 6000, position: "top-center", style: { padding: '16px', borderRadius: '16px' } });
+    ));
   };
 
-const executeOrderAPI = async () => {
-  setIsProcessing(true);
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
-  const loadId = toast.loading("Processing your request...");
-
-  const orderData = {
-    items: cartItems.map((item) => ({
-      productId: item.productId || item._id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      image: item.image,
-    })),
-    billingInfo: { ...billing, saveInfo },
-    totalPrice: subtotal,
-    userId,
-    paymentMethod,
-  };
-
-  try {
-    const endpoint = paymentMethod === "cod" ? "cod" : "create-checkout-session";
-    const res = await fetch(`https://shoppingstore-backend.vercel.app/api/orders/${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(orderData),
-    });
-    
-    const data = await res.json();
-    
-    if (res.ok) {
-      // --- IMPORTANT: Run these BEFORE the If/Else to ensure they hit both methods ---
-      
-      // 1. Clear Database
-      await clearDatabaseCart(); 
-
-      // 2. Update Navbar UI immediately
-      resetGlobalCartUI(); 
-
-      // 3. Clear the local state so the "Cart is Empty" screen shows
-      setCartItems([]); 
-
-      if (paymentMethod === "cod") {
-        toast.success("Order Placed! Your cart is now empty.", { id: loadId });
-        
-        // Wait 1.5 seconds so they see the success toast before moving
-        setTimeout(() => {
-          navigate("/orderTracking");
-        }, 1500);
-      } else {
-        // Online Payment logic
-        toast.success("Redirecting to payment...", { id: loadId });
-        if (data.url) {
-          window.location.href = data.url;
-        }
-      }
-    } else {
-      throw new Error(data.message || "Server error");
-    }
-  } catch (err) {
-    console.error("Order error:", err);
-    toast.error("Failed to process order.", { id: loadId });
-    setIsProcessing(false);
-  }
-};
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setBilling(prev => ({ ...prev, [name]: value }));
+    setBilling({ ...billing, [e.target.name]: e.target.value });
   };
 
-  // Inside your return, before the main grid
-if (!loading && cartItems.length === 0 && !isProcessing) {
-  return (
-    <div className="flex flex-col items-center justify-center h-screen space-y-4">
-      <ShoppingBag size={64} className="text-gray-300" />
-      <h2 className="text-xl font-bold">Your cart is empty</h2>
-      <button 
-        onClick={() => navigate("/home")}
-        className="bg-blue-600 text-white px-6 py-2 rounded-lg"
-      >
-        Go Shopping
-      </button>
-    </div>
-  );
-}
+  if (!loading && cartItems.length === 0 && !isProcessing) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-white">
+        <ShoppingBag size={48} className="text-gray-200 mb-4" />
+        <h2 className="text-lg font-bold text-gray-400">Your cart is empty</h2>
+        <button onClick={() => navigate("/home")} className="mt-4 text-blue-600 font-bold underline">Return Home</button>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 md:px-20 py-10 text-gray-800">
+    <div className="min-h-screen bg-gray-50 px-4 md:px-10 py-6 text-gray-800">
       <Toaster position="top-center" />
-      
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-black mb-2">Checkout</h1>
-        <p className="text-gray-500 mb-8 font-medium">Complete your details to finish the purchase.</p>
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-2xl font-black mb-6">Checkout</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* BILLING FORM */}
-          <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold mb-6">1. Shipping Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-md font-bold mb-4 flex items-center gap-2"><Circle size={8} className="fill-blue-600 text-blue-600"/> Shipping Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {Object.keys(billing).map((key) => (
                 <div key={key} className={key === 'address' ? 'md:col-span-2' : ''}>
-                  <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">{key}</label>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">{key}</label>
                   <input
                     type="text"
                     name={key}
                     value={(billing as any)[key]}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
-                    placeholder={`Your ${key}...`}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 transition-all"
+                    placeholder={key}
                   />
                 </div>
               ))}
             </div>
-
-            <div className="mt-8 p-5 bg-blue-50 rounded-2xl flex items-center gap-4 border border-blue-100">
-              <input 
-                  type="checkbox" 
-                  id="saveInfo"
-                  disabled={!isFormComplete} 
-                  checked={saveInfo}
-                  onChange={(e) => setSaveInfo(e.target.checked)}
-                  className="w-6 h-6 cursor-pointer accent-blue-600"
-              />
-              <label htmlFor="saveInfo" className={`text-sm font-bold ${!isFormComplete ? 'text-gray-400' : 'text-blue-900 cursor-pointer'}`}>
-                Save info for next time
-              </label>
-              {!isFormComplete && <span className="text-[10px] text-red-500 font-black ml-auto bg-white px-3 py-1 rounded-full border border-red-100">FORM INCOMPLETE</span>}
-            </div>
           </div>
 
-          {/* ORDER SUMMARY */}
           <div className="space-y-6">
-            <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-              <h2 className="font-bold text-xl mb-6">Order Summary</h2>
-              
-              <div className="max-h-64 overflow-y-auto pr-2 space-y-4 mb-6 custom-scrollbar">
+            <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+              <h2 className="font-bold text-md mb-4">Summary</h2>
+              <div className="max-h-48 overflow-y-auto space-y-3 mb-4 pr-2 custom-scrollbar">
                 {cartItems.map((item) => (
-                  <div key={item._id} className="flex gap-4 items-center border-b border-gray-50 pb-4">
-                    <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-2xl" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black truncate">{item.name}</p>
-                      <p className="text-xs font-bold text-gray-400">Qty: {item.quantity}</p>
+                  <div key={item._id} className="flex gap-3 items-center">
+                    <div className="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden border border-gray-100 shrink-0">
+                      <img src={item.image} className="w-full h-full object-contain p-1" alt={item.name} />
                     </div>
-                    <span className="font-black text-sm text-blue-600">${item.price * item.quantity}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate">{item.name}</p>
+                      <p className="text-[10px] text-gray-400">Qty: {item.quantity}</p>
+                    </div>
+                    <span className="text-xs font-black">${item.price * item.quantity}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-dashed">
-                <div className="flex justify-between text-gray-500 font-bold"><span>Subtotal</span><span>${subtotal}</span></div>
-                <div className="flex justify-between text-green-600 font-bold"><span>Shipping</span><span>FREE</span></div>
-                <div className="flex justify-between text-2xl font-black pt-3"><span>Total</span><span>${subtotal}</span></div>
+              <div className="space-y-2 py-3 border-t border-gray-50 text-sm">
+                <div className="flex justify-between text-gray-500"><span>Subtotal</span><span>${subtotal}</span></div>
+                <div className="flex justify-between text-2xl font-black border-t pt-2 mt-2"><span>Total</span><span>${subtotal}</span></div>
               </div>
 
-              <div className="mt-8 space-y-3">
-                 <button onClick={() => setPaymentMethod('bank')} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${paymentMethod === 'bank' ? 'border-blue-600 bg-blue-50' : 'border-gray-50 bg-gray-50'}`}>
-                   <div className="flex items-center gap-3"><CreditCard className={paymentMethod === 'bank' ? 'text-blue-600' : 'text-gray-400'} /> <span className="font-bold">Online Card</span></div>
-                   {paymentMethod === 'bank' && <CheckCircle2 size={18} className="text-blue-600" />}
+              <div className="mt-4 space-y-2">
+                 <button onClick={() => setPaymentMethod('bank')} className={`w-full flex items-center justify-between p-3 rounded-xl border ${paymentMethod === 'bank' ? 'border-blue-600 bg-blue-50' : 'border-gray-100'}`}>
+                   <span className="text-xs font-bold flex items-center gap-2"><CreditCard size={14}/> Card</span>
+                   {paymentMethod === 'bank' && <CheckCircle2 size={14} className="text-blue-600" />}
                  </button>
-                 <button onClick={() => setPaymentMethod('cod')} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${paymentMethod === 'cod' ? 'border-blue-600 bg-blue-50' : 'border-gray-50 bg-gray-50'}`}>
-                   <div className="flex items-center gap-3"><DollarSign className={paymentMethod === 'cod' ? 'text-blue-600' : 'text-gray-400'} /> <span className="font-bold">Cash Delivery</span></div>
-                   {paymentMethod === 'cod' && <CheckCircle2 size={18} className="text-blue-600" />}
+                 <button onClick={() => setPaymentMethod('cod')} className={`w-full flex items-center justify-between p-3 rounded-xl border ${paymentMethod === 'cod' ? 'border-blue-600 bg-blue-50' : 'border-gray-100'}`}>
+                   <span className="text-xs font-bold flex items-center gap-2"><DollarSign size={14}/> Cash</span>
+                   {paymentMethod === 'cod' && <CheckCircle2 size={14} className="text-blue-600" />}
                  </button>
               </div>
 
               <button
-                disabled={isProcessing || cartItems.length === 0}
+                disabled={isProcessing}
                 onClick={handlePlaceOrder}
-                className={`w-full mt-8 py-5 rounded-2xl font-black text-white shadow-xl transition-all tracking-widest ${isProcessing ? 'bg-gray-200 cursor-not-allowed' : 'bg-black hover:bg-blue-700'}`}
+                className="w-full mt-6 py-3 rounded-xl font-black text-sm text-white bg-black hover:bg-blue-700 transition-all"
               >
-                {isProcessing ? "PROCESSING..." : "PLACE ORDER"}
+                {isProcessing ? "PROCESSING..." : "CONFIRM ORDER"}
               </button>
-              
-              {/* POLICY MESSAGE */}
-              <div className="mt-6 p-4 bg-orange-50 rounded-2xl border border-orange-100 flex gap-3">
-                 <AlertCircle className="text-orange-500 shrink-0" size={18} />
-                 <p className="text-[11px] font-bold text-orange-800 leading-tight">
-                   Once your order is processed and the shipping cycle starts, cancellation is no longer possible. Please verify your details.
-                 </p>
-              </div>
             </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-      `}</style>
     </div>
   );
 };

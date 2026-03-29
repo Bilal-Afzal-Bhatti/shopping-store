@@ -13,34 +13,37 @@ function Signup() {
   const navigate = useNavigate();
 
   // --- GOOGLE OAUTH LOGIC ---
-  const loginWithGoogle = useGoogleLogin({
-  onSuccess: async (tokenResponse) => {
-    setLoading(true);
-    try {
-      // ✅ FIX: Use VITE_BACKEND_URL here, NOT the Client ID
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      
-      console.log("Connecting to:", backendUrl);
+const loginWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        // 1. Ensure your .env has VITE_BACKEND_URL=https://your-backend.vercel.app
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        
+        console.log("Token Response:", tokenResponse);
 
-      const res = await axios.post(`${backendUrl}/api/auth/google`, {
-        access_token: tokenResponse.access_token,
-      });
+        // 2. KEY CHANGE: Send 'token' to match your backend's req.body destructuring
+        const res = await axios.post(`${backendUrl}/api/auth/google`, {
+          token: tokenResponse.access_token, 
+        });
 
-      if (res.data.success) {
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("userId", res.data.user._id);
-        alert("Authentication Successful!");
-        navigate("/"); 
+        if (res.data.success) {
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem("userId", res.data.user._id);
+          alert("Authentication Successful!");
+          navigate("/"); 
+        }
+      } catch (error) {
+        console.error("Connection Error:", error);
+        // This was the confusing error message! Let's make it more accurate:
+        const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message : "Google Authentication Failed at Backend";
+        alert(errorMessage || "Google Authentication Failed at Backend");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Connection Error:", error);
-      alert("Could not reach the Vault server.");
-    } finally {
-      setLoading(false);
-    }
-  }
-});
-
+    },
+    onError: () => alert("Google Login Failed"),
+  });
   // --- MANUAL SIGNUP LOGIC ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

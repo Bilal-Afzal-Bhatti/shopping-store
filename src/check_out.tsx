@@ -152,7 +152,7 @@ const clearDatabaseCart = async () => {
         // COD SPECIFIC SUCCESS FLOW
         toast.success("Order Placed! Your cart has been cleared.", { id: loadId });
         setCartItems([]); // Clear local UI state
-        
+         await clearDatabaseCart();
         // Navigate to tracking after a short delay
         setTimeout(() => {
           navigate("/orderTracking");

@@ -14,32 +14,32 @@ function Signup() {
 
   // --- GOOGLE OAUTH LOGIC ---
   const loginWithGoogle = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setLoading(true);
-      try {
-        // Use Vite Environment Variable for the URL
-     
-        const backendUrl = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-   console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID)
-        const res = await axios.post(`${backendUrl}/api/auth/google`, {
-          access_token: tokenResponse.access_token,
-        });
+  onSuccess: async (tokenResponse) => {
+    setLoading(true);
+    try {
+      // ✅ FIX: Use VITE_BACKEND_URL here, NOT the Client ID
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      
+      console.log("Connecting to:", backendUrl);
 
-        if (res.data.success) {
-          localStorage.setItem("token", res.data.token);
-          localStorage.setItem("userId", res.data.user._id);
-          alert("Signed up successfully via Google!");
-          navigate("/"); // Go to Shop
-        }
-      } catch (error) {
-        console.error("Google Auth Error:", error);
-        alert("Google Sign-up failed. Please try again.");
-      } finally {
-        setLoading(false);
+      const res = await axios.post(`${backendUrl}/api/auth/google`, {
+        access_token: tokenResponse.access_token,
+      });
+
+      if (res.data.success) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("userId", res.data.user._id);
+        alert("Authentication Successful!");
+        navigate("/"); 
       }
-    },
-    onError: () => alert("Google Login Failed"),
-  });
+    } catch (error) {
+      console.error("Connection Error:", error);
+      alert("Could not reach the Vault server.");
+    } finally {
+      setLoading(false);
+    }
+  }
+});
 
   // --- MANUAL SIGNUP LOGIC ---
   const handleSubmit = async (e: React.FormEvent) => {

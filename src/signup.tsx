@@ -18,7 +18,8 @@ function Signup() {
       setLoading(true);
       try {
         // Use Vite Environment Variable for the URL
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID)
+        const backendUrl = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
         const res = await axios.post(`${backendUrl}/api/auth/google`, {
           access_token: tokenResponse.access_token,

@@ -52,7 +52,7 @@ function Signup() {
     <div className="flex flex-col md:flex-row min-h-screen animate-in fade-in duration-700">
       
       {/* Left Image Section - High-end layout */}
-      <div className="hidden md:block w-full md:w-[55%] bg-[#CBE4E8] flex items-center justify-end">
+      <div className="hidden md:block w-full md:w-[55%] bg-[#CBE4E8]  items-center justify-end">
         <img
           src={Side_image}
           alt="Create Account"

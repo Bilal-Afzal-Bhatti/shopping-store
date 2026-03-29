@@ -4,7 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Side_image from "./assets/Side_Image.png";
 import { useGoogleLogin } from "@react-oauth/google"; // 1. Import the hook
 import axios from "axios"; // 2. Ensure axios is installed
-
+import { GoogleLogin } from '@react-oauth/google';
 function Signup() {
   const [name, setName] = useState("");
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -12,38 +12,38 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // --- GOOGLE OAUTH LOGIC ---
-const loginWithGoogle = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setLoading(true);
-      try {
-        // 1. Ensure your .env has VITE_BACKEND_URL=https://your-backend.vercel.app
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+//   // --- GOOGLE OAUTH LOGIC ---
+// const loginWithGoogle = useGoogleLogin({
+//     onSuccess: async (tokenResponse) => {
+//       setLoading(true);
+//       try {
+//         // 1. Ensure your .env has VITE_BACKEND_URL=https://your-backend.vercel.app
+//         const backendUrl = import.meta.env.VITE_BACKEND_URL;
         
-        console.log("Token Response:", tokenResponse);
+//         console.log("Token Response:", tokenResponse);
 
-        // 2. KEY CHANGE: Send 'token' to match your backend's req.body destructuring
-        const res = await axios.post(`${backendUrl}/api/auth/google`, {
-          token: tokenResponse.access_token, 
-        });
+//         // 2. KEY CHANGE: Send 'token' to match your backend's req.body destructuring
+//         const res = await axios.post(`${backendUrl}/api/auth/google`, {
+//           token: tokenResponse.access_token, 
+//         });
 
-        if (res.data.success) {
-          localStorage.setItem("token", res.data.token);
-          localStorage.setItem("userId", res.data.user._id);
-          alert("Authentication Successful!");
-          navigate("/"); 
-        }
-      } catch (error) {
-        console.error("Connection Error:", error);
-        // This was the confusing error message! Let's make it more accurate:
-        const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message : "Google Authentication Failed at Backend";
-        alert(errorMessage || "Google Authentication Failed at Backend");
-      } finally {
-        setLoading(false);
-      }
-    },
-    onError: () => alert("Google Login Failed"),
-  });
+//         if (res.data.success) {
+//           localStorage.setItem("token", res.data.token);
+//           localStorage.setItem("userId", res.data.user._id);
+//           alert("Authentication Successful!");
+//           navigate("/"); 
+//         }
+//       } catch (error) {
+//         console.error("Connection Error:", error);
+//         // This was the confusing error message! Let's make it more accurate:
+//         const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message : "Google Authentication Failed at Backend";
+//         alert(errorMessage || "Google Authentication Failed at Backend");
+//       } finally {
+//         setLoading(false);
+//       }
+//     },
+//     onError: () => alert("Google Login Failed"),
+//   });
   // --- MANUAL SIGNUP LOGIC ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,25 +134,38 @@ const loginWithGoogle = useGoogleLogin({
           </form>
 
           {/* 3. UPDATED GOOGLE BUTTON */}
-          <div className="w-full">
-            <button
-              type="button" // Important to prevent form submission
-              onClick={() => loginWithGoogle()}
-              disabled={loading}
-              className="w-full border-4 border-black flex items-center justify-center gap-3 py-4 rounded-none mt-4 
-                         bg-white text-black font-black uppercase italic text-sm
-                         shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
-                         hover:shadow-none hover:translate-x-1 hover:translate-y-1 
-                         transition-all active:scale-[0.98]"
-            >
-              <FcGoogle size={24} />
-              <span>{loading ? "Verifying..." : "Sign up with Google"}</span>
-            </button>
+         <div className="w-full flex justify-center mt-4">
+  <GoogleLogin
+    onSuccess={async (credentialResponse) => {
+      setLoading(true);
+      try {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        
+        // credentialResponse.credential is the ID Token (JWT) your backend needs
+        const res = await axios.post(`${backendUrl}/api/auth/google`, {
+          token: credentialResponse.credential, 
+        });
 
-            <p className="text-[9px] text-center mt-4 font-bold text-gray-400 uppercase tracking-widest">
-              Identity verified via Google OAuth 2.0
-            </p>
-          </div>
+        if (res.data.success) {
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem("userId", res.data.user._id);
+          alert("Authentication Successful!");
+          navigate("/"); 
+        }
+      } catch (error) {
+        const axiosError = axios.isAxiosError(error) ? error : null;
+        console.error("Auth Error:", axiosError?.response?.data);
+        alert(axiosError?.response?.data?.message || "Invalid Token - check Backend Client ID");
+      } finally {
+        setLoading(false);
+      }
+    }}
+    onError={() => {
+      alert("Google Login Failed");
+    }}
+    useOneTap // Optional: shows a small "login as" popup for returning users
+  />
+</div>
 
           <div className="text-center mt-8">
             <p className="text-gray-600 text-sm">

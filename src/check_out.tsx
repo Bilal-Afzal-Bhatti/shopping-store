@@ -88,7 +88,11 @@ await fetch(`https://shoppingstore-backend.vercel.app/api/cart/clear/${userId}`,
         // First clear database, then show success, then navigate
         await clearDatabaseCart(); 
         toast.success("Order Placed Successfully!", { id: loadId });
-        setTimeout(() => navigate("/orderTracking"), 1500);
+      // We use a slightly longer delay to ensure the state updates finish
+      setTimeout(() => {
+        console.log("Navigating to tracking...");
+        navigate("/orderTracking");
+      }, 2000);
       } else {
         throw new Error("COD failed");
       }

@@ -2,15 +2,14 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-// 1. Import the Provider from the library
 import { GoogleOAuthProvider } from '@react-oauth/google'
 
-// Replace this string with your real Client ID from Google Cloud Console
-const GOOGLE_CLIENT_ID = "YOUR_CLIENT_ID_GOES_HERE.apps.googleusercontent.com";
+// ✅ Load the Client ID from your .env file
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* 2. Wrap App with the Google Provider */}
+    {/* Wrap App with the Google Provider using the env variable */}
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <App />
     </GoogleOAuthProvider>

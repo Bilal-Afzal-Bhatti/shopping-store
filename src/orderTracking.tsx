@@ -14,6 +14,7 @@ interface OrderItem {
 }
 
 interface OrderData {
+  cancellationRequested: boolean;
   _id: string;
   orderStatus: 'processing' | 'shipped' | 'delivered' | 'cancelled';
   totalPrice: number;
@@ -58,7 +59,7 @@ const OrderTracking: React.FC = () => {
   // 2. Initial Fetch + Polling (Checks every 30 seconds for manual DB changes)
   useEffect(() => {
     fetchOrder();
-    const interval = setInterval(() => fetchOrder(true), 30000);
+    const interval = setInterval(() => fetchOrder(true), 30000); 
     return () => clearInterval(interval);
   }, [id]);
 
@@ -87,9 +88,9 @@ const OrderTracking: React.FC = () => {
         setIsCancelling(true);
         const res = await axios.post(
           `https://shoppingstore-backend.vercel.app/api/ordercancel/${id}/cancel`,
-          {
-            reason: reason,
-            additionalNotes: "Requested via Tracking Page"
+          { 
+            reason: reason, 
+            additionalNotes: "Requested via Tracking Page" 
           },
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
@@ -117,7 +118,7 @@ const OrderTracking: React.FC = () => {
       <RefreshCw className="animate-spin mb-2" /> Loading Package Info...
     </div>
   );
-
+  
   if (!order) return <div className="h-screen flex items-center justify-center font-black">ORDER NOT FOUND</div>;
 
   const steps = [
@@ -131,17 +132,17 @@ const OrderTracking: React.FC = () => {
     <div className="min-h-screen bg-[#fafafa] py-12 px-4">
       <div className="max-w-5xl mx-auto">
         <button onClick={() => navigate(-1)} className="mb-6 flex items-center gap-2 font-black uppercase text-xs tracking-widest hover:text-red-600 transition-colors">
-          <ArrowLeft size={14} /> Back to Store
+          <ArrowLeft size={14}/> Back to Store
         </button>
 
         {/* ORDER HEADER */}
         <div className="bg-white border-2 border-black p-8 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[10px] font-black px-2 py-0.5 uppercase tracking-widest ${order.orderStatus === 'cancelled' ? 'bg-red-600 text-white' : 'bg-black text-white'}`}>
-                {order.orderStatus}
-              </span>
-              <span className="text-gray-400 font-bold text-[10px]">/ PLACED {new Date(order.createdAt).toLocaleDateString()}</span>
+               <span className={`text-[10px] font-black px-2 py-0.5 uppercase tracking-widest ${order.orderStatus === 'cancelled' ? 'bg-red-600 text-white' : 'bg-black text-white'}`}>
+                 {order.orderStatus}
+               </span>
+               <span className="text-gray-400 font-bold text-[10px]">/ PLACED {new Date(order.createdAt).toLocaleDateString()}</span>
             </div>
             <h1 className="text-4xl font-black uppercase tracking-tighter leading-none">Track Order</h1>
             <p className="font-mono text-xs underline mt-2 text-gray-500">REF ID: {order._id}</p>
@@ -157,10 +158,10 @@ const OrderTracking: React.FC = () => {
           <div className="absolute top-0 left-0 w-2 h-full bg-black"></div>
           <div className="flex justify-between items-center relative z-10 max-w-2xl mx-auto">
             {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = index <= currentIdx;
-              const isCurrent = index === currentIdx;
-              return (
+               const Icon = step.icon;
+               const isActive = index <= currentIdx;
+               const isCurrent = index === currentIdx;
+               return (
                 <div key={step.id} className="flex flex-col items-center relative">
                   <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center border-4 transition-all duration-500
                     ${isActive ? 'bg-black text-white border-black' : 'bg-white text-gray-200 border-gray-100'}
@@ -171,15 +172,15 @@ const OrderTracking: React.FC = () => {
                     {step.label}
                   </p>
                 </div>
-              )
+               )
             })}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+     
           {/* ITEMS */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="font-black uppercase tracking-widest text-sm mb-4 flex items-center gap-2"><RefreshCw size={16} /> Items in Package</h3>
+            <h3 className="font-black uppercase tracking-widest text-sm mb-4 flex items-center gap-2"><RefreshCw size={16}/> Items in Package</h3>
             {order.items.map((item, i) => (
               <div key={i} className="bg-white border-2 border-black p-4 flex items-center justify-between shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 transition-transform">
                 <div className="flex items-center gap-4">
@@ -206,42 +207,44 @@ const OrderTracking: React.FC = () => {
               <p className="text-xs text-gray-400 mt-1 leading-relaxed font-bold">{order.billingInfo.address}</p>
               <p className="text-xs text-gray-500 uppercase mt-1">{order.billingInfo.city}, {order.billingInfo.zipcode}</p>
             </div>
-            {/* CANCELLATION LOGIC BOX */}
-            <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+{/* CANCELLATION BOX */}
+<div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+  
+  {/* 1. CHECK: Did the user click? (Using the boolean from your DB) */}
+  {order.cancellationRequested && order.orderStatus !== 'cancelled' ? (
+    <div className="bg-[#FFFDF2] p-5 border-l-4 border-[#EAB308]">
+      <div className="flex items-center gap-2 text-[#854D0E] mb-2">
+        <Info size={18} className="animate-pulse" />
+        <h4 className="font-black uppercase text-xs tracking-tighter">Request Under Review</h4>
+      </div>
+      <p className="text-[11px] font-bold text-gray-600 leading-tight">
+        An admin is currently verifying your request.
+      </p>
+    </div>
+  ) : order.orderStatus === 'cancelled' ? (
+    /* 2. CHECK: Did you manually set orderStatus to 'cancelled' in DB? */
+    <div className="text-center p-6 bg-red-50 border-2 border-dashed border-red-200">
+      <p className="text-[10px] font-black uppercase text-red-600 tracking-widest leading-none">
+        Order Successfully Cancelled
+      </p>
+      <p className="text-[9px] font-bold text-gray-400 mt-1">REFUND IN PROGRESS</p>
+    </div>
+  ) : (
+    /* 3. DEFAULT: Show button (even if orderStatus is 'processing') */
+    <button 
+      onClick={handleCancelOrder}
+      disabled={isCancelling}
+      className="w-full py-4 border-2 border-black bg-white text-red-600 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white transition-all active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50"
+    >
+      {isCancelling ? 'SENDING...' : 'Cancel Order'}
+    </button>
+  )}
+</div>
+</div>
 
-              {/* FIX: Only show 'Under Review' if the status is processing AND we just triggered a cancel */}
-              {order.orderStatus === 'processing' && isCancelling ? (
-                <div className="bg-[#FFFDF2] p-5 border-l-4 border-[#EAB308]">
-                  <div className="flex items-center gap-2 text-[#854D0E] mb-2">
-                    <Info size={18} className="animate-pulse" />
-                    <h4 className="font-black uppercase text-xs tracking-tighter">Request Under Review</h4>
-                  </div>
-                  <p className="text-[11px] font-bold text-gray-600 leading-tight">
-                    Your request is being verified by an admin.
-                  </p>
-                </div>
-              ) : !['shipped', 'delivered', 'cancelled', 'processing'].includes(order.orderStatus) ? (
-                /* Normal Cancel Button for 'Pending' or 'Confirmed' orders */
-                <button
-                  onClick={handleCancelOrder}
-                  disabled={isCancelling}
-                  className="w-full py-4 border-2 border-black bg-white text-red-600 font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none"
-                >
-                  {isCancelling ? 'PROCESSING...' : 'Cancel Order'}
-                </button>
-              ) : (
-                /* Fallback for when the order is already moving (Shipped) or Finished */
-                <div className="text-center p-6 bg-gray-100 border-2 border-dashed border-gray-300">
-                  <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">
-                    {order.orderStatus === 'cancelled' ? 'Successfully Cancelled' : 'Order in Progress'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
-    </div>
+  
   );
 };
 

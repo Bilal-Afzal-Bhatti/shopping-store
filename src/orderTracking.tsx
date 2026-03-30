@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Check, Truck, Clock, ShieldCheck, MapPin, AlertCircle, Package, ArrowLeft } from 'lucide-react';
-
+import Swal from 'sweetalert2';
 // --- INTERFACES ---
 interface OrderItem {
   productId: string | number;
@@ -37,7 +37,56 @@ const OrderTracking: React.FC = () => {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+const [isCancelling, setIsCancelling] = useState(false);
 
+const handleCancelOrder = async () => {
+    // A. Confirm with the user first (UX Standard)
+    const result = await Swal.fire({
+      title: 'CANCEL ORDER?',
+      text: "This action will send a request to our admins.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#000000',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'YES, CANCEL IT',
+      customClass: {
+        popup: 'border-4 border-black rounded-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]',
+        confirmButton: 'rounded-none font-black uppercase',
+        cancelButton: 'rounded-none font-black uppercase'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setIsCancelling(true);
+        // B. API Call
+        const res = await axios.post(
+          `https://shoppingstore-backend.vercel.app/api/orders/${id}/cancel`, 
+          { reason: "Changed my mind" }, // You could also show a select dropdown here
+          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        );
+
+        if (res.data.success) {
+          Swal.fire({
+            title: 'REQUEST SENT',
+            text: 'Admin will review your cancellation.',
+            icon: 'success',
+            confirmButtonColor: '#000'
+          });
+          // Refresh order data to show "Processing" or "Cancellation Pending"
+          window.location.reload(); 
+        }
+      } catch (err: any) {
+        Swal.fire('ERROR', err.response?.data?.message || 'Cancellation failed', 'error');
+      } finally {
+        setIsCancelling(false);
+      }
+    }
+  };
+
+  // 3. Logic Check: Can the user cancel?
+  // Industry Standard: No cancellation if Shipped or already Cancelled
+  const canCancel = order && !['shipped', 'delivered', 'cancelled'].includes(order.orderStatus.toLowerCase());
   useEffect(() => {
     const fetchOrder = async () => {
       try {
@@ -210,7 +259,33 @@ const OrderTracking: React.FC = () => {
              </div>
           </div>
         </div>
-
+<div className="mt-6">
+               {canCancel ? (
+                 <button
+                   onClick={handleCancelOrder}
+                   disabled={isCancelling}
+                   className={`w-full py-4 border-2 border-black font-black uppercase tracking-widest transition-all
+                     ${isCancelling 
+                        ? 'bg-gray-200 cursor-not-allowed' 
+                        : 'bg-white text-red-600 hover:bg-red-600 hover:text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1'
+                     }`}
+                 >
+                   {isCancelling ? 'Processing...' : 'Cancel Order'}
+                 </button>
+               ) : (
+                 <div className="p-4 bg-gray-100 border-2 border-dashed border-gray-400 text-center">
+                    <p className="text-[10px] font-black uppercase text-gray-500">
+                        {order?.orderStatus === 'cancelled' 
+                          ? 'This order is already cancelled' 
+                          : 'Cancellation unavailable for shipped items'}
+                    </p>
+                 </div>
+               )}
+               <p className="text-[9px] text-gray-400 mt-2 text-center uppercase font-bold">
+                 * Orders cannot be cancelled once they are in the 'Shipped' stage.
+               </p>
+             </div>
+        
       </div>
     </div>
   );

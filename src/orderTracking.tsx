@@ -30,7 +30,7 @@ const OrderTracking: React.FC = () => {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
-  
+
   // Use a ref to track the current status for the comparison logic without re-triggering callbacks
   const orderStatusRef = useRef<string | null>(null);
 
@@ -216,28 +216,33 @@ const OrderTracking: React.FC = () => {
               {order.cancellationRequested && order.orderStatus !== 'cancelled' ? (
                 <div className="bg-[#FFFDF2] p-5 border-l-4 border-[#EAB308]">
                   <div className="flex items-center gap-2 text-[#854D0E] mb-2 font-black uppercase text-xs">
-                    <Info size={18} className="animate-pulse" /> 
+                    <Info size={18} className="animate-pulse" />
                     Request Under Review
                   </div>
                   <p className="text-[11px] font-bold text-gray-600 leading-tight">
                     An admin is currently verifying your request.
                   </p>
                 </div>
-              ) : order.orderStatus === 'cancelled' ? (
-                <div className="text-center p-6 bg-red-50 border-2 border-dashed border-red-200">
-                  <p className="text-[10px] font-black uppercase text-red-600 tracking-widest leading-none">
-                    Order Successfully Cancelled
-                  </p>
-                  <p className="text-[9px] font-bold text-gray-400 mt-1 uppercase">Redirecting to Home...</p>
-                </div>
-              ) : (
-                <button 
+              )  : order.orderStatus === 'cancelled' ? (
+              <div className="text-center p-6 bg-green-50 border-2 border-dashed border-green-600 shadow-[4px_4px_0px_0px_rgba(22,163,74,1)]">
+                <p className="text-[10px] font-black uppercase text-green-600 tracking-widest leading-none">
+                  Request Approved & Cancelled
+                </p>
+                <p className="text-[9px] font-bold text-gray-400 mt-1 uppercase">
+                  Redirecting to Home...
+                </p>
+              </div>)
+              : (
+                <button
                   onClick={handleCancelOrder}
                   disabled={isCancelling}
                   className="w-full py-4 border-2 border-black bg-white text-red-600 font-black uppercase hover:bg-red-600 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50"
                 >
                   {isCancelling ? 'SENDING...' : 'Cancel Order'}
                 </button>
+                // Change the orderStatus === 'cancelled' block to this:
+            
+              
               )}
             </div>
           </div>

@@ -219,7 +219,7 @@ const OrderTracking: React.FC = () => {
                     You have requested a cancellation. An admin is currently verifying if your package has been shipped.
                   </p>
                 </div>
-              ) : !['shipped', 'delivered', 'cancelled'].includes(order.orderStatus) ? (
+              ) : !['processing','shipped', 'delivered', 'cancelled'].includes(order.orderStatus) ? (
                 <button 
                   onClick={handleCancelOrder}
                   disabled={isCancelling}

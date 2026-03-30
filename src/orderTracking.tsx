@@ -60,7 +60,9 @@ const handleCancelOrder = async () => {
       try {
         setIsCancelling(true);
         // B. API Call
+           console.log("id",id);
         const res = await axios.post(
+       
           `https://shoppingstore-backend.vercel.app/api/orders/${id}/cancel`, 
           { reason: "Changed my mind" }, // You could also show a select dropdown here
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }

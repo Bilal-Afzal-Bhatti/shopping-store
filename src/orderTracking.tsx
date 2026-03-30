@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Truck, Clock, ShieldCheck, MapPin, ArrowLeft, Info, RefreshCw } from 'lucide-react';
@@ -30,17 +30,18 @@ const OrderTracking: React.FC = () => {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  
+  // Use a ref to track the current status for the comparison logic without re-triggering callbacks
+  const orderStatusRef = useRef<string | null>(null);
 
-  // 1. Memoized fetch function with Navigation Logic
   const fetchOrder = useCallback(async (isSilent = false) => {
     try {
       if (!isSilent) setLoading(true);
       const { data } = await axios.get(`https://shoppingstore-backend.vercel.app/api/orders/track/${id}`);
       const newOrder = data.order || data;
 
-      // 🔥 AUTO-NAVIGATE LOGIC:
-      // Triggered when Admin manually sets status to 'cancelled' in DB
-      if (order && order.orderStatus !== 'cancelled' && newOrder.orderStatus === 'cancelled') {
+      // Logic: Check if status changed to cancelled since the last fetch
+      if (orderStatusRef.current && orderStatusRef.current !== 'cancelled' && newOrder.orderStatus === 'cancelled') {
         Swal.fire({
           title: 'REQUEST ACCEPTED',
           text: 'Your order has been cancelled. Redirecting to home...',
@@ -50,23 +51,22 @@ const OrderTracking: React.FC = () => {
           confirmButtonColor: '#000'
         });
 
-        setTimeout(() => {
-          navigate('/');
-        }, 3000);
+        setTimeout(() => navigate('/'), 3000);
       }
 
+      orderStatusRef.current = newOrder.orderStatus;
       setOrder(newOrder);
     } catch (err) {
       console.error("Order tracking error:", err);
     } finally {
       if (!isSilent) setLoading(false);
     }
-  }, [id, order, navigate]);
+  }, [id, navigate]);
 
-  // 2. Initial Fetch + Polling (Checks every 5 seconds for fast manual updates)
+  // Initial Fetch + Polling
   useEffect(() => {
     fetchOrder();
-    const interval = setInterval(() => fetchOrder(true), 5000);
+    const interval = setInterval(() => fetchOrder(true), 5000); // Polling every 5 seconds
     return () => clearInterval(interval);
   }, [fetchOrder]);
 
@@ -94,21 +94,19 @@ const OrderTracking: React.FC = () => {
         setIsCancelling(true);
         const res = await axios.post(
           `https://shoppingstore-backend.vercel.app/api/ordercancel/${id}/cancel`,
-          {
-            reason: reason,
-            additionalNotes: "Requested via Tracking Page"
-          },
+          { reason, additionalNotes: "Requested via Tracking Page" },
           { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
         );
 
-        if (res.status === 201) {
+        if (res.status === 201 || res.status === 200) {
           Swal.fire({
             title: 'REQUEST SENT',
             text: 'Admin is reviewing your request.',
             icon: 'success',
             confirmButtonColor: '#000'
           });
-          // Note: We do NOT update state here so the button stays visible until Admin acts.
+          // Refresh data immediately to catch any immediate DB changes
+          fetchOrder(true);
         }
       } catch (err: any) {
         Swal.fire('ERROR', err.response?.data?.message || 'Action failed', 'error');
@@ -124,7 +122,7 @@ const OrderTracking: React.FC = () => {
     </div>
   );
 
-  if (!order) return <div className="h-screen flex items-center justify-center font-black">ORDER NOT FOUND</div>;
+  if (!order) return <div className="h-screen flex items-center justify-center font-black uppercase">Order Not Found</div>;
 
   const steps = [
     { id: 'processing', label: 'Processing', icon: Clock },
@@ -134,12 +132,13 @@ const OrderTracking: React.FC = () => {
   const currentIdx = steps.findIndex(s => s.id === order.orderStatus);
 
   return (
-    <div className="min-h-screen bg-[#fafafa] py-12 px-4">
+    <div className="min-h-screen bg-[#fafafa] py-12 px-4 font-sans">
       <div className="max-w-5xl mx-auto">
         <button onClick={() => navigate(-1)} className="mb-6 flex items-center gap-2 font-black uppercase text-xs tracking-widest hover:text-red-600 transition-colors">
           <ArrowLeft size={14} /> Back to Store
         </button>
 
+        {/* HEADER SECTION */}
         <div className="bg-white border-2 border-black p-8 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -157,6 +156,7 @@ const OrderTracking: React.FC = () => {
           </div>
         </div>
 
+        {/* STEPPER SECTION */}
         <div className="bg-white border-2 border-black p-10 mb-8 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-2 h-full bg-black"></div>
           <div className="flex justify-between items-center relative z-10 max-w-2xl mx-auto">
@@ -181,6 +181,7 @@ const OrderTracking: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* ITEMS LIST */}
           <div className="lg:col-span-2 space-y-4">
             <h3 className="font-black uppercase tracking-widest text-sm mb-4 flex items-center gap-2"><RefreshCw size={16} /> Items in Package</h3>
             {order.items.map((item, i) => (
@@ -199,6 +200,7 @@ const OrderTracking: React.FC = () => {
             ))}
           </div>
 
+          {/* SIDEBAR DETAILS */}
           <div className="space-y-6">
             <div className="bg-black text-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(220,38,38,1)]">
               <h3 className="font-black uppercase text-xs mb-3 flex items-center gap-2 tracking-[0.2em] border-b border-gray-800 pb-2">
@@ -209,8 +211,8 @@ const OrderTracking: React.FC = () => {
               <p className="text-xs text-gray-500 uppercase mt-1">{order.billingInfo.city}, {order.billingInfo.zipcode}</p>
             </div>
 
+            {/* ACTION SECTION */}
             <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              {/* 1. Show 'Under Review' ONLY when YOU manually set cancellationRequested to true in DB */}
               {order.cancellationRequested && order.orderStatus !== 'cancelled' ? (
                 <div className="bg-[#FFFDF2] p-5 border-l-4 border-[#EAB308]">
                   <div className="flex items-center gap-2 text-[#854D0E] mb-2 font-black uppercase text-xs">
@@ -223,9 +225,10 @@ const OrderTracking: React.FC = () => {
                 </div>
               ) : order.orderStatus === 'cancelled' ? (
                 <div className="text-center p-6 bg-red-50 border-2 border-dashed border-red-200">
-                  <p className="text-[10px] font-black uppercase text-red-600 tracking-widest">
-                    Request Accepted - Redirecting...
+                  <p className="text-[10px] font-black uppercase text-red-600 tracking-widest leading-none">
+                    Order Successfully Cancelled
                   </p>
+                  <p className="text-[9px] font-bold text-gray-400 mt-1 uppercase">Redirecting to Home...</p>
                 </div>
               ) : (
                 <button 

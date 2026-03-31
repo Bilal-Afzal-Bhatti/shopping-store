@@ -212,40 +212,48 @@ const OrderTracking: React.FC = () => {
             </div>
 
             {/* ACTION SECTION */}
-            <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              {order.cancellationRequested && order.orderStatus !== 'cancelled' ? (
-                <div className="bg-[#FFFDF2] p-5 border-l-4 border-[#EAB308]">
-                  <div className="flex items-center gap-2 text-[#854D0E] mb-2 font-black uppercase text-xs">
-                    <Info size={18} className="animate-pulse" />
-                    Request Under Review
-                  </div>
-                  <p className="text-[11px] font-bold text-gray-600 leading-tight">
-                    An admin is currently verifying your request.
-                  </p>
-                </div>
-              )  : order.orderStatus === 'cancelled' ? (
-              <div className="text-center p-6 bg-green-50 border-2 border-dashed border-green-600 shadow-[4px_4px_0px_0px_rgba(22,163,74,1)]">
-                <p className="text-[10px] font-black uppercase text-green-600 tracking-widest leading-none">
-                  Request Approved & Cancelled
-                </p>
-                <p className="text-[9px] font-bold text-gray-400 mt-1 uppercase">
-                  Redirecting to Home...
-                </p>
-              </div>)
-              : (
-                <button
-                  onClick={handleCancelOrder}
-                  disabled={isCancelling}
-                  className="w-full py-4 border-2 border-black bg-white text-red-600 font-black uppercase hover:bg-red-600 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50"
-                >
-                  {isCancelling ? 'SENDING...' : 'Cancel Order'}
-                </button>
-                // Change the orderStatus === 'cancelled' block to this:
-            
-              
-              )}
-            </div>
-          </div>
+           <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+  {order.cancellationRequested && order.orderStatus !== 'cancelled' ? (
+    /* 1. REQUEST UNDER REVIEW STATE */
+    <div className="bg-[#FFFDF2] p-5 border-l-4 border-[#EAB308]">
+      <div className="flex items-center gap-2 text-[#854D0E] mb-2 font-black uppercase text-xs">
+        <Info size={18} className="animate-pulse" />
+        Request Under Review
+      </div>
+      <p className="text-[11px] font-bold text-gray-600 leading-tight">
+        An admin is currently verifying your request.
+      </p>
+    </div>
+  ) : order.orderStatus === 'cancelled' ? (
+    /* 2. APPROVED & CANCELLED STATE */
+    <div className="text-center p-6 bg-green-50 border-2 border-dashed border-green-600 shadow-[4px_4px_0px_0px_rgba(22,163,74,1)]">
+      <p className="text-[10px] font-black uppercase text-green-600 tracking-widest leading-none">
+        Request Approved & Cancelled
+      </p>
+      <p className="text-[9px] font-bold text-gray-400 mt-1 uppercase">
+        Redirecting to Home...
+      </p>
+    </div>
+  ) : order.orderStatus === 'shipped' || order.orderStatus === 'delivered' ? (
+    /* 3. SHIPPED/DELIVERED STATE (Button Disabled) */
+    <button
+      disabled
+      className="w-full py-4 border-2 border-gray-300 bg-gray-100 text-gray-400 font-black uppercase cursor-not-allowed"
+    >
+      Cannot Cancel (Already {order.orderStatus})
+    </button>
+  ) : (
+    /* 4. DEFAULT STATE (Cancel Order Button) */
+    <button
+      onClick={handleCancelOrder}
+      disabled={isCancelling}
+      className="w-full py-4 border-2 border-black bg-white text-red-600 font-black uppercase hover:bg-red-600 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50"
+    >
+      {isCancelling ? 'SENDING...' : 'Cancel Order'}
+    </button>
+  )}
+</div>
+</div>
         </div>
       </div>
     </div>

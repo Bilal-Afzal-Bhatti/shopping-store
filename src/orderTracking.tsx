@@ -138,7 +138,7 @@ const OrderTracking: React.FC = () => {
           
           <div className="relative max-w-2xl mx-auto py-4">
             {/* THE CONNECTING LINE */}
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -translate-y-[180%] md:-translate-y-[210%]">
+            <div className="absolute top-1/2 left-1 w-full h-1 bg-gray-100 -translate-y-[180%] md:-translate-y-[210%]">
                 <div 
                     className="h-full bg-black transition-all duration-1000 ease-in-out" 
                     style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}

@@ -203,7 +203,7 @@ function Navbar() {
                   className={`text-base font-medium transition-colors ${activeIndex === 99 ? "text-red-500" : "text-black hover:text-red-500"
                     }`}
                   onClick={() => {
-                    setActiveIndex(4); // Using a unique index for 'My Orders' active state
+                    setActiveIndex(99); // Using a unique index for 'My Orders' active state
                     setMenuOpen(false);
                   }}
                 >
@@ -214,7 +214,7 @@ function Navbar() {
                 <Link to="/wishlist"   className={`text-base font-medium transition-colors ${activeIndex === 99 ? "text-red-500" : "text-black hover:text-red-500"
                     }`}
                   onClick={() => {
-                    setActiveIndex(5); // Using a unique index for 'Wishlist' active state
+                    setActiveIndex(100); // Using a unique index for 'Wishlist' active state
                     setMenuOpen(false);
                   }}
                 >Wishlist</Link>

@@ -134,9 +134,9 @@ const OrderTracking: React.FC = () => {
 
         {/* STEPPER SECTION WITH CONNECTING LINE */}
         <div className="bg-white border-2 border-black p-10 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-20 h-full bg-black"></div>
+          <div className="absolute top-0 left-0 w-2 h-full bg-black"></div>
           
-          <div className="relative max-w-2xl mx-auto py-4">
+          <div className="relative max-w-2.5xl mx-auto py-4">
             {/* THE CONNECTING LINE */}
             <div className="absolute top-1/2 left-0.5 w-full h-1 bg-gray-100 -translate-y-[180%] md:-translate-y-[210%]">
                 <div 

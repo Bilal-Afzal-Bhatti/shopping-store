@@ -34,62 +34,62 @@ function Navbar() {
     navigate("/", { replace: true });
     localStorage.clear();
 
-  // 2. Trigger the event (Optional, but good for other components)
-  window.dispatchEvent(new Event("cartUpdated"));
+    // 2. Trigger the event (Optional, but good for other components)
+    window.dispatchEvent(new Event("cartUpdated"));
 
-  // 3. Show a quick toast or alert if you want, then reload
-  // Using window.location.href forces a full browser refresh to the login page
-  window.location.href = "/login";
+    // 3. Show a quick toast or alert if you want, then reload
+    // Using window.location.href forces a full browser refresh to the login page
+    window.location.href = "/login";
   };
 
   const fetchCartCount = async () => {
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
 
-  // If no user, reset to 0 immediately
-  if (!token || !userId) {
-    setCartCount(0);
-    return;
-  }
+    // If no user, reset to 0 immediately
+    if (!token || !userId) {
+      setCartCount(0);
+      return;
+    }
 
-  try {
-    const res = await fetch(
-      `https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    if (!res.ok) throw new Error("Failed to fetch cart");
-    const data = await res.json();
-    
-    // Set the count and sync localStorage for backup
-    const count = data.items?.length || 0;
-    setCartCount(count);
-    localStorage.setItem("cartCount", count.toString());
-  } catch (err) {
-    setCartCount(0);
-  }
-};
+    try {
+      const res = await fetch(
+        `https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to fetch cart");
+      const data = await res.json();
 
-useEffect(() => {
-  // 1. Run immediately when Chrome loads/refreshes the page
-  fetchCartCount();
-
-  // 2. Listen for the "cartUpdated" event we trigger in Checkout.tsx
-  window.addEventListener("cartUpdated", fetchCartCount);
-
-  // 3. Listen for "storage" changes (e.g., user logs out or clears data)
-  window.addEventListener("storage", fetchCartCount);
-
-  // Cleanup listeners when component unmounts
-  return () => {
-    window.removeEventListener("cartUpdated", fetchCartCount);
-    window.removeEventListener("storage", fetchCartCount);
+      // Set the count and sync localStorage for backup
+      const count = data.items?.length || 0;
+      setCartCount(count);
+      localStorage.setItem("cartCount", count.toString());
+    } catch (err) {
+      setCartCount(0);
+    }
   };
-}, []);
+
+  useEffect(() => {
+    // 1. Run immediately when Chrome loads/refreshes the page
+    fetchCartCount();
+
+    // 2. Listen for the "cartUpdated" event we trigger in Checkout.tsx
+    window.addEventListener("cartUpdated", fetchCartCount);
+
+    // 3. Listen for "storage" changes (e.g., user logs out or clears data)
+    window.addEventListener("storage", fetchCartCount);
+
+    // Cleanup listeners when component unmounts
+    return () => {
+      window.removeEventListener("cartUpdated", fetchCartCount);
+      window.removeEventListener("storage", fetchCartCount);
+    };
+  }, []);
   useEffect(() => {
     const handleScroll = () => setIsSticky(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
@@ -174,45 +174,53 @@ useEffect(() => {
               <img src={searchIcon} alt="" className="w-5 h-5 opacity-60" onClick={() => handleSearch()} />
             </form>
 
-           {/* Mobile Nav Links */}
-<ul className="flex flex-col gap-5 border-b border-gray-100 pb-6">
-  {menuItems.map((item, index) => (
-    <li key={index}>
-      <Link
-        to={
-          item === "Sign Up" ? "/signup" : 
-          item === "Home" ? "/" : 
-          item === "About" ? "/about" : "/contact"
-        }
-        className={`text-base font-medium transition-colors ${
-          activeIndex === index ? "text-red-500" : "text-black hover:text-red-500"
-        }`}
-        onClick={() => {
-          setActiveIndex(index);
-          setMenuOpen(false);
-        }}
-      >
-        {item}
-      </Link>
-    </li>
-  ))}
+            {/* Mobile Nav Links */}
+            <ul className="flex flex-col gap-5 border-b border-gray-100 pb-6">
+              {menuItems.map((item, index) => (
+                <li key={index}>
+                  <Link
+                    to={
+                      item === "Sign Up" ? "/signup" :
+                        item === "Home" ? "/" :
+                          item === "About" ? "/about" : "/contact"
+                    }
+                    className={`text-base font-medium transition-colors ${activeIndex === index ? "text-red-500" : "text-black hover:text-red-500"
+                      }`}
+                    onClick={() => {
+                      setActiveIndex(index);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    {item}
+                  </Link>
+                </li>
+              ))}
 
-  {/* Added My Orders with Active State */}
-  <li>
-    <Link
-      to="/myOrder"
-      className={`text-base font-medium transition-colors ${
-        activeIndex === 99 ? "text-red-500" : "text-black hover:text-red-500"
-      }`}
-      onClick={() => {
-        setActiveIndex(99); // Using a unique index for 'My Orders' active state
-        setMenuOpen(false);
-      }}
-    >
-      My Orders
-    </Link>
-  </li>
-</ul>
+              {/* Added My Orders with Active State */}
+              <li>
+                <Link
+                  to="/myOrder"
+                  className={`text-base font-medium transition-colors ${activeIndex === 99 ? "text-red-500" : "text-black hover:text-red-500"
+                    }`}
+                  onClick={() => {
+                    setActiveIndex(4); // Using a unique index for 'My Orders' active state
+                    setMenuOpen(false);
+                  }}
+                >
+                  My Orders
+                </Link>
+              </li>
+              <li>
+                <Link to="/wishlist"   className={`text-base font-medium transition-colors ${activeIndex === 99 ? "text-red-500" : "text-black hover:text-red-500"
+                    }`}
+                  onClick={() => {
+                    setActiveIndex(5); // Using a unique index for 'Wishlist' active state
+                    setMenuOpen(false);
+                  }}
+                >Wishlist</Link>
+               
+              </li>
+            </ul>
 
             {/* Mobile Action Icons Row */}
             <div className="flex items-center justify-between py-6">
@@ -230,9 +238,7 @@ useEffect(() => {
               <Link to="/myaccount" onClick={() => setMenuOpen(false)} className="p-2">
                 <User className="w-6 h-6 text-gray-700" />
               </Link>
-                 <Link to="/wishlist" onClick={() => setMenuOpen(false)} className="p-2">
-                <User className="w-6 h-6 text-gray-700" />
-              </Link>
+
             </div>
 
             {/* Mobile Logout (Sticky to bottom) */}

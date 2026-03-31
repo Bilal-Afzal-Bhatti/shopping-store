@@ -1,8 +1,7 @@
-import { useState, useTransition, useCallback } from 'react';
+import React, { useState, useTransition, useCallback, useEffect } from 'react';
 import { Trash2, ShoppingBag, Heart, ArrowRight, Star, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// --- TYPES ---
 interface WishlistItem {
   _id: string;
   name: string;
@@ -13,16 +12,23 @@ interface WishlistItem {
   rating: number;
 }
 
-const Wishlist = () => {
+const Wishlist: React.FC = () => {
   const navigate = useNavigate();
-  const [isPending, startTransition] = useTransition(); // React 19 Optimization
+  const [isPending, startTransition] = useTransition();
+  const [isVisible, setIsVisible] = useState(false);
+  
+  // Initial Mock Data
   const [wishlist, setWishlist] = useState<WishlistItem[]>([
-    // Mock data based on your e-commerce project scope
-    { _id: '1', name: 'Premium Tech Shell', price: 120, image: '/api/placeholder/150/150', category: 'Apparel', inStock: true, rating: 4.8 },
-    { _id: '2', name: 'Minimalist Watch', price: 85, image: '/api/placeholder/150/150', category: 'Accessories', inStock: false, rating: 4.5 }
+    { _id: '1', name: 'Elite Graphite Shell', price: 145.00, image: 'https://placehold.co/400x400/000000/FFFFFF/png?text=Product+1', category: 'Outerwear', inStock: true, rating: 4.9 },
+    { _id: '2', name: 'Vortex Mesh Sneakers', price: 210.50, image: 'https://placehold.co/400x400/000000/FFFFFF/png?text=Product+2', category: 'Footwear', inStock: true, rating: 4.7 },
+    { _id: '3', name: 'Cyberpunk Lens v2', price: 65.00, image: 'https://placehold.co/400x400/000000/FFFFFF/png?text=Product+3', category: 'Accessories', inStock: false, rating: 4.5 }
   ]);
 
-  // Optimization: Memoized remove handler to prevent unnecessary re-renders
+  // Trigger entrance animation on mount
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
   const handleRemove = useCallback((id: string) => {
     startTransition(() => {
       setWishlist(prev => prev.filter(item => item._id !== id));
@@ -30,76 +36,90 @@ const Wishlist = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#fafafa] py-12 px-4 md:px-8 font-sans">
+    <div className="min-h-screen bg-[#fafafa] py-16 px-6 font-sans selection:bg-black selection:text-white">
       <div className="max-w-6xl mx-auto">
         
-        {/* HEADER SECTION */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-red-600 font-black uppercase text-xs tracking-[0.3em]">
-              <Heart size={16} fill="currentColor" /> Your Collection
+        {/* ELEGANT HEADER */}
+        <header className={`transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
+          <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-16">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 bg-black text-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em]">
+                <Heart size={12} fill="white" /> Curated Favorites
+              </div>
+              <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.8] mb-2">
+                Wishlist<span className="text-red-600">.</span>
+              </h1>
+              <p className="text-gray-400 font-bold uppercase text-xs tracking-widest">
+                Storage: {wishlist.length} Items / Capacity: Unlimited
+              </p>
             </div>
-            <h1 className="text-6xl font-black uppercase tracking-tighter leading-none">
-              Wishlist <span className="text-gray-200">({wishlist.length})</span>
-            </h1>
+            <button 
+              onClick={() => navigate('/shop')}
+              className="group flex items-center gap-4 font-black uppercase text-sm border-b-4 border-black pb-2 hover:text-red-600 transition-all"
+            >
+              Back to Catalog <ArrowRight size={20} className="group-hover:translate-x-3 transition-transform" />
+            </button>
           </div>
-          <button 
-            onClick={() => navigate('/shop')}
-            className="group flex items-center gap-3 font-black uppercase text-sm border-b-4 border-black pb-1 hover:text-red-600 transition-colors"
-          >
-            Continue Shopping <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
-          </button>
-        </div>
+        </header>
 
         {wishlist.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
-            {wishlist.map((item) => (
+          <div className="grid grid-cols-1 gap-8">
+            {wishlist.map((item, index) => (
               <div 
                 key={item._id}
-                className="bg-white border-2 border-black p-4 md:p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row items-center gap-8 group hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all"
+                style={{ transitionDelay: `${index * 150}ms` }}
+                className={`bg-white border-[3px] border-black p-6 flex flex-col md:flex-row items-center gap-10 shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] hover:shadow-[15px_15px_0px_0px_rgba(220,38,38,1)] hover:-translate-y-2 hover:-translate-x-1 transition-all duration-500 group
+                ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'}`}
               >
-                {/* IMAGE CONTAINER */}
-                <div className="w-full md:w-40 h-40 bg-gray-50 border-2 border-black p-4 relative overflow-hidden shrink-0">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500" />
+                {/* PRODUCT VISUAL */}
+                <div className="w-full md:w-48 h-48 bg-[#f0f0f0] border-2 border-black relative overflow-hidden shrink-0">
+                  <img 
+                    src={item.image} 
+                    alt={item.name} 
+                    className="w-full h-full object-cover mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-out" 
+                  />
                   {!item.inStock && (
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                      <span className="bg-black text-white text-[10px] font-black uppercase px-2 py-1">Out of Stock</span>
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rotate-12 scale-150">
+                      <span className="text-white font-black uppercase text-[10px] tracking-widest -rotate-12">Sold Out</span>
                     </div>
                   )}
                 </div>
 
-                {/* INFO SECTION */}
-                <div className="flex-1 space-y-2 text-center md:text-left">
-                  <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{item.category}</p>
-                  <h3 className="text-2xl font-black uppercase tracking-tight">{item.name}</h3>
-                  <div className="flex items-center justify-center md:justify-start gap-1 text-yellow-500">
-                    <Star size={14} fill="currentColor" />
-                    <span className="text-black font-bold text-xs">{item.rating}</span>
+                {/* PRODUCT INFO */}
+                <div className="flex-1 space-y-3 text-center md:text-left">
+                  <div className="flex items-center justify-center md:justify-start gap-4">
+                    <span className="text-[10px] font-black uppercase px-2 py-1 bg-gray-100 border border-black">{item.category}</span>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={12} fill={i < Math.floor(item.rating) ? "black" : "none"} stroke="black" />
+                      ))}
+                    </div>
                   </div>
+                  <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tight group-hover:text-red-600 transition-colors">{item.name}</h3>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Global Shipping Available • 2-Year Warranty</p>
                 </div>
 
-                {/* PRICE & ACTIONS */}
-                <div className="flex flex-col md:flex-row items-center gap-6 w-full md:w-auto">
-                  <div className="text-center md:text-right">
-                    <p className="text-gray-400 font-black uppercase text-[10px]">Unit Price</p>
-                    <p className="text-3xl font-black">${item.price}</p>
+                {/* PRICING & ACTIONS */}
+                <div className="flex flex-col md:flex-row items-center gap-8 w-full md:w-auto border-t-2 md:border-t-0 md:border-l-2 border-black pt-6 md:pt-0 md:pl-10">
+                  <div className="text-center md:text-right min-w-[120px]">
+                    <p className="text-gray-400 font-black uppercase text-[10px] mb-1">Price</p>
+                    <p className="text-4xl font-black italic">${item.price.toFixed(2)}</p>
                   </div>
 
-                  <div className="flex gap-3 w-full md:w-auto">
+                  <div className="flex gap-4 w-full md:w-auto">
                     <button 
                       disabled={!item.inStock || isPending}
-                      className="flex-1 md:flex-none bg-black text-white px-8 py-4 font-black uppercase text-xs tracking-widest hover:bg-red-600 transition-colors disabled:bg-gray-200 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="flex-1 md:flex-none bg-black text-white px-10 py-5 font-black uppercase text-xs tracking-[0.2em] hover:bg-red-600 transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:bg-gray-200 disabled:text-gray-400 flex items-center justify-center gap-3"
                     >
-                      {isPending ? <RefreshCw size={16} className="animate-spin" /> : <ShoppingBag size={18} />}
-                      Add to Cart
+                      {isPending ? <RefreshCw size={18} className="animate-spin" /> : <ShoppingBag size={20} />}
+                      Add to Bag
                     </button>
                     
                     <button 
                       onClick={() => handleRemove(item._id)}
-                      className="p-4 border-2 border-black hover:bg-black hover:text-white transition-all group/trash"
-                      title="Remove from wishlist"
+                      className="p-5 border-[3px] border-black bg-white hover:bg-black hover:text-white transition-all active:translate-y-1"
                     >
-                      <Trash2 size={20} className="group-hover/trash:scale-110 transition-transform" />
+                      <Trash2 size={24} />
                     </button>
                   </div>
                 </div>
@@ -107,23 +127,9 @@ const Wishlist = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 border-4 border-dashed border-gray-200">
-            <Heart size={48} className="mx-auto text-gray-200 mb-4" />
-            <h2 className="text-2xl font-black uppercase text-gray-300">Your wishlist is empty</h2>
-            <button 
-              onClick={() => navigate('/shop')}
-              className="mt-6 bg-black text-white px-10 py-4 font-black uppercase tracking-widest hover:bg-red-600 transition-all"
-            >
-              Go Explore
-            </button>
-          </div>
-        )}
-
-        {/* FOOTER STATS */}
-        {wishlist.length > 0 && (
-          <div className="mt-12 p-6 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center">
-            <p className="font-bold text-sm uppercase tracking-widest">Estimated Value</p>
-            <p className="text-2xl font-black">${wishlist.reduce((acc, curr) => acc + curr.price, 0).toFixed(2)}</p>
+          <div className="py-32 text-center border-[6px] border-dashed border-gray-200">
+             <h2 className="text-4xl md:text-6xl font-black uppercase text-gray-200 italic tracking-tighter">No items found in orbit.</h2>
+             <button onClick={() => navigate('/shop')} className="mt-10 bg-black text-white px-16 py-6 font-black uppercase tracking-[0.3em] hover:bg-red-600 transition-all">Launch Shop</button>
           </div>
         )}
       </div>

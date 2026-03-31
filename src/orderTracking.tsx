@@ -135,20 +135,15 @@ const OrderTracking: React.FC = () => {
         {/* STEPPER SECTION WITH CONNECTING LINE */}
         <div className="bg-white border-2 border-black p-10 mb-8 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-2 h-full bg-black"></div>
-        <div className="relative max-w-2xl mx-auto py-4">
-    {/* THE CONNECTING LINE (Corrected) */}
-    {/* By removing w-full and using left-8 / right-8, the line is pinned between the centers of the icons. w-auto allows it to fill the gap. */}
-    <div className="absolute top-1/2 left-8 right-8 w-auto h-1 bg-gray-100 -translate-y-[180%] md:-translate-y-[210%]">
-        <div 
-            className="h-full bg-black transition-all duration-1000 ease-in-out" 
-            style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}
-        ></div>
-    </div>
-
-    <div className="flex justify-between items-center relative z-10">
-      {/* ... steps mapping ... */}
-    </div>
-</div>
+          
+          <div className="relative max-w-2xl mx-auto py-4">
+            {/* THE CONNECTING LINE */}
+            <div className="absolute top-1/2 left-0.5 w-full h-1 bg-gray-100 -translate-y-[180%] md:-translate-y-[210%]">
+                <div 
+                    className="h-full bg-black transition-all duration-1000 ease-in-out" 
+                    style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}
+                ></div>
+            </div>
 
             <div className="flex justify-between items-center relative z-10">
               {steps.map((step, index) => {
@@ -228,7 +223,7 @@ const OrderTracking: React.FC = () => {
           </div>
         </div>
       </div>
-   
+    </div>
   );
 };
 

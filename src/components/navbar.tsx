@@ -173,55 +173,61 @@ function Navbar() {
               />
               <img src={searchIcon} alt="" className="w-5 h-5 opacity-60" onClick={() => handleSearch()} />
             </form>
+{/* Mobile Nav Links */}
+<ul className="flex flex-col gap-5 border-b border-gray-100 pb-6">
+  {menuItems.map((item, index) => (
+    <li key={index}>
+      <Link
+        to={
+          item === "Sign Up" ? "/signup" :
+          item === "Home" ? "/" :
+          item === "About" ? "/about" : "/contact"
+        }
+        className={`text-base font-medium transition-colors ${
+          activeIndex === index ? "text-red-500" : "text-black hover:text-red-500"
+        }`}
+        onClick={() => {
+          setActiveIndex(index);
+          setMenuOpen(false);
+        }}
+      >
+        {item}
+      </Link>
+    </li>
+  ))}
 
-            {/* Mobile Nav Links */}
-            <ul className="flex flex-col gap-5 border-b border-gray-100 pb-6">
-              {menuItems.map((item, index) => (
-                <li key={index}>
-                  <Link
-                    to={
-                      item === "Sign Up" ? "/signup" :
-                        item === "Home" ? "/" :
-                          item === "About" ? "/about" : "/contact"
-                    }
-                    className={`text-base font-medium transition-colors ${activeIndex === index ? "text-red-500" : "text-black hover:text-red-500"
-                      }`}
-                    onClick={() => {
-                      setActiveIndex(index);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
+  {/* My Orders - Unique Index 99 */}
+  <li>
+    <Link
+      to="/myOrder"
+      className={`text-base font-medium transition-colors ${
+        activeIndex === 99 ? "text-red-500" : "text-black hover:text-red-500"
+      }`}
+      onClick={() => {
+        setActiveIndex(99); 
+        setMenuOpen(false);
+      }}
+    >
+      My Orders
+    </Link>
+  </li>
 
-              {/* Added My Orders with Active State */}
-              <li>
-                <Link
-                  to="/myOrder"
-                  className={`text-base font-medium transition-colors ${activeIndex === 99 ? "text-red-500" : "text-black hover:text-red-500"
-                    }`}
-                  onClick={() => {
-                    setActiveIndex(99); // Using a unique index for 'My Orders' active state
-                    setMenuOpen(false);
-                  }}
-                >
-                  My Orders
-                </Link>
-              </li>
-              <li>
-                <Link to="/wishlist"   className={`text-base font-medium transition-colors ${activeIndex === 99 ? "text-red-500" : "text-black hover:text-red-500"
-                    }`}
-                  onClick={() => {
-                    setActiveIndex(100); // Using a unique index for 'Wishlist' active state
-                    setMenuOpen(false);
-                  }}
-                >Wishlist</Link>
-               
-              </li>
-            </ul>
-
+  {/* Wishlist - Unique Index 100 (Changed from 99 to 100) */}
+  <li>
+    <Link 
+      to="/wishlist"   
+      className={`text-base font-medium transition-colors ${
+        activeIndex === 100 ? "text-red-500" : "text-black hover:text-red-500"
+      }`}
+      onClick={() => {
+        setActiveIndex(100); // Now matches the className check
+        setMenuOpen(false);
+      }}
+    >
+      Wishlist
+    </Link>
+  </li>
+</ul>
             {/* Mobile Action Icons Row */}
             <div className="flex items-center justify-between py-6">
               <button onClick={() => setHeartActive(!heartActive)} className="p-2">

@@ -55,14 +55,14 @@ export default function Flash_sales() {
     return () => clearInterval(interval);
   }, []);
 
-  const products = [
-    { id: 1, name: "Wireless Headphones", price: "$120", rating: 4, discount: "20% OFF", image: joystick },
-    { id: 2, name: "Smart Watch", price: "$80", rating: 5, discount: "40% OFF", image: key_board },
-    { id: 3, name: "Gaming Mouse", price: "$40", rating: 3, discount: "40% OFF", image: led },
-    { id: 4, name: "Bluetooth Speaker", price: "$90", rating: 4, discount: "40% OFF", image: bluetooth },
-    { id: 5, name: "Bluetooth Speaker", price: "$90", rating: 4, discount: "40% OFF", image: bluetooth },
-    { id: 6, name: "Bluetooth Speaker", price: "$90", rating: 4, discount: "20% OFF", image: bluetooth },
-  ];
+ const products = [
+  { id: 1, name: "Gaming Joystick", price: "$120", rating: 4, discount: "20% OFF", image: joystick },
+  { id: 2, name: "Mechanical Keyboard", price: "$80", rating: 5, discount: "40% OFF", image: key_board },
+  { id: 3, name: "LED Gaming Monitor", price: "$40", rating: 3, discount: "40% OFF", image: led },
+  { id: 4, name: "Bluetooth Speaker", price: "$90", rating: 4, discount: "40% OFF", image: bluetooth },
+  { id: 5, name: "Premium Audio System", price: "$90", rating: 4, discount: "40% OFF", image: bluetooth }, // Kept same image, updated name
+  { id: 6, name: "Portable Speaker", price: "$90", rating: 4, discount: "20% OFF", image: bluetooth }, // Kept same image, updated name
+];
 
   const toggleLike = (id: number) => {
     setLiked((prev) => ({ ...prev, [id]: !prev[id] }));

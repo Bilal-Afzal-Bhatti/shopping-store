@@ -230,6 +230,9 @@ useEffect(() => {
               <Link to="/myaccount" onClick={() => setMenuOpen(false)} className="p-2">
                 <User className="w-6 h-6 text-gray-700" />
               </Link>
+                 <Link to="/wishlist" onClick={() => setMenuOpen(false)} className="p-2">
+                <User className="w-6 h-6 text-gray-700" />
+              </Link>
             </div>
 
             {/* Mobile Logout (Sticky to bottom) */}
@@ -300,6 +303,7 @@ useEffect(() => {
                 <div className="absolute right-0 mt-4 w-56 border border-gray-100 shadow-xl rounded-lg py-2 bg-white transform origin-top-right animate-in fade-in zoom-in duration-200">
                   <Link to="/myaccount" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm"><User size={18} /> Manage My Account</Link>
                   <Link to="/myOrder" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm"><Package size={18} /> My Orders</Link>
+                  <Link to="/wishlist" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm"><Heart size={18} /> Wishlist</Link>
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-red-600 text-left text-sm font-medium">
                     <LogOut size={18} /> Logout
                   </button>

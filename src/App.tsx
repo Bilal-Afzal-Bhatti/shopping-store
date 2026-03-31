@@ -17,6 +17,7 @@ import PaymentSuccess from "./paymentsuccess";
 import OrderTracking from "./orderTracking";
 import MyOrders from "./myOrder";
 import OAuthLogin from "./OAuthLogin";
+import Wishlist from "./wishlist";
 export default function App() {
   return (
     <Router>
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="/orderTracking/:id" element ={<OrderTracking/>}/>
         <Route path="/myOrder" element ={<MyOrders/>}/>
         <Route path="/OAuthLogin" element={<OAuthLogin/>}/>
+        <Route path="/wishlist" element={<Wishlist/>}/> 
       </Routes>
       <ScrollToTop />
       <Footer />

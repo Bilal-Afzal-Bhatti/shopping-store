@@ -6,7 +6,8 @@ import { GoogleLogin } from '@react-oauth/google';
 
 function Signup() {
   const [name, setName] = useState("");
-  const [emailOrPhone, setEmailOrPhone] = useState("");
+  const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ function Signup() {
       const res = await fetch(`${backendUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, emailOrPhone, password }),
+        body: JSON.stringify({ name, email, password }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -59,7 +60,7 @@ function Signup() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full border-b py-3 outline-none focus:border-black" required />
-            <input type="text" placeholder="Email or Phone" value={emailOrPhone} onChange={(e) => setEmailOrPhone(e.target.value)} className="w-full border-b py-3 outline-none focus:border-black" required />
+            <input type="text" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border-b py-3 outline-none focus:border-black" required />
             <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full border-b py-3 outline-none focus:border-black" required />
             <button type="submit" className="w-full bg-[#DB4444] text-white py-4 rounded font-medium hover:bg-red-700 transition-all" disabled={loading}>
               {loading ? "Creating Account..." : "Create Account"}

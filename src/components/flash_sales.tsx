@@ -84,6 +84,7 @@ const handleWishlistToggle = async (product: any) => {
       setLiked(prev => ({ ...prev, [product.id]: !prev[product.id] }));
 
       // API Call - Using the same Vercel URL pattern as your Cart
+      console.log("Toggling wishlist for product ID:", product.id); // Debug log
       const response = await axios.post(
         "https://shoppingstore-backend.vercel.app/api/wishlist/w/add",
         { 

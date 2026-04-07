@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Side_image from "./assets/Side_Image.png";
 import axios, { AxiosError } from "axios";
 import { GoogleLogin } from '@react-oauth/google';
-
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 function Signup() {
   const [name, setName] = useState("");
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -15,7 +15,8 @@ function Signup() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("https://shoppingstore-backend.vercel.app/api/auth/register", {
+     
+      const res = await fetch(`${backendUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, emailOrPhone, password }),

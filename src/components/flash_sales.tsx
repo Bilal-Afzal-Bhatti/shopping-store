@@ -85,7 +85,7 @@ const handleWishlistToggle = async (product: any) => {
 
       // API Call - Using the same Vercel URL pattern as your Cart
       const response = await axios.post(
-        "https://shoppingstore-backend.vercel.app/api/wishlist/toggle",
+        "https://shoppingstore-backend.vercel.app/api//wishlist/toggle",
         { 
           productId: product.id,
           name: product.name,
@@ -98,6 +98,7 @@ const handleWishlistToggle = async (product: any) => {
       if (response.data.success) {
         toast.success(response.data.message || "Wishlist updated");
       }
+      navigate("/wishlist");
     } catch (error: any) {
       // Rollback on error
       setLiked(prev => ({ ...prev, [product.id]: !prev[product.id] }));

@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef,useTransition } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion"; // Removed unused useAnimation and AnimatePresence
 import { Heart, Eye, Star } from "lucide-react";
-
+import axios from "axios"; // <--- ADD THIS
 // Assets
 import joystick from "../assets/joystick.png";
 import key_board from "../assets/Key_board.png";
@@ -13,22 +13,26 @@ import bluetooth from "../assets/bluetooth.png";
 import SliderArrows from "../components/arrow";
 import Line from "./line";
 import CartModal from "../components/modal";
+import { toast } from "react-hot-toast";
 
 const SALE_END_DATE = new Date();
 SALE_END_DATE.setDate(SALE_END_DATE.getDate() + 3);
 
 export default function Flash_sales() {
-  const [liked, setLiked] = useState<Record<number, boolean>>({});
+
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
-  const [isAdding, setIsAdding] = useState(false);
-
+const [isAdding, setIsAdding] = useState(false);
+const [isLiked, setLiked] = useState<Record<number, boolean>>({});
+const [isPending, startTransition] = useTransition();
   // Framer Motion specific state
   const [width, setWidth] = useState(0);
   const carousel = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+
+  
   useEffect(() => {
     if (carousel.current) {
       // Calculate total scrollable width minus visible width
@@ -64,10 +68,43 @@ export default function Flash_sales() {
   { id: 6, name: "Portable Speaker", price: "$90", rating: 4, discount: "20% OFF", image: bluetooth }, // Kept same image, updated name
 ];
 
-  const toggleLike = (id: number) => {
-    setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  // const toggleLike = (id: number) => {
+  //   setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
+  // };
+const handleWishlistToggle = async (product: any) => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    toast.error("Please login to add to wishlist");
+    return;
+  }
 
+  startTransition(async () => {
+    try {
+      // Optimistic UI update
+      setLiked(prev => ({ ...prev, [product.id]: !prev[product.id] }));
+
+      // API Call - Using the same Vercel URL pattern as your Cart
+      const response = await axios.post(
+        "https://shoppingstore-backend.vercel.app/api/wishlist/toggle",
+        { 
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image 
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message || "Wishlist updated");
+      }
+    } catch (error: any) {
+      // Rollback on error
+      setLiked(prev => ({ ...prev, [product.id]: !prev[product.id] }));
+      toast.error(error.response?.data?.message || "Failed to update wishlist");
+    }
+  });
+};
   const handleAddToCart = async (product: any) => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -180,15 +217,21 @@ export default function Flash_sales() {
                 </span>
 
                 <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
-                  <button
-                    onClick={() => toggleLike(product.id)}
-                    className="p-1.5 bg-white rounded-full shadow-sm transition active:scale-95"
-                  >
-                    <Heart
-                      size={18}
-                      className={`${liked[product.id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-600"}`}
-                    />
-                  </button>
+                <button
+  onClick={() => handleWishlistToggle(product)} // Pass whole product for API
+  disabled={isPending}
+  className={`p-1.5 bg-white rounded-full shadow-sm transition active:scale-95 
+    ${isPending ? "opacity-50 cursor-wait" : "opacity-100"}`}
+>
+  <Heart
+    size={18}
+    className={`transition-all duration-300 ${
+      isLiked[product.id] // <--- FIXED: Check specific ID
+        ? "fill-[#DB4444] text-[#DB4444] scale-110" 
+        : "text-gray-600 hover:text-red-400"
+    }`}
+  />
+</button>
                   <Link to={"/view_item"} className="p-1.5 bg-white rounded-full shadow-sm transition">
                     <Eye size={18} className="text-gray-600" />
                   </Link>

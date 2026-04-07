@@ -36,7 +36,7 @@ const Wishlist: React.FC = () => {
 
       try {
         const response = await axios.get(
-          "https://shoppingstore-backend.vercel.app/api/wishlist/show",
+          "https://shoppingstore-backend.vercel.app/api/wishlist/wishlist/show",
           { headers: { Authorization: `Bearer ${token}` } }
         );
 

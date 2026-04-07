@@ -5,7 +5,7 @@ import axios from "axios";
 import Side_image from "./assets/Side_Image.png";
 
 function Login() {
-  const [emailOrPhone, setEmailOrPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ function Login() {
     setLoading(true);
     try {
       const res = await axios.post(`${backendUrl}/api/auth/login`, {
-        emailOrPhone,
+        email,
         password,
       });
 
@@ -87,8 +87,8 @@ function Login() {
               <input
                 type="text"
                 placeholder="Email or Phone Number"
-                value={emailOrPhone}
-                onChange={(e) => setEmailOrPhone(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full border-b border-gray-300 py-3 outline-none focus:border-black transition-colors"
                 required
               />

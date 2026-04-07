@@ -67,7 +67,7 @@ const Wishlist: React.FC = () => {
       try {
         // Use the same "Toggle" endpoint you used for adding
         const response = await axios.post(
-          `${backendUrl}/api/wishlist/w/add`,
+          `${backendUrl}/api/wishlist/clear`,
           { productId }, 
           { headers: { Authorization: `Bearer ${token}` } }
         );

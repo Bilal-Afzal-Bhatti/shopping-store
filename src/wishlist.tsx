@@ -1,7 +1,8 @@
 import React, { useState, useTransition, useCallback, useEffect } from 'react';
 import { Trash2, ShoppingBag, Heart, ArrowRight, Star, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import axios from "axios"; // <--- ADD THIS
+import { toast } from "react-hot-toast";
 interface WishlistItem {
   _id: string;
   name: string;
@@ -13,27 +14,81 @@ interface WishlistItem {
 }
 
 const Wishlist: React.FC = () => {
-  const navigate = useNavigate();
+ const navigate = useNavigate();
   const [isPending, startTransition] = useTransition();
   const [isVisible, setIsVisible] = useState(false);
   
-  // Initial Mock Data
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([
-    { _id: '1', name: 'Elite Graphite Shell', price: 145.00, image: 'https://placehold.co/400x400/000000/FFFFFF/png?text=Product+1', category: 'Outerwear', inStock: true, rating: 4.9 },
-    { _id: '2', name: 'Vortex Mesh Sneakers', price: 210.50, image: 'https://placehold.co/400x400/000000/FFFFFF/png?text=Product+2', category: 'Footwear', inStock: true, rating: 4.7 },
-    { _id: '3', name: 'Cyberpunk Lens v2', price: 65.00, image: 'https://placehold.co/400x400/000000/FFFFFF/png?text=Product+3', category: 'Accessories', inStock: false, rating: 4.5 }
-  ]);
+  // 1. Start with an empty array
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Trigger entrance animation on mount
+  // 2. Fetch Wishlist Data on Mount
   useEffect(() => {
-    setIsVisible(true);
-  }, []);
+    const fetchWishlist = async () => {
+      const token = localStorage.getItem("token");
 
-  const handleRemove = useCallback((id: string) => {
-    startTransition(() => {
-      setWishlist(prev => prev.filter(item => item._id !== id));
+      // Check if user is logged in
+      if (!token) {
+        toast.error("Please login to view your wishlist");
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          "https://shoppingstore-backend.vercel.app/api/wishlist/get",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data.success) {
+          setWishlist(response.data.wishlist);
+        }
+      } catch (error: any) {
+        console.error("Fetch error:", error);
+        toast.error(error.response?.data?.message || "Failed to load wishlist");
+      } finally {
+        setLoading(false);
+        setIsVisible(true); // Trigger animations after data loads
+      }
+    };
+
+    fetchWishlist();
+  }, [navigate]);
+
+  // 3. Optimized Delete Logic
+  const handleRemove = useCallback(async (id: string) => {
+    const token = localStorage.getItem("token");
+    
+    startTransition(async () => {
+      try {
+        // Optimistic UI Update
+        setWishlist(prev => prev.filter(item => item._id !== id));
+
+        const response = await axios.post(
+          "https://shoppingstore-backend.vercel.app/api/wishlist/toggle",
+          { productId: id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (!response.data.success) {
+          throw new Error("Failed to sync with server");
+        }
+        toast.success("Item removed");
+      } catch (error) {
+        toast.error("Could not remove item");
+        // Revert UI if server call fails
+        setWishlist(wishlist); 
+      }
     });
-  }, []);
+  }, [wishlist]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-12 h-12 border-4 border-black border-t-red-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#fafafa] py-16 px-6 font-sans selection:bg-black selection:text-white">

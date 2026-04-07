@@ -89,7 +89,7 @@ const handleWishlistToggle = async (product: any) => {
 
       // 3. API Call
       const response = await axios.post(
-        "https://shoppingstore-backend.vercel.app/api/wishlist/w/add", // Ensure this matches your route exactly
+        "https://shoppingstore-backend.vercel.app/api/wishlist/add", // Ensure this matches your route exactly
         { 
           productId: product.id,
           name: product.name,

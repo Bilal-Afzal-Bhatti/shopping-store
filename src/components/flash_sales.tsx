@@ -73,21 +73,23 @@ const [isPending, startTransition] = useTransition();
   // };
 const handleWishlistToggle = async (product: any) => {
   const token = localStorage.getItem("token");
+  
   if (!token) {
     toast.error("Please login to add to wishlist");
     return;
   }
 
   startTransition(async () => {
+    // 1. Store previous state for an accurate rollback
+    const wasLiked = !!isLiked[product.id];
+
     try {
-      // Optimistic UI update
-      setLiked(prev => ({ ...prev, [product.id]: !prev[product.id] }));
+      // 2. Optimistic UI update (Instant Heart Color Change)
+      setLiked(prev => ({ ...prev, [product.id]: !wasLiked }));
 
-      // API Call - Using the same Vercel URL pattern as your Cart
-      console.log("Toggling wishlist for product ID:", product.id); // Debug log
-
+      // 3. API Call
       const response = await axios.post(
-        "https://shoppingstore-backend.vercel.app/api/wishlist/w/add",
+        "https://shoppingstore-backend.vercel.app/api/wishlist/w/add", // Ensure this matches your route exactly
         { 
           productId: product.id,
           name: product.name,
@@ -99,12 +101,16 @@ const handleWishlistToggle = async (product: any) => {
 
       if (response.data.success) {
         toast.success(response.data.message || "Wishlist updated");
+        // 4. FIXED: Only navigate if the server actually says 'Success'
+        navigate("/wishlist"); 
       }
-    navigate("/wishlist");
     } catch (error: any) {
-      // Rollback on error
-      setLiked(prev => ({ ...prev, [product.id]: !prev[product.id] }));
-      toast.error(error.response?.data?.message || "Failed to update wishlist");
+      // 5. ROLLBACK: Use the stored 'wasLiked' to flip it back perfectly
+      setLiked(prev => ({ ...prev, [product.id]: wasLiked }));
+      
+      const errorMsg = error.response?.data?.message || "Server Error: Could not update wishlist";
+      toast.error(errorMsg);
+      console.error("Wishlist API Error:", error.response?.data || error.message);
     }
   });
 };

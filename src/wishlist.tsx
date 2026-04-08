@@ -1,6 +1,6 @@
 import React, { useState, useTransition, useCallback, useEffect } from 'react';
 import { Trash2, ShoppingBag, Heart, ArrowLeft, Star, Loader2, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,Link } from 'react-router-dom';
 import axios from "axios"; 
 import { toast } from "react-hot-toast";
 
@@ -17,7 +17,7 @@ interface WishlistItem {
 
 const Wishlist: React.FC = () => {
   const navigate = useNavigate();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
@@ -120,12 +120,13 @@ const Wishlist: React.FC = () => {
               <span className="text-sm not-italic ml-2 text-gray-400">({wishlist.length})</span>
             </h1>
           </div>
-          <button 
-            onClick={() => navigate('/home')} 
-            className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-red-600 transition-colors border-b-2 border-transparent hover:border-red-600 pb-1"
-          >
-            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Back to Store
-          </button>
+         <Link 
+    to="/home" 
+    className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-red-600 transition-colors border-b-2 border-transparent hover:border-red-600 pb-1"
+  >
+    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
+    Back to Store
+  </Link>
         </div>
 
         {wishlist.length > 0 ? (

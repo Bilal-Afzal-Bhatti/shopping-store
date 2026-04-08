@@ -66,8 +66,10 @@ const Wishlist: React.FC = () => {
     startTransition(async () => {
       try {
         // Use the same "Toggle" endpoint you used for adding
+      console.log("Attempting to remove productId:", productId);
         const response = await axios.post(
           `${backendUrl}/api/wishlist/clear`,
+          
           { productId }, 
           { headers: { Authorization: `Bearer ${token}` } }
         );

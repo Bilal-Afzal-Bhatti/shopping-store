@@ -56,33 +56,32 @@ const Wishlist: React.FC = () => {
   }, [navigate, backendUrl]);
 
   // 2. Fixed Delete Logic
-  const handleRemove = useCallback(async (productId: string | number) => {
-    const token = localStorage.getItem("token");
-    
-    // Optimistic Update: Remove from UI immediately
-    const previousWishlist = [...wishlist];
-    setWishlist(prev => prev.filter(item => item.productId !== productId));
+const handleRemove = useCallback(async (productId: string | number) => {
+  const token = localStorage.getItem("token");
+  
+  // Optimistic Update: Remove from UI immediately
+  const previousWishlist = [...wishlist];
+  setWishlist(prev => prev.filter(item => item.productId !== productId));
 
-    startTransition(async () => {
-      try {
-        // Use the same "Toggle" endpoint you used for adding
-      console.log("Attempting to remove productId:", productId);
-        const response = await axios.post(
-          `${backendUrl}/api/wishlist/clear`,
-          
-          { productId }, 
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        if (response.data.success) {
-          toast.success("Item removed");
+  startTransition(async () => {
+    try {
+      const response = await axios.delete(
+        `${backendUrl}/api/wishlist/clear`, 
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          data: { productId } // 👈 This is the correct way to send a body in DELETE
         }
-      } catch (error) {
-        toast.error("Could not remove item");
-        setWishlist(previousWishlist); // Revert UI on failure
+      );
+
+      if (response.data.success) {
+        toast.success("Item removed");
       }
-    });
-  }, [wishlist, backendUrl]);
+    } catch (error) {
+      toast.error("Could not remove item");
+      setWishlist(previousWishlist); // Revert UI on failure
+    }
+  });
+}, [wishlist, backendUrl]);
 
   if (loading) {
     return (

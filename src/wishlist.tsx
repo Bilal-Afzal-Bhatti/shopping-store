@@ -121,7 +121,7 @@ const Wishlist: React.FC = () => {
             </h1>
           </div>
          <Link 
-    to="/home" 
+    to="/" 
     className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-red-600 transition-colors border-b-2 border-transparent hover:border-red-600 pb-1"
   >
     <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 

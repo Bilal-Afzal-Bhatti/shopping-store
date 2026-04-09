@@ -86,7 +86,7 @@ function Login() {
             <div className="space-y-4">
               <input
                 type="text"
-                placeholder="Email or Phone Number"
+                placeholder="Email "
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border-b border-gray-300 py-3 outline-none focus:border-black transition-colors"

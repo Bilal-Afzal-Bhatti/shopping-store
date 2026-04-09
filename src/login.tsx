@@ -29,7 +29,7 @@ function Login() {
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("userId", res.data.user._id);
-        navigate("/cart");
+        navigate("/home");
       }
     } catch (err: any) {
       alert(err.response?.data?.message || "Invalid credentials");

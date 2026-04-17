@@ -22,14 +22,14 @@ export interface Product {
 export const productsApi = {
   // Fetch all products (with optional query params for filtering/pagination)
   getAllProducts: async (params?: Record<string, any>): Promise<Product[]> => {
-    const response = await axiosInstance.get('/products', { params });
+    const response = await axiosInstance.get('/api/customer/product/show', { params });
     // Assuming backend returns { success: true, data: [...] } structure
     return response.data?.data || response.data;
   },
 
   // Fetch a single product by ID
   getProductById: async (id: string): Promise<Product> => {
-    const response = await axiosInstance.get(`/products/${id}`);
+    const response = await axiosInstance.get(`/api/customer/product/${id}`);
     return response.data?.data || response.data;
   },
 };

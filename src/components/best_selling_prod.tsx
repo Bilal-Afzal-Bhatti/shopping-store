@@ -1,44 +1,201 @@
-import axios from 'axios';
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Heart, Eye, Star } from "lucide-react";
 
-// Determine base URL dynamically based on environment
-const baseURL = import.meta.env.MODE === 'development' 
-  ? 'http://192.168.18.40:5173' 
-  : import.meta.env.VITE_API_BASE_URL || 'https://shoppingstore-backend.vercel.app';
+// Assets
+import coat from "../assets/coat.jpg";
+import bag from "../assets/bag.jpg";
+import speaker from "../assets/speaker.jpg";
+import bookshelf from "../assets/bookshelf.jpg";
 
-// Create an Axios instance
-const axiosInstance = axios.create({
-  baseURL,
-  timeout: 10000, // 10 seconds
-});
+// Components
+import CartModal from "../components/modal";
 
-// Request Interceptor
-axiosInstance.interceptors.request.use(
-  (config) => {
-    // Optionally add authorization token or other custom headers here
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+import { useDispatch } from "react-redux";
+import { addToCart } from "../redux/slices/cartSlice";
+import axiosInstance from "../api/axiosInstance";
+
+export default function Bestselling() {
+  const dispatch = useDispatch();
+  const [liked, setLiked] = useState<Record<number, boolean>>({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
+  const [isAdding, setIsAdding] = useState(false);
+  
+  // Framer Motion constraints state
+  const [width, setWidth] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  const products = [
+    { id: 101, name: "The North Coat", price: "$260", oldPrice: "$360", rating: 5, reviews: 65, image: coat },
+    { id: 102, name: "Gucci Savoy Bag", price: "$960", oldPrice: "$1160", rating: 4, reviews: 85, image: bag },
+    { id: 103, name: "RGB Liquid CPU Cooler", price: "$160", oldPrice: "$170", rating: 4, reviews: 95, image: speaker },
+    { id: 104, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
+    { id: 105, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
+  ];
+
+  // Calculate constraints when component mounts or products change
+  useEffect(() => {
+    if (carouselRef.current) {
+      setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+  }, []);
 
-// Response Interceptor
-axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    // Handle global errors (e.g., 401 Unauthorized, 500 Server Error)
-    if (error.response?.status === 401) {
-      console.error('Unauthorized, logging out...');
-      // Implement logout logic here, e.g., clear localStorage & redirect
+  const toggleLike = (id: number) => {
+    setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleAddToCart = async (product: any) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setModalConfig({ message: "Please log in first.", type: 'error' });
+      setIsModalOpen(true);
+      return;
     }
-    return Promise.reject(error);
-  }
-);
 
-export default axiosInstance;
+    setIsAdding(true);
+    try {
+      const productData = {
+        productId: product.id,
+        name: product.name,
+        price: parseFloat(product.price.replace("$", "")),
+        image: product.image,
+      };
+
+      const res = await axiosInstance.post("/cart/add", productData);
+
+      if (res.status === 200 || res.status === 201) {
+        // Dispatch to Redux state 
+        dispatch(addToCart({
+          _id: product.id.toString(),
+          name: product.name,
+          price: productData.price,
+          images: [product.image],
+          description: '',
+          category: '',
+          stock: 10
+        }));
+
+        setModalConfig({ message: `${product.name} added to cart!`, type: 'success' });
+        setIsModalOpen(true);
+      } else {
+        setModalConfig({ message: res.data?.message || "Error adding item", type: 'error' });
+        setIsModalOpen(true);
+      }
+    } catch (err: any) {
+      setModalConfig({ message: err.response?.data?.message || "Network error.", type: 'error' });
+      setIsModalOpen(true);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 mb-10">
+      {/* 🔴 Label */}
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-5 h-10 bg-[#DB4444] rounded-sm"></div>
+        <span className="text-[#DB4444] font-bold text-sm uppercase tracking-wider">This Month</span>
+      </div>
+
+      {/* Section Header */}
+      <div className="flex flex-row items-center justify-between mb-8">
+        <h2 className="text-xl sm:text-4xl font-bold text-black tracking-tight">
+          Best Selling Products
+        </h2>
+        <button className="bg-[#DB4444] text-white px-8 py-3 rounded-md hover:bg-[#c33d3d] transition-all active:scale-95 text-sm font-medium">
+          View All
+        </button>
+      </div>
+
+      {/* Framer Motion Carousel */}
+      <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={carouselRef}>
+        <motion.div 
+          drag="x"
+          dragConstraints={{ right: 0, left: -width }}
+          className="flex gap-4 sm:gap-6"
+        >
+          {products.map((product) => (
+            <motion.div 
+              key={product.id} 
+              className="min-w-[85%] sm:min-w-[300px] md:min-w-[280px] lg:min-w-[300px] pointer-events-none"
+            >
+              <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
+                
+                {/* Image */}
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
+                />
+
+                {/* Action Icons */}
+                <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => toggleLike(product.id)}
+                    className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition active:scale-90"
+                  >
+                    <Heart 
+                      size={18} 
+                      fill={liked[product.id] ? "#DB4444" : "none"} 
+                      className={liked[product.id] ? "text-[#DB4444]" : "text-black"} 
+                    />
+                  </button>
+                  <Link 
+                    to={`/view_item/${product.id}`} 
+                    className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition"
+                  >
+                    <Eye size={18} />
+                  </Link>
+                </div>
+
+                {/* Add to Cart Button */}
+                <button 
+                  disabled={isAdding}
+                  className="absolute bottom-0 w-full bg-slate-600 text-white py-2 
+                             opacity-100 md:opacity-0 md:group-hover:opacity-100 
+                             transition-opacity duration-300 
+                             disabled:bg-gray-600 disabled:cursor-not-allowed 
+                             active:bg-gray-800 active:scale-95"
+                  onClick={() => handleAddToCart(product)}
+                >
+                  {isAdding ? "Adding..." : "Add To Cart"}
+                </button>
+              </div>
+
+              {/* Product Info */}
+              <div className="mt-4 pointer-events-auto">
+                <h3 className="font-bold text-black text-base truncate">{product.name}</h3>
+                <div className="flex gap-3 items-center mt-1">
+                  <span className="text-[#DB4444] font-bold">{product.price}</span>
+                  {product.oldPrice && (
+                    <span className="text-gray-400 line-through text-sm">{product.oldPrice}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 mt-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={14} className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                  ))}
+                  <span className="text-gray-400 text-xs font-bold ml-1">({product.reviews})</span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+
+      <CartModal 
+        isOpen={isModalOpen}
+        type={modalConfig.type}
+        message={modalConfig.message}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={() => {
+          setIsModalOpen(false);
+          if (modalConfig.type === 'success') navigate('/cart');
+        }}
+      />
+    </div>
+  );
+}

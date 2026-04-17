@@ -6,11 +6,28 @@ import led from "../assets/led.png";
 import bluetooth from "../assets/bluetooth.png";
 import SliderArrows from "../components/arrow";
 import { Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addToCart } from "../redux/slices/cartSlice";
+import toast from "react-hot-toast";
 
 export default function Our_products() {
+  const dispatch = useDispatch();
   const [liked, setLiked] = useState<Record<number, boolean>>({});
   const [currentPage, setCurrentPage] = useState(0);
   const productsPerPage = 8; 
+
+  const handleAddToCart = (product: any) => {
+    dispatch(addToCart({
+      _id: product.id.toString(),
+      name: product.name,
+      price: parseInt(product.price.replace('$', '')),
+      images: [product.image],
+      description: '',
+      category: '',
+      stock: 10
+    }));
+    toast.success(`${product.name} added to cart`);
+  };
 
   const products = [
     { id: 1, name: "Wireless Headphones", price: "$120", rating: 4, discount: "40% OFF", image: joystick },
@@ -94,7 +111,10 @@ export default function Our_products() {
 
               <img src={product.image} alt={product.name} className="w-40 h-40 object-contain mix-blend-multiply" />
 
-              <button className="absolute bottom-0 w-full  bg-slate-600 text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
+              <button 
+                onClick={() => handleAddToCart(product)}
+                className="absolute bottom-0 w-full  bg-slate-600 text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
+              >
                 Add to Cart
               </button>
             </div>

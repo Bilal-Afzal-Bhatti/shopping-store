@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Signup from "./signup";
 import Home from "./home";
 import Login from "./login";
@@ -18,9 +19,11 @@ import OrderTracking from "./orderTracking";
 import MyOrders from "./myOrder";
 import OAuthLogin from "./OAuthLogin";
 import Wishlist from "./wishlist";
+
 export default function App() {
   return (
     <Router>
+      <Toaster position="top-right" />
       {/* Global header shown on all pages */}
     
       <Tophead />

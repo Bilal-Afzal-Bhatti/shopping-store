@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google"; // Import official component
 import axios from "axios"; 
@@ -12,10 +12,7 @@ function Login() {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  useEffect(() => {
-    window.scrollTo({ top: 80, behavior: "smooth" });
-  }, []);
-
+ 
   // --- MANUAL LOGIN (For Email/Password users) ---
   const handleManualLogin = async (e: React.FormEvent) => {
     e.preventDefault();

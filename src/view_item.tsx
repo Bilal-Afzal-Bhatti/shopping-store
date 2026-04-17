@@ -192,7 +192,7 @@ const Viewitem: React.FC = () => {
               <span className="text-gray-400 text-xs font-bold ml-1">({product.ratings?.count || 0} Reviews)</span>
             </div>
             
-            <div className="w-[1px] h-4 bg-gray-300"></div>
+            <div className="w-px h-4 bg-gray-300"></div>
 
             <span className={`font-medium ${product.stock > 0 ? 'text-[#00FF66]' : 'text-[#DB4444]'}`}>
                {product.stock > 0 ? 'In Stock' : 'Out of Stock'}

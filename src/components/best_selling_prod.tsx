@@ -10,6 +10,14 @@ import { addToCart } from "../redux/slices/cartSlice";
 import axiosInstance from "../api/axiosInstance";
 import { useProducts } from "../hooks/useProducts";
 import type { Product } from "../api/productsApi";
+import { productsApi } from "../api/productsApi";
+
+// Helper for beautiful discount rendering
+const formatDiscount = (discount?: string) => {
+  if (!discount || discount === 'No Discount') return null;
+  const num = discount.match(/\d+/);
+  return num ? `-${num[0]}%` : discount;
+};
 
 export default function Bestselling() {
   const dispatch = useDispatch();
@@ -82,6 +90,20 @@ export default function Bestselling() {
     }
   };
 
+  const handleRateProduct = async (product: Product, ratingValue: number) => {
+    try {
+      const result = await productsApi.rateProduct(product._id, ratingValue);
+      if (result.success) {
+        // You'll likely see a native toast library in future, but assuming they have a modal
+        setModalConfig({ message: result.message || 'Rating submitted!', type: 'success' });
+        setIsModalOpen(true);
+      }
+    } catch (err: any) {
+      setModalConfig({ message: err.response?.data?.message || 'Failed to submit rating', type: 'error' });
+      setIsModalOpen(true);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 mb-10">
       {/* 🔴 Label */}
@@ -136,9 +158,9 @@ export default function Bestselling() {
                 <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
                   
                   {/* Discount / Label */}
-                  {product.discount && product.discount !== 'No Discount' && (
-                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded-sm z-10">
-                      {product.discount}
+                  {formatDiscount(product.discount) && (
+                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[12px] font-bold px-3 py-1 rounded-sm z-10 shadow-sm">
+                      {formatDiscount(product.discount)}
                     </span>
                   )}
 
@@ -194,10 +216,27 @@ export default function Bestselling() {
                   </div>
                   {product.ratings && (
                     <div className="flex items-center gap-1 mt-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={14} className={i < Math.round(product.ratings?.average || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                      ))}
-                      <span className="text-gray-400 text-xs font-bold ml-1">({product.ratings?.count || 0})</span>
+                      {[...Array(5)].map((_, i) => {
+                        const starValue = i + 1;
+                        const avgStr = product.ratings?.average || 0;
+                        return (
+                           <button 
+                             key={i} 
+                             onClick={() => handleRateProduct(product, starValue)}
+                             className="focus:outline-hidden hover:scale-110 active:scale-95 transition-transform"
+                           >
+                             <Star 
+                               size={15} 
+                               className={`transition-colors duration-200 ${
+                                 starValue <= Math.round(avgStr) 
+                                   ? "text-yellow-400 fill-yellow-400 drop-shadow-sm" 
+                                   : "text-gray-300 hover:text-yellow-200"
+                               }`} 
+                             />
+                           </button>
+                        );
+                      })}
+                      <span className="text-gray-500 text-xs font-semibold ml-1.5 opacity-80">({product.ratings?.count || 0})</span>
                     </div>
                   )}
                 </div>

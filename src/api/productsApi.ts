@@ -5,6 +5,12 @@ export interface ReviewRatings {
   count: number;
 }
 
+export interface ProductColor {
+  name: string;
+  hex: string;
+  stock?: number;
+}
+
 export interface Product {
   _id: string; // From MongoDB
   name: string;
@@ -15,6 +21,7 @@ export interface Product {
   discount?: string;
   category: string;
   ratings?: ReviewRatings;
+  colors?: ProductColor[];
   isActive: boolean;
 }
 
@@ -31,5 +38,11 @@ export const productsApi = {
   getProductById: async (id: string): Promise<Product> => {
     const response = await axiosInstance.get(`/api/customer/product/${id}`);
     return response.data?.data || response.data;
+  },
+
+  // Rate a product
+  rateProduct: async (id: string, rating: number): Promise<any> => {
+    const response = await axiosInstance.post(`/api/customer/product/${id}/rate`, { rating });
+    return response.data;
   },
 };

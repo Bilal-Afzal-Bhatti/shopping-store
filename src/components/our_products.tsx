@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Heart, Eye, Star } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-
+import toast from "react-hot-toast";
 
 // Components & API
 import SliderArrows from "../components/arrow";
@@ -11,6 +11,14 @@ import { addToCart } from "../redux/slices/cartSlice";
 import axiosInstance from "../api/axiosInstance";
 import { useProducts } from "../hooks/useProducts";
 import type { Product } from "../api/productsApi";
+import { productsApi } from "../api/productsApi";
+
+// Helper for beautiful discount rendering
+const formatDiscount = (discount?: string) => {
+  if (!discount || discount === 'No Discount') return null;
+  const num = discount.match(/\d+/);
+  return num ? `-${num[0]}%` : discount;
+};
 
 export default function Our_products() {
   const dispatch = useDispatch();
@@ -72,6 +80,17 @@ export default function Our_products() {
       setIsModalOpen(true);
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleRateProduct = async (product: Product, ratingValue: number) => {
+    try {
+      const result = await productsApi.rateProduct(product._id, ratingValue);
+      if (result.success) {
+        toast.success(result.message || 'Rating submitted!');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to submit rating');
     }
   };
 
@@ -137,9 +156,9 @@ export default function Our_products() {
           {currentProducts.map((product: Product) => (
             <div key={product._id} className="group">
               <div className="relative bg-[#F5F5F5] aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
-                {product.discount && product.discount !== 'No Discount' && (
-                   <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded-sm z-10">
-                     {product.discount}
+                {formatDiscount(product.discount) && (
+                   <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[12px] font-bold px-3 py-1 rounded-sm z-10 shadow-sm">
+                     {formatDiscount(product.discount)}
                    </span>
                 )}
 
@@ -172,10 +191,27 @@ export default function Our_products() {
                   )}
                   {product.ratings && (
                     <div className="flex items-center ml-2 border-l pl-2 border-gray-300">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={14} className={i < Math.round(product.ratings?.average || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                      ))}
-                      <span className="text-gray-400 text-xs ml-1">({product.ratings?.count || 0})</span>
+                      {[...Array(5)].map((_, i) => {
+                        const starValue = i + 1;
+                        const avgStr = product.ratings?.average || 0;
+                        return (
+                           <button 
+                             key={i} 
+                             onClick={() => handleRateProduct(product, starValue)}
+                             className="focus:outline-hidden hover:scale-110 active:scale-95 transition-transform"
+                           >
+                             <Star 
+                               size={15} 
+                               className={`transition-colors duration-200 ${
+                                 starValue <= Math.round(avgStr) 
+                                   ? "text-yellow-400 fill-yellow-400 drop-shadow-sm" 
+                                   : "text-gray-300 hover:text-yellow-200"
+                               }`} 
+                             />
+                           </button>
+                        );
+                      })}
+                      <span className="text-gray-500 text-xs font-semibold ml-1.5 opacity-80">({product.ratings?.count || 0})</span>
                     </div>
                   )}
                 </div>

@@ -14,9 +14,17 @@ import { addToCart } from "../redux/slices/cartSlice";
 import axiosInstance from "../api/axiosInstance";
 import { useProducts } from "../hooks/useProducts";
 import type { Product } from "../api/productsApi";
+import { productsApi } from "../api/productsApi";
 
 const SALE_END_DATE = new Date();
 SALE_END_DATE.setDate(SALE_END_DATE.getDate() + 3);
+
+// Helper for beautiful discount rendering
+const formatDiscount = (discount?: string) => {
+  if (!discount || discount === 'No Discount') return null;
+  const num = discount.match(/\d+/);
+  return num ? `-${num[0]}%` : discount;
+};
 
 export default function Flash_sales() {
   const dispatch = useDispatch();
@@ -135,6 +143,19 @@ export default function Flash_sales() {
     }
   };
 
+  const handleRateProduct = async (product: Product, ratingValue: number) => {
+    try {
+      // Optimistic UI could go here
+      const result = await productsApi.rateProduct(product._id, ratingValue);
+      if (result.success) {
+        toast.success(result.message || 'Rating submitted!');
+        // Note: You would typically invalidate queries here if using queryClient directly
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to submit rating');
+    }
+  };
+
   const handleNext = () => {
     if (carousel.current) {
       carousel.current.scrollBy({ left: carousel.current.offsetWidth / 2, behavior: "smooth" });
@@ -214,9 +235,9 @@ export default function Flash_sales() {
                 className="min-w-[85%] sm:min-w-[300px] md:min-w-[300px] pointer-events-none"
               >
                 <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-6 overflow-hidden pointer-events-auto">
-                  {product.discount && product.discount !== 'No Discount' && (
-                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded z-10">
-                      {product.discount}
+                  {formatDiscount(product.discount) && (
+                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[12px] font-bold px-3 py-1 rounded z-10 shadow-sm">
+                      {formatDiscount(product.discount)}
                     </span>
                   )}
 
@@ -266,10 +287,27 @@ export default function Flash_sales() {
                   </div>
                   {product.ratings && (
                     <div className="flex items-center gap-1 mt-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={14} className={i < Math.round(product.ratings?.average || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                      ))}
-                      <span className="text-gray-400 text-xs font-bold ml-1">({product.ratings?.count || 0})</span>
+                      {[...Array(5)].map((_, i) => {
+                        const starValue = i + 1;
+                        const avgStr = product.ratings?.average || 0;
+                        return (
+                          <button 
+                            key={i} 
+                            onClick={() => handleRateProduct(product, starValue)}
+                            className="focus:outline-hidden hover:scale-110 active:scale-95 transition-transform"
+                          >
+                            <Star 
+                              size={15} 
+                              className={`transition-colors duration-200 ${
+                                starValue <= Math.round(avgStr) 
+                                  ? "text-yellow-400 fill-yellow-400 drop-shadow-sm" 
+                                  : "text-gray-300 hover:text-yellow-200"
+                              }`} 
+                            />
+                          </button>
+                        );
+                      })}
+                      <span className="text-gray-500 text-xs font-semibold ml-1.5 opacity-80">({product.ratings?.count || 0})</span>
                     </div>
                   )}
                 </div>

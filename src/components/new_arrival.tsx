@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useProducts } from "../hooks/useProducts";
-import type { Product } from "../api/productsApi";
 
 function New_arrival() {
   const { data: products = [], isLoading, isError } = useProducts({ category: 'new_arrival' });

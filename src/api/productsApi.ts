@@ -1,14 +1,21 @@
 import axiosInstance from './axiosInstance';
 
-// Define the shape of a typical Product
+export interface ReviewRatings {
+  average: number;
+  count: number;
+}
+
 export interface Product {
-  _id: string;
+  _id: string; // From MongoDB
   name: string;
-  description: string;
   price: number;
-  category: string;
-  images: string[];
+  originalPrice?: number;
   stock: number;
+  image: string;
+  discount?: string;
+  category: string;
+  ratings?: ReviewRatings;
+  isActive: boolean;
 }
 
 // Example API calls for products

@@ -2,23 +2,23 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Eye, Star } from "lucide-react";
-
-// Assets
-import coat from "../assets/coat.jpg";
-import bag from "../assets/bag.jpg";
-import speaker from "../assets/speaker.jpg";
-import bookshelf from "../assets/bookshelf.jpg";
-
-// Components
-import CartModal from "../components/modal";
-
 import { useDispatch } from "react-redux";
+
+// Flow & API
+import CartModal from "../components/modal";
 import { addToCart } from "../redux/slices/cartSlice";
 import axiosInstance from "../api/axiosInstance";
+import { useProducts } from "../hooks/useProducts";
+import type { Product } from "../api/productsApi";
 
 export default function Bestselling() {
   const dispatch = useDispatch();
-  const [liked, setLiked] = useState<Record<number, boolean>>({});
+  const navigate = useNavigate();
+
+  // Fetch true bestselling data from our new backend endpoint!
+  const { data: products = [], isLoading, isError } = useProducts({ category: 'bestselling' });
+
+  const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
   const [isAdding, setIsAdding] = useState(false);
@@ -26,28 +26,18 @@ export default function Bestselling() {
   // Framer Motion constraints state
   const [width, setWidth] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
-  const products = [
-    { id: 101, name: "The North Coat", price: "$260", oldPrice: "$360", rating: 5, reviews: 65, image: coat },
-    { id: 102, name: "Gucci Savoy Bag", price: "$960", oldPrice: "$1160", rating: 4, reviews: 85, image: bag },
-    { id: 103, name: "RGB Liquid CPU Cooler", price: "$160", oldPrice: "$170", rating: 4, reviews: 95, image: speaker },
-    { id: 104, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
-    { id: 105, name: "Small BookSelf", price: "$360", oldPrice: null, rating: 5, reviews: 99, image: bookshelf },
-  ];
-
-  // Calculate constraints when component mounts or products change
   useEffect(() => {
-    if (carouselRef.current) {
+    if (carouselRef.current && !isLoading) {
       setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
     }
-  }, []);
+  }, [products, isLoading]);
 
-  const toggleLike = (id: number) => {
+  const toggleLike = (id: string) => {
     setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleAddToCart = async (product: any) => {
+  const handleAddToCart = async (product: Product) => {
     const token = localStorage.getItem("token");
     if (!token) {
       setModalConfig({ message: "Please log in first.", type: 'error' });
@@ -58,24 +48,24 @@ export default function Bestselling() {
     setIsAdding(true);
     try {
       const productData = {
-        productId: product.id,
+        productId: product._id,
         name: product.name,
-        price: parseFloat(product.price.replace("$", "")),
+        price: product.price,
         image: product.image,
       };
 
       const res = await axiosInstance.post("/cart/add", productData);
 
       if (res.status === 200 || res.status === 201) {
-        // Dispatch to Redux state 
+        // FIXED: Matched exact properties to your TS Product interface
         dispatch(addToCart({
-          _id: product.id.toString(),
+          _id: product._id.toString(),
           name: product.name,
           price: productData.price,
-          images: [product.image],
-          description: '',
-          category: '',
-          stock: 10
+          image: product.image,
+          stock: product.stock || 10,
+          category: product.category || 'Other',
+          isActive: true
         }));
 
         setModalConfig({ message: `${product.name} added to cart!`, type: 'success' });
@@ -110,81 +100,119 @@ export default function Bestselling() {
         </button>
       </div>
 
-      {/* Framer Motion Carousel */}
-      <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={carouselRef}>
-        <motion.div 
-          drag="x"
-          dragConstraints={{ right: 0, left: -width }}
-          className="flex gap-4 sm:gap-6"
-        >
-          {products.map((product) => (
-            <motion.div 
-              key={product.id} 
-              className="min-w-[85%] sm:min-w-[300px] md:min-w-[280px] lg:min-w-[300px] pointer-events-none"
-            >
-              <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
-                
-                {/* Image */}
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
-                />
+      {/* Error State */}
+      {isError && (
+        <div className="w-full text-center py-10 text-red-500 font-medium bg-red-50 rounded-md">
+          Failed to load bestselling products. Please try again later.
+        </div>
+      )}
 
-                {/* Action Icons */}
-                <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-100 transition-opacity">
+      {/* Loading Skeletons */}
+      {isLoading && (
+        <div className="flex gap-4 sm:gap-6 overflow-hidden">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="min-w-[85%] sm:min-w-[300px] md:min-w-[280px] lg:min-w-[300px] flex flex-col gap-4 animate-pulse">
+              <div className="w-full aspect-square bg-gray-200 rounded-md"></div>
+              <div className="h-4 bg-gray-200 w-3/4 rounded-md"></div>
+              <div className="h-4 bg-gray-200 w-1/4 rounded-md"></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Framer Motion Carousel */}
+      {!isLoading && !isError && products.length > 0 && (
+        <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={carouselRef}>
+          <motion.div 
+            drag="x"
+            dragConstraints={{ right: 0, left: -width }}
+            className="flex gap-4 sm:gap-6"
+          >
+            {products.map((product: Product) => (
+              <motion.div 
+                key={product._id} 
+                className="min-w-[85%] sm:min-w-[300px] md:min-w-[280px] lg:min-w-[300px] pointer-events-none"
+              >
+                <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
+                  
+                  {/* Discount / Label */}
+                  {product.discount && product.discount !== 'No Discount' && (
+                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded-sm z-10">
+                      {product.discount}
+                    </span>
+                  )}
+
+                  {/* Image */}
+                  <img
+                    src={product.image || 'https://via.placeholder.com/150'}
+                    alt={product.name}
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
+                  />
+
+                  {/* Action Icons */}
+                  <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => toggleLike(product._id)}
+                      className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition active:scale-90"
+                    >
+                      <Heart 
+                        size={18} 
+                        fill={liked[product._id] ? "#DB4444" : "none"} 
+                        className={liked[product._id] ? "text-[#DB4444]" : "text-black"} 
+                      />
+                    </button>
+                    <Link 
+                      to={`/view_item/${product._id}`} 
+                      className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition"
+                    >
+                      <Eye size={18} />
+                    </Link>
+                  </div>
+
+                  {/* Add to Cart Button */}
                   <button 
-                    onClick={() => toggleLike(product.id)}
-                    className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition active:scale-90"
+                    disabled={isAdding}
+                    className="absolute bottom-0 w-full bg-slate-600 text-white py-2 
+                               opacity-100 md:opacity-0 md:group-hover:opacity-100 
+                               transition-opacity duration-300 
+                               disabled:bg-gray-600 disabled:cursor-not-allowed 
+                               active:bg-gray-800 active:scale-95 z-10"
+                    onClick={() => handleAddToCart(product)}
                   >
-                    <Heart 
-                      size={18} 
-                      fill={liked[product.id] ? "#DB4444" : "none"} 
-                      className={liked[product.id] ? "text-[#DB4444]" : "text-black"} 
-                    />
+                    {isAdding ? "Adding..." : "Add To Cart"}
                   </button>
-                  <Link 
-                    to={`/view_item/${product.id}`} 
-                    className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition"
-                  >
-                    <Eye size={18} />
-                  </Link>
                 </div>
 
-                {/* Add to Cart Button */}
-                <button 
-                  disabled={isAdding}
-                  className="absolute bottom-0 w-full bg-slate-600 text-white py-2 
-                             opacity-100 md:opacity-0 md:group-hover:opacity-100 
-                             transition-opacity duration-300 
-                             disabled:bg-gray-600 disabled:cursor-not-allowed 
-                             active:bg-gray-800 active:scale-95"
-                  onClick={() => handleAddToCart(product)}
-                >
-                  {isAdding ? "Adding..." : "Add To Cart"}
-                </button>
-              </div>
-
-              {/* Product Info */}
-              <div className="mt-4 pointer-events-auto">
-                <h3 className="font-bold text-black text-base truncate">{product.name}</h3>
-                <div className="flex gap-3 items-center mt-1">
-                  <span className="text-[#DB4444] font-bold">{product.price}</span>
-                  {product.oldPrice && (
-                    <span className="text-gray-400 line-through text-sm">{product.oldPrice}</span>
+                {/* Product Info */}
+                <div className="mt-4 pointer-events-auto">
+                  <h3 className="font-bold text-black text-base truncate">{product.name}</h3>
+                  <div className="flex gap-3 items-center mt-1">
+                    <span className="text-[#DB4444] font-bold">${product.price}</span>
+                    {product.originalPrice && (
+                      <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
+                    )}
+                  </div>
+                  {product.ratings && (
+                    <div className="flex items-center gap-1 mt-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={14} className={i < Math.round(product.ratings?.average || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                      ))}
+                      <span className="text-gray-400 text-xs font-bold ml-1">({product.ratings?.count || 0})</span>
+                    </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1 mt-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                  ))}
-                  <span className="text-gray-400 text-xs font-bold ml-1">({product.reviews})</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !isError && products.length === 0 && (
+         <div className="col-span-full text-center py-10 mt-10 text-gray-500 font-medium">
+            No bestselling products found at the moment.
+         </div>
+      )}
 
       <CartModal 
         isOpen={isModalOpen}

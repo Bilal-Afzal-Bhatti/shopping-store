@@ -1,44 +1,44 @@
-import { useState, useEffect, useRef,useTransition } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion"; // Removed unused useAnimation and AnimatePresence
+import { motion } from "framer-motion";
 import { Heart, Eye, Star } from "lucide-react";
-import axios from "axios"; // <--- ADD THIS
-// Assets
-import joystick from "../assets/joystick.png";
-import key_board from "../assets/Key_board.png";
-import led from "../assets/led.png";
-import bluetooth from "../assets/bluetooth.png";
+import axios from "axios"; 
+import { useDispatch } from "react-redux";
 
-// Components
+// Components & API
 import SliderArrows from "../components/arrow";
 import Line from "./line";
 import CartModal from "../components/modal";
 import { toast } from "react-hot-toast";
+import { addToCart } from "../redux/slices/cartSlice";
+import axiosInstance from "../api/axiosInstance";
+import { useProducts } from "../hooks/useProducts";
+import type { Product } from "../api/productsApi";
 
 const SALE_END_DATE = new Date();
 SALE_END_DATE.setDate(SALE_END_DATE.getDate() + 3);
 
 export default function Flash_sales() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Fetch dynamic data
+  const { data: products = [], isLoading, isError } = useProducts({ category: 'flash_sales' });
 
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
-const [isAdding, setIsAdding] = useState(false);
-const [isLiked, setLiked] = useState<Record<number, boolean>>({});
-const [isPending, startTransition] = useTransition();
-  // Framer Motion specific state
+  const [isAdding, setIsAdding] = useState(false);
+  const [isLiked, setLiked] = useState<Record<string, boolean>>({});
+  const [isPending, startTransition] = useTransition();
   const [width, setWidth] = useState(0);
   const carousel = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
-
-  
   useEffect(() => {
-    if (carousel.current) {
-      // Calculate total scrollable width minus visible width
+    if (carousel.current && !isLoading) {
       setWidth(carousel.current.scrollWidth - carousel.current.offsetWidth);
     }
-  }, []);
+  }, [products, isLoading]);
 
   // Timer Logic
   useEffect(() => {
@@ -59,62 +59,41 @@ const [isPending, startTransition] = useTransition();
     return () => clearInterval(interval);
   }, []);
 
- const products = [
-  { id: 1, name: "Gaming Joystick", price: "$120", rating: 4, discount: "20% OFF", image: joystick },
-  { id: 2, name: "Mechanical Keyboard", price: "$80", rating: 5, discount: "40% OFF", image: key_board },
-  { id: 3, name: "LED Gaming Monitor", price: "$40", rating: 3, discount: "40% OFF", image: led },
-  { id: 4, name: "Bluetooth Speaker", price: "$90", rating: 4, discount: "40% OFF", image: bluetooth },
-  { id: 5, name: "Premium Audio System", price: "$90", rating: 4, discount: "40% OFF", image: bluetooth }, // Kept same image, updated name
-  { id: 6, name: "Portable Speaker", price: "$90", rating: 4, discount: "20% OFF", image: bluetooth }, // Kept same image, updated name
-];
-
-  // const toggleLike = (id: number) => {
-  //   setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
-  // };
-const handleWishlistToggle = async (product: any) => {
-  const token = localStorage.getItem("token");
-  
-  if (!token) {
-    toast.error("Please login to add to wishlist");
-    return;
-  }
-
-  startTransition(async () => {
-    // 1. Store previous state for an accurate rollback
-    const wasLiked = !!isLiked[product.id];
-
-    try {
-      // 2. Optimistic UI update (Instant Heart Color Change)
-      setLiked(prev => ({ ...prev, [product.id]: !wasLiked }));
-
-      // 3. API Call
-      const response = await axios.post(
-        "https://shoppingstore-backend.vercel.app/api/wishlist/add", // Ensure this matches your route exactly
-        { 
-          productId: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.image 
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.success) {
-        toast.success(response.data.message || "Wishlist updated");
-        // 4. FIXED: Only navigate if the server actually says 'Success'
-        navigate("/wishlist"); 
-      }
-    } catch (error: any) {
-      // 5. ROLLBACK: Use the stored 'wasLiked' to flip it back perfectly
-      setLiked(prev => ({ ...prev, [product.id]: wasLiked }));
-      
-      const errorMsg = error.response?.data?.message || "Server Error: Could not update wishlist";
-      toast.error(errorMsg);
-      console.error("Wishlist API Error:", error.response?.data || error.message);
+  const handleWishlistToggle = async (product: Product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to add to wishlist");
+      return;
     }
-  });
-};
-  const handleAddToCart = async (product: any) => {
+
+    startTransition(async () => {
+      const wasLiked = !!isLiked[product._id];
+      try {
+        setLiked(prev => ({ ...prev, [product._id]: !wasLiked }));
+        const response = await axios.post(
+          "https://shoppingstore-backend.vercel.app/api/wishlist/add", 
+          { 
+            productId: product._id,
+            name: product.name,
+            price: product.price,
+            image: product.image 
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data.success) {
+          toast.success(response.data.message || "Wishlist updated");
+          navigate("/wishlist"); 
+        }
+      } catch (error: any) {
+        setLiked(prev => ({ ...prev, [product._id]: wasLiked }));
+        const errorMsg = error.response?.data?.message || "Server Error: Could not update wishlist";
+        toast.error(errorMsg);
+      }
+    });
+  };
+
+  const handleAddToCart = async (product: Product) => {
     const token = localStorage.getItem("token");
     if (!token) {
       setModalConfig({ message: "Please log in first to add items to your cart.", type: 'error' });
@@ -124,34 +103,38 @@ const handleWishlistToggle = async (product: any) => {
     setIsAdding(true);
     try {
       const productData = {
-        productId: product.id,
+        productId: product._id,
         name: product.name,
-        price: parseFloat(product.price.replace("$", "")),
+        price: product.price,
         image: product.image,
-        discount: product.discount,
       };
-      const res = await fetch("https://shoppingstore-backend.vercel.app/api/cart/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(productData),
-      });
-      const data = await res.json();
-      if (res.ok) {
+      
+      const res = await axiosInstance.post("/cart/add", productData);
+      
+      if (res.status === 200 || res.status === 201) {
+        dispatch(addToCart({
+          _id: product._id.toString(),
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          stock: product.stock || 10,
+          category: product.category || 'Other',
+          isActive: true
+        }));
         setModalConfig({ message: `${product.name} has been added to your cart!`, type: 'success' });
         setIsModalOpen(true);
       } else {
-        setModalConfig({ message: data.message || "Failed to add item.", type: 'error' });
+        setModalConfig({ message: res.data?.message || "Failed to add item.", type: 'error' });
         setIsModalOpen(true);
       }
-    } catch (err) {
-      setModalConfig({ message: "Network error. Please try again later.", type: 'error' });
+    } catch (err: any) {
+      setModalConfig({ message: err.response?.data?.message || "Network error. Please try again later.", type: 'error' });
       setIsModalOpen(true);
     } finally {
       setIsAdding(false);
     }
   };
 
-  // Improved Arrow Logic for all devices
   const handleNext = () => {
     if (carousel.current) {
       carousel.current.scrollBy({ left: carousel.current.offsetWidth / 2, behavior: "smooth" });
@@ -166,8 +149,6 @@ const handleWishlistToggle = async (product: any) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 md:mt-60 lg:mt-20">
-      
-      {/* Header Section */}
       <div className="flex items-center gap-4 mb-4">
         <div className="w-5 h-10 bg-[#DB4444] rounded-sm"></div>
         <span className="text-[#DB4444] font-bold text-sm md:text-base uppercase tracking-wider">Today's</span>
@@ -176,7 +157,6 @@ const handleWishlistToggle = async (product: any) => {
       <div className="flex flex-row items-center justify-between mb-8 flex-wrap gap-y-4">
         <div className="flex flex-row items-center gap-6 md:gap-20 flex-wrap">
           <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-black tracking-tight">Flash Sales</h2>
-
           <div className="flex items-center gap-3 sm:gap-6">
             {[
               { label: "Days", value: timeLeft.days },
@@ -202,82 +182,108 @@ const handleWishlistToggle = async (product: any) => {
         </div>
       </div>
 
-      {/* Responsive Framer Motion Slider */}
-      <div 
-        className="overflow-hidden cursor-grab active:cursor-grabbing px-0" 
-        ref={carousel}
-      >
-        <motion.div 
-          drag="x" 
-          dragConstraints={{ right: 0, left: -width }}
-          // While dragging, snap is disabled; transition handles the release smoothness
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="flex gap-4 sm:gap-8"
-        >
-          {products.map((product) => (
-            <motion.div 
-              key={product.id} 
-              // Setting width to allow partial visibility of the next slide on mobile
-              className="min-w-[85%] sm:min-w-[300px] md:min-w-[300px] pointer-events-none"
-            >
-              <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-6 overflow-hidden pointer-events-auto">
-                <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded z-10">
-                  {product.discount}
-                </span>
+      {isError && (
+        <div className="w-full text-center py-10 text-red-500 font-medium bg-red-50 rounded-md">
+          Failed to load flash sales. Please try again later.
+        </div>
+      )}
 
-                <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
-                <button
-  onClick={() => handleWishlistToggle(product)} // Pass whole product for API
-  disabled={isPending}
-  className={`p-1.5 bg-white rounded-full shadow-sm transition active:scale-95 
-    ${isPending ? "opacity-50 cursor-wait" : "opacity-100"}`}
->
-  <Heart
-    size={18}
-    className={`transition-all duration-300 ${
-      isLiked[product.id] // <--- FIXED: Check specific ID
-        ? "fill-[#DB4444] text-[#DB4444] scale-110" 
-        : "text-gray-600 hover:text-red-400"
-    }`}
-  />
-</button>
-                  <Link to={"/view_item"} className="p-1.5 bg-white rounded-full shadow-sm transition">
-                    <Eye size={18} className="text-gray-600" />
-                  </Link>
-                </div>
-
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
-                />
-
-                <button 
-                  disabled={isAdding}
-                  className="absolute bottom-0 w-full  bg-slate-600 text-white py-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600"
-                  onClick={() => handleAddToCart(product)}
-                >
-                  {isAdding ? "Adding..." : "Add To Cart"}
-                </button>
-              </div>
-
-              <div className="mt-4 text-left pointer-events-auto">
-                <h3 className="font-bold text-gray-900 text-sm md:text-base truncate">{product.name}</h3>
-                <div className="flex gap-3 items-center mt-1">
-                  <span className="text-[#DB4444] font-bold">{product.price}</span>
-                  <span className="text-gray-400 line-through text-xs sm:text-sm">$160</span>
-                </div>
-                <div className="flex items-center gap-1 mt-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} className={i < product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                  ))}
-                  <span className="text-gray-400 text-xs font-bold ml-1">(88)</span>
-                </div>
-              </div>
-            </motion.div>
+      {isLoading && (
+        <div className="flex gap-4 sm:gap-8 overflow-hidden px-0">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="min-w-[85%] sm:min-w-[300px] md:min-w-[300px] flex flex-col gap-4 animate-pulse">
+               <div className="w-full aspect-square bg-gray-200 rounded-md"></div>
+               <div className="h-4 bg-gray-200 w-3/4 rounded-md"></div>
+               <div className="h-4 bg-gray-200 w-1/4 rounded-md"></div>
+            </div>
           ))}
-        </motion.div>
-      </div>
+        </div>
+      )}
+
+      {!isLoading && !isError && products.length > 0 && (
+        <div className="overflow-hidden cursor-grab active:cursor-grabbing px-0" ref={carousel}>
+          <motion.div 
+            drag="x" 
+            dragConstraints={{ right: 0, left: -width }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="flex gap-4 sm:gap-8"
+          >
+            {products.map((product: Product) => (
+              <motion.div 
+                key={product._id} 
+                className="min-w-[85%] sm:min-w-[300px] md:min-w-[300px] pointer-events-none"
+              >
+                <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-6 overflow-hidden pointer-events-auto">
+                  {product.discount && product.discount !== 'No Discount' && (
+                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded z-10">
+                      {product.discount}
+                    </span>
+                  )}
+
+                  <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
+                    <button
+                      onClick={() => handleWishlistToggle(product)}
+                      disabled={isPending}
+                      className={`p-1.5 bg-white rounded-full shadow-sm transition active:scale-95 
+                        ${isPending ? "opacity-50 cursor-wait" : "opacity-100"}`}
+                    >
+                      <Heart
+                        size={18}
+                        className={`transition-all duration-300 ${
+                          isLiked[product._id]
+                            ? "fill-[#DB4444] text-[#DB4444] scale-110" 
+                            : "text-gray-600 hover:text-red-400"
+                        }`}
+                      />
+                    </button>
+                    <Link to={`/view_item/${product._id}`} className="p-1.5 bg-white rounded-full shadow-sm transition">
+                      <Eye size={18} className="text-gray-600" />
+                    </Link>
+                  </div>
+
+                  <img
+                    src={product.image || 'https://via.placeholder.com/150'}
+                    alt={product.name}
+                    className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
+                  />
+
+                  <button 
+                    disabled={isAdding}
+                    className="absolute bottom-0 w-full bg-slate-600 text-white py-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 disabled:bg-gray-600 z-10"
+                    onClick={() => handleAddToCart(product)}
+                  >
+                    {isAdding ? "Adding..." : "Add To Cart"}
+                  </button>
+                </div>
+
+                <div className="mt-4 text-left pointer-events-auto">
+                  <h3 className="font-bold text-gray-900 text-sm md:text-base truncate">{product.name}</h3>
+                  <div className="flex gap-3 items-center mt-1">
+                    <span className="text-[#DB4444] font-bold">${product.price}</span>
+                    {product.originalPrice && (
+                      <span className="text-gray-400 line-through text-xs sm:text-sm">${product.originalPrice}</span>
+                    )}
+                  </div>
+                  {product.ratings && (
+                    <div className="flex items-center gap-1 mt-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={14} className={i < Math.round(product.ratings?.average || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                      ))}
+                      <span className="text-gray-400 text-xs font-bold ml-1">({product.ratings?.count || 0})</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      )}
+
+      {!isLoading && !isError && products.length === 0 && (
+         <div className="col-span-full text-center py-10 mt-10 text-gray-500 font-medium">
+            No active flash sales right now. Check back later!
+         </div>
+      )}
 
       <div className="flex justify-center mt-12">
         <button className="bg-[#DB4444] text-white px-10 py-3 rounded-md font-medium transition-all duration-200 hover:bg-[#c33d3d] active:scale-95">

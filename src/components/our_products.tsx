@@ -1,61 +1,80 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Heart, Eye, Star } from "lucide-react";
-import joystick from "../assets/joystick.png";
-import key_board from "../assets/Key_board.png";
-import led from "../assets/led.png";
-import bluetooth from "../assets/bluetooth.png";
-import SliderArrows from "../components/arrow";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+
+
+// Components & API
+import SliderArrows from "../components/arrow";
+import CartModal from "../components/modal";
 import { addToCart } from "../redux/slices/cartSlice";
-import toast from "react-hot-toast";
+import axiosInstance from "../api/axiosInstance";
+import { useProducts } from "../hooks/useProducts";
+import type { Product } from "../api/productsApi";
 
 export default function Our_products() {
   const dispatch = useDispatch();
-  const [liked, setLiked] = useState<Record<number, boolean>>({});
+  const navigate = useNavigate();
+
+  // Fetch dynamic data
+  const { data: products = [], isLoading, isError } = useProducts({ category: 'our_products' });
+
+  const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [currentPage, setCurrentPage] = useState(0);
   const productsPerPage = 8; 
 
-  const handleAddToCart = (product: any) => {
-    dispatch(addToCart({
-      _id: product.id.toString(),
-      name: product.name,
-      price: parseInt(product.price.replace('$', '')),
-      images: [product.image],
-      description: '',
-      category: '',
-      stock: 10
-    }));
-    toast.success(`${product.name} added to cart`);
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
+  const [isAdding, setIsAdding] = useState(false);
 
-  const products = [
-    { id: 1, name: "Wireless Headphones", price: "$120", rating: 4, discount: "40% OFF", image: joystick },
-    { id: 2, name: "Smart Watch", price: "$80", rating: 5, discount: "40% OFF", image: key_board },
-    { id: 3, name: "Gaming Mouse", price: "$40", rating: 3, discount: "40% OFF", image: led },
-    { id: 4, name: "Bluetooth Speaker", price: "$90", rating: 4, discount: "40% OFF", image: bluetooth },
-    { id: 5, name: "Mechanical Keyboard", price: "$150", rating: 5, discount: "40% OFF", image: key_board },
-    { id: 6, name: "LED Monitor", price: "$200", rating: 4, discount: "40% OFF", image: led },
-    { id: 7, name: "VR Headset", price: "$250", rating: 5, discount: "40% OFF", image: joystick },
-    { id: 8, name: "Bluetooth Earbuds", price: "$70", rating: 4, discount: "40% OFF", image: bluetooth },
-    // Adding more random data for Page 2
-    { id: 9, name: "RGB Gaming Chair", price: "$300", rating: 5, discount: "10% OFF", image: joystick },
-    { id: 10, name: "4K Web Camera", price: "$110", rating: 4, discount: "15% OFF", image: led },
-    { id: 11, name: "Noise Cancelling Mic", price: "$85", rating: 4, discount: "20% OFF", image: bluetooth },
-    { id: 12, name: "Gaming Mousepad", price: "$25", rating: 3, discount: "5% OFF", image: key_board },
-    { id: 13, name: "USB-C Hub", price: "$45", rating: 5, discount: "30% OFF", image: led },
-    { id: 14, name: "External SSD 1TB", price: "$130", rating: 5, discount: "25% OFF", image: joystick },
-    { id: 15, name: "Cooling Fan RGB", price: "$35", rating: 4, discount: "40% OFF", image: led },
-    { id: 16, name: "Wired Gaming Headset", price: "$65", rating: 4, discount: "40% OFF", image: bluetooth },
-  ];
+  const totalPages = Math.ceil(products.length / productsPerPage) || 1;
 
-  const totalPages = Math.ceil(products.length / productsPerPage);
-
-  const toggleLike = (id: number) => {
+  const toggleLike = (id: string) => {
     setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Logic for Arrows to switch pages
+  const handleAddToCart = async (product: Product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setModalConfig({ message: "Please log in first to add items to your cart.", type: 'error' });
+      setIsModalOpen(true);
+      return;
+    }
+    setIsAdding(true);
+    try {
+      const productData = {
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+      };
+      
+      const res = await axiosInstance.post("/cart/add", productData);
+      
+      if (res.status === 200 || res.status === 201) {
+        dispatch(addToCart({
+          _id: product._id.toString(),
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          stock: product.stock || 10,
+          category: product.category || 'Other',
+          isActive: true
+        }));
+        setModalConfig({ message: `${product.name} added to cart!`, type: 'success' });
+        setIsModalOpen(true);
+      } else {
+        setModalConfig({ message: res.data?.message || "Failed to add item.", type: 'error' });
+        setIsModalOpen(true);
+      }
+    } catch (err: any) {
+      setModalConfig({ message: err.response?.data?.message || "Network error. Please try again later.", type: 'error' });
+      setIsModalOpen(true);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   const handleNext = () => {
     if (currentPage < totalPages - 1) {
       setCurrentPage(prev => prev + 1);
@@ -68,8 +87,10 @@ export default function Our_products() {
     }
   };
 
-  const startIdx = currentPage * productsPerPage;
-  const currentProducts = products.slice(startIdx, startIdx + productsPerPage);
+  const currentProducts = useMemo(() => {
+    const startIdx = currentPage * productsPerPage;
+    return products.slice(startIdx, startIdx + productsPerPage);
+  }, [products, currentPage, productsPerPage]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-10 sm:mt-20 font-sans">
@@ -80,7 +101,7 @@ export default function Our_products() {
         <span className="text-[#DB4444] font-bold text-sm md:text-base uppercase tracking-wider">Our Products</span>
       </div>
 
-      {/* ⚡ Header Row: Inline and Arrows on the Right */}
+      {/* Header Row: Inline and Arrows on the Right */}
       <div className="flex flex-row items-center justify-between w-full mb-8">
         <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-black tracking-tight">
           Explore Our Products
@@ -91,60 +112,109 @@ export default function Our_products() {
         </div>
       </div>
 
-      {/* 🛍️ Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[800px]">
-        {currentProducts.map((product) => (
-          <div key={product.id} className="group">
-            <div className="relative bg-[#F5F5F5] aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
-              <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded-sm z-10">
-                {product.discount}
-              </span>
+      {isError && (
+        <div className="w-full text-center py-10 text-red-500 font-medium bg-red-50 rounded-md">
+          Failed to load products. Please try again later.
+        </div>
+      )}
 
-              <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
-                <button onClick={() => toggleLike(product.id)} className="p-1.5 bg-white rounded-full shadow-sm">
-                  <Heart size={18} className={liked[product.id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-400"} />
+      {/* Loading Skeletons */}
+      {isLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex flex-col gap-4 animate-pulse">
+              <div className="w-full aspect-square bg-gray-200 rounded-md"></div>
+              <div className="h-4 bg-gray-200 w-3/4 rounded-md mt-4"></div>
+              <div className="h-4 bg-gray-200 w-1/4 rounded-md"></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 🛍️ Grid */}
+      {!isLoading && !isError && currentProducts.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
+          {currentProducts.map((product: Product) => (
+            <div key={product._id} className="group">
+              <div className="relative bg-[#F5F5F5] aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
+                {product.discount && product.discount !== 'No Discount' && (
+                   <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[10px] px-3 py-1 rounded-sm z-10">
+                     {product.discount}
+                   </span>
+                )}
+
+                <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
+                  <button onClick={() => toggleLike(product._id)} className="p-1.5 bg-white rounded-full shadow-sm hover:text-[#DB4444] active:scale-90 transition">
+                    <Heart size={18} className={liked[product._id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-400"} />
+                  </button>
+                  <Link to={`/view_item/${product._id}`} className="p-1.5 bg-white rounded-full shadow-sm hover:text-[#DB4444] transition">
+                    <Eye size={18} className="text-gray-400" />
+                  </Link>
+                </div>
+
+                <img src={product.image || 'https://via.placeholder.com/150'} alt={product.name} className="w-3/4 h-3/4 object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-110" />
+
+                <button 
+                  onClick={() => handleAddToCart(product)}
+                  disabled={isAdding}
+                  className="absolute bottom-0 w-full z-10 bg-slate-600 text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all disabled:bg-gray-600"
+                >
+                  {isAdding ? "Adding..." : "Add to Cart"}
                 </button>
-                <Link to={`/view_item/${product.id}`} className="p-1.5 bg-white rounded-full shadow-sm">
-                  <Eye size={18} className="text-gray-400" />
-                </Link>
               </div>
 
-              <img src={product.image} alt={product.name} className="w-40 h-40 object-contain mix-blend-multiply" />
-
-              <button 
-                onClick={() => handleAddToCart(product)}
-                className="absolute bottom-0 w-full  bg-slate-600 text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
-              >
-                Add to Cart
-              </button>
-            </div>
-
-            <div className="mt-4 text-left">
-              <h3 className="font-bold text-gray-900 text-base truncate">{product.name}</h3>
-              <div className="flex gap-3 items-center">
-                <p className="text-[#DB4444] font-bold text-lg">{product.price}</p>
-                <div className="flex items-center">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} size={14} className={star <= product.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                  ))}
-                  <span className="text-gray-400 text-xs ml-2">(65)</span>
+              <div className="mt-4 text-left">
+                <h3 className="font-bold text-gray-900 text-base truncate">{product.name}</h3>
+                <div className="flex gap-3 items-center">
+                  <p className="text-[#DB4444] font-bold text-lg">${product.price}</p>
+                  {product.originalPrice && (
+                    <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
+                  )}
+                  {product.ratings && (
+                    <div className="flex items-center ml-2 border-l pl-2 border-gray-300">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={14} className={i < Math.round(product.ratings?.average || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                      ))}
+                      <span className="text-gray-400 text-xs ml-1">({product.ratings?.count || 0})</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !isError && products.length === 0 && (
+         <div className="w-full text-center py-10 mt-10 text-gray-500 font-medium">
+            No products found right now.
+         </div>
+      )}
 
       {/* Pagination Dots */}
-      <div className="flex justify-center mt-10 space-x-3">
-        {Array.from({ length: totalPages }).map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrentPage(idx)}
-            className={`w-3 h-3 rounded-full transition-all ${idx === currentPage ? "bg-[#DB4444] scale-125" : "bg-gray-300"}`}
-          />
-        ))}
-      </div>
+      {!isLoading && !isError && totalPages > 1 && (
+        <div className="flex justify-center mt-10 space-x-3">
+          {Array.from({ length: totalPages }).map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentPage(idx)}
+              className={`w-3 h-3 rounded-full transition-all ${idx === currentPage ? "bg-[#DB4444] scale-125" : "bg-gray-300"}`}
+            />
+          ))}
+        </div>
+      )}
+
+      <CartModal 
+        isOpen={isModalOpen}
+        type={modalConfig.type}
+        message={modalConfig.message}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={() => {
+          setIsModalOpen(false);
+          if (modalConfig.type === 'success') navigate('/cart');
+        }}
+      />
     </div>
   );
 }

@@ -1,41 +1,37 @@
+// src/api/axiosInstance.ts
 import axios from 'axios';
 
-// Determine base URL dynamically based on environment
-const baseURL = import.meta.env.MODE === 'development' 
-  ? 'http://192.168.18.40:5173' 
-  : import.meta.env.VITE_API_BASE_URL || 'https://shoppingstore-backend.vercel.app';
+const BASE = 
+  import.meta.env.VITE_API_BASE_URL     ||
+  import.meta.env.VITE_API_FALLBACK_1   ||
+  import.meta.env.VITE_API_FALLBACK_2   ||
+  'http://localhost:5000';
 
-// Create an Axios instance
 const axiosInstance = axios.create({
-  baseURL,
-  timeout: 10000, // 10 seconds
+  baseURL: `${BASE}/api`,   // → http://192.168.18.40:5000/api
+  timeout: 10000,
 });
 
-// Request Interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Optionally add authorization token or other custom headers here
     const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    // ✅ log every request so you can see exact URL being hit
+    console.log(`🌐 [axios] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response Interceptor
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Handle global errors (e.g., 401 Unauthorized, 500 Server Error)
     if (error.response?.status === 401) {
-      console.error('Unauthorized, logging out...');
-      // Implement logout logic here, e.g., clear localStorage & redirect
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    if (error.response?.status === 403) {
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

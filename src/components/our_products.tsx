@@ -7,8 +7,10 @@ import toast from "react-hot-toast";
 // Components & API
 import SliderArrows from "../components/arrow";
 import CartModal from "../components/modal";
-import { addToCart } from "../redux/slices/cartSlice";
-import axiosInstance from "../api/axiosInstance";
+
+import { addToCartAsync } from "../redux/slices/cartSlice";
+import type { AppDispatch } from "../redux/store";
+
 import { useProducts } from "../hooks/useProducts";
 import type { Product } from "../api/productsApi";
 import { productsApi } from "../api/productsApi";
@@ -21,11 +23,15 @@ const formatDiscount = (discount?: string) => {
 };
 
 export default function Our_products() {
-  const dispatch = useDispatch();
+
   const navigate = useNavigate();
 
   // Fetch dynamic data
-  const { data: products = [], isLoading, isError } = useProducts({ category: 'our_products' });
+ // wherever our_products.tsx calls useProducts
+  const dispatch = useDispatch<AppDispatch>();
+  // Fetch true bestselling data from our new backend endpoint!
+const { data, isLoading, isError } = useProducts({ category: 'bestselling' });
+const products: Product[] = data?.products ?? [];
 
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [currentPage, setCurrentPage] = useState(0);
@@ -41,47 +47,26 @@ export default function Our_products() {
     setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleAddToCart = async (product: Product) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setModalConfig({ message: "Please log in first to add items to your cart.", type: 'error' });
-      setIsModalOpen(true);
-      return;
-    }
-    setIsAdding(true);
-    try {
-      const productData = {
-        productId: product._id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-      };
-      
-      const res = await axiosInstance.post("/cart/add", productData);
-      
-      if (res.status === 200 || res.status === 201) {
-        dispatch(addToCart({
-          _id: product._id.toString(),
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          stock: product.stock || 10,
-          category: product.category || 'Other',
-          isActive: true
-        }));
-        setModalConfig({ message: `${product.name} added to cart!`, type: 'success' });
-        setIsModalOpen(true);
-      } else {
-        setModalConfig({ message: res.data?.message || "Failed to add item.", type: 'error' });
-        setIsModalOpen(true);
-      }
-    } catch (err: any) {
-      setModalConfig({ message: err.response?.data?.message || "Network error. Please try again later.", type: 'error' });
-      setIsModalOpen(true);
-    } finally {
-      setIsAdding(false);
-    }
-  };
+ const handleAddToCart = async (product: Product) => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    setModalConfig({ message: "Please log in first.", type: "error" });
+    setIsModalOpen(true);
+    return;
+  }
+
+  setIsAdding(true);
+  try {
+    await dispatch(addToCartAsync(product)).unwrap();
+    setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
+    setIsModalOpen(true);
+  } catch (err: any) {
+    setModalConfig({ message: err || "Failed to add to cart.", type: "error" });
+    setIsModalOpen(true);
+  } finally {
+    setIsAdding(false);
+  }
+};
 
   const handleRateProduct = async (product: Product, ratingValue: number) => {
     try {

@@ -1,281 +1,114 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ChevronUp, ChevronDown, Trash2 } from "lucide-react";
+// src/cart.tsx
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronUp, ChevronDown, Trash2, ShoppingBag } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState, AppDispatch } from './redux/store';
+import {
+  fetchCart,
+  removeFromCartAsync,
+  updateQuantityAsync,
+} from './redux/slices/cartSlice';
 
 const Cart: React.FC = () => {
-  const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState<any[]>([]);
-  const [cartUpdated, setCartUpdated] = useState(false);
+  const navigate  = useNavigate();
+  const dispatch  = useDispatch<AppDispatch>();
+  const { items, totalPrice, loading, synced } = useSelector((s: RootState) => s.cart);
+
   const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [, setCartTotal] = useState(0);
 
+  // Fetch from backend on mount — only if not already synced
   useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const userId = localStorage.getItem("userId");
-
-        if (!token || !userId) {
-          console.warn("⚠️ No user logged in. Redirecting...");
-          navigate("/login");
-          return; // 🧭 stop execution here
-        } else {
-          navigate("/cart");
-        }
-        console.warn(" USER ID", userId);
-        const res = await fetch(
-          `https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token ? `Bearer ${token}` : "",
-            },
-          }
-        );
-
-        const data = await res.json();
-        if (res.ok) {
-          setCartItems(data.items || []);
-        } else {
-          console.error("Error fetching cart:", data);
-          setCartItems([]);
-        }
-      } catch (err) {
-        console.error("Error:", err);
-        setCartItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCart();
+    const token  = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    if (!token || !userId) { navigate('/login'); return; }
+    if (!synced) dispatch(fetchCart());
   }, []);
 
-  const handleQuantityChange = (id: string, type: "inc" | "dec") => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item._id === id
-          ? {
-            ...item,
-            quantity:
-              type === "inc"
-                ? (item.quantity || 1) + 1
-                : item.quantity > 1
-                  ? item.quantity - 1
-                  : 1,
-          }
-          : item
-      )
-    );
-    setCartUpdated(false);
+  const handleQuantityChange = (itemId: string, type: 'inc' | 'dec', currentQty: number) => {
+    const newQty = type === 'inc' ? currentQty + 1 : currentQty > 1 ? currentQty - 1 : 1;
+    if (newQty === currentQty) return;
+    dispatch(updateQuantityAsync({ itemId, quantity: newQty }));
   };
 
-
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
-    0
-  );
-  const shipping = 0;
-  const orderTotal = subtotal + shipping;
-
-  const handleDeleteItem = async (itemId: string) => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    if (!token || !userId) return alert("User not logged in!");
-    console.warn(" DELETE ITEM ID", itemId);
-    try {
-      const res = await fetch(
-        `https://shoppingstore-backend.vercel.app/api/cart/delete/${userId}/${itemId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("❌ Failed to delete item:", data);
-        return;
-      }
-
-      // Remove item from frontend state
-      setCartItems((prev) => prev.filter((item) => item._id !== itemId));
-    } catch (error) {
-      console.error("❌ Failed to delete item:", error);
-    }
+  const handleDelete = (itemId: string) => {
+    dispatch(removeFromCartAsync(itemId));
   };
-  // 🔹 UPDATE single Cart Item API
-  const handleUpdateCart = async (itemId: string) => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId"); // take from frontend
-
-    if (!token || !userId) return alert("User not logged in!");
-
-    try {
-      // Find the item to update
-      const itemToUpdate = cartItems.find((item) => item._id === itemId);
-      if (!itemToUpdate) return;
-
-      // Prepare payload
-      const updatedData = {
-        quantity: itemToUpdate.quantity,
-      };
-
-      const res = await fetch(
-        `https://shoppingstore-backend.vercel.app/api/cart/update/${userId}/${itemId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(updatedData),
-        }
-      );
-
-      const data = await res.json();
-
-      if (res.ok) {
-        // Update the item total locally
-        setCartItems((prev) =>
-          prev.map((item) =>
-            item._id === itemId
-              ? { ...item, totalPrice: item.price * item.quantity }
-              : item
-          )
-        );
-
-        // Update cart total
-        const newTotal = cartItems.reduce(
-          (sum, item) =>
-            sum + (item._id === itemId ? item.price * item.quantity : item.price * item.quantity),
-          0
-        );
-        setCartTotal(newTotal);
-
-        setCartUpdated(true);
-      } else {
-        console.error("❌ Failed to update cart:", data.message);
-      }
-    } catch (err) {
-      console.error("❌ Error updating cart:", err);
-    }
-  };
-
 
   const handleCheckout = () => {
-    if (cartItems.length === 0) {
-      setShowModal(true);
-      return;
-    }
-    navigate("/check_out");
+    if (items.length === 0) { setShowModal(true); return; }
+    navigate('/check_out');
   };
 
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-screen text-gray-600">
-        Loading your cart...
-      </div>
-    );
+  if (loading) return (
+    <div className="flex justify-center items-center h-screen text-gray-600">
+      Loading your cart...
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white text-gray-800 px-6 md:px-20 py-16">
+
       {/* Breadcrumb */}
       <div className="text-sm text-gray-500 mb-8 flex justify-between items-center">
         <div>
-          <Link to="/" className="hover:text-blue-600 font-medium">
-            HOME
-          </Link>
+          <Link to="/" className="hover:text-blue-600 font-medium">HOME</Link>
           <span className="mx-2 text-gray-400">/</span>
           <span className="text-blue-600 font-semibold">CART</span>
         </div>
-
-        <Link
-          to="/"
-          className="px-5 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition"
-        >
+        <Link to="/" className="px-5 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition">
           ← Return to Shop
         </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 🛒 Cart Items Section */}
+
+        {/* Cart Items */}
         <div className="lg:col-span-2">
-          {cartItems.length > 0 ? (
+          {items.length > 0 ? (
             <>
-            <div className="hidden lg:grid lg:grid-cols-4 bg-gray-100 font-semibold text-gray-700 py-3 px-6 rounded-md">
-              <div>Product</div>
-              <div className="text-center">Price</div>
-              <div className="text-center">Quantity</div>
-              <div className="text-center">Subtotal</div>
-            </div>
+              <div className="hidden lg:grid lg:grid-cols-4 bg-gray-100 font-semibold text-gray-700 py-3 px-6 rounded-md">
+                <div>Product</div>
+                <div className="text-center">Price</div>
+                <div className="text-center">Quantity</div>
+                <div className="text-center">Subtotal</div>
+              </div>
 
-              {/* Scrollable list */}
-              <div
-                className={`flex flex-col divide-y divide-gray-200 mt-4 ${cartItems.length > 4 ? "max-h-[400px] overflow-y-auto scrollbar-thin" : ""
-                  }`}
-              >
-                {cartItems.map((item) => (
-                 <div
-    key={item._id}
-    className="grid grid-cols-1 md:grid-cols-4 items-center py-4 px-4 md:px-6 hover:bg-gray-50 transition gap-2 md:gap-0"
-  >
-   {/* Product */}
-<div className="flex  flex-col md:flex-row md:items-center gap-2 md:gap-4">
-  <img
-    src={item.image}
-    alt={item.name}
-    className="w-20 h-20 object-contain bg-gray-50 rounded-md mx-auto md:mx-0"
-  />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{item.name}</span>
-                        {item.discount && (
-                          <span className="text-green-600 text-sm">
-                            {item.discount}
-                          </span>
-                        )}
-                      </div>
+              <div className={`flex flex-col divide-y divide-gray-200 mt-4 ${items.length > 4 ? 'max-h-[400px] overflow-y-auto' : ''}`}>
+                {items.map((item) => (
+                  <div key={item._id} className="grid grid-cols-1 md:grid-cols-4 items-center py-4 px-4 md:px-6 hover:bg-gray-50 transition gap-2 md:gap-0">
 
-                      <button
-                        onClick={() => handleDeleteItem(item._id)}
-                        aria-label="Delete item"
-                        className="text-red-500 hover:text-red-700 transition mt-1 md:mt-0 p-2"
-                      >
-                        <Trash2 size={18} />
+                    {/* Product */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-20 h-20 object-contain bg-gray-50 rounded-md mx-auto md:mx-0"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80?text=No+Image'; }}
+                      />
+                      <span className="font-medium text-sm">{item.name}</span>
+                      <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 transition p-1">
+                        <Trash2 size={16} />
                       </button>
                     </div>
 
                     {/* Price */}
-                    <div className="mt-2 md:mt-0 text-center">
-                      ${item.price}
-                    </div>
+                    <div className="text-center text-sm">${item.price.toFixed(2)}</div>
 
                     {/* Quantity */}
-                    <div className="flex justify-center items-center mt-2 md:mt-0">
+                    <div className="flex justify-center items-center">
                       <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
                         <input
                           type="number"
                           readOnly
-                          value={item.quantity || 1}
+                          value={item.quantity}
                           className="w-12 text-center py-1 text-sm outline-none"
                         />
                         <div className="flex flex-col border-l border-gray-300">
-                          <button
-                            onClick={() => handleQuantityChange(item._id, "inc")}
-                            className="px-1 hover:bg-gray-200"
-                          >
+                          <button onClick={() => handleQuantityChange(item._id, 'inc', item.quantity)} className="px-1 hover:bg-gray-200">
                             <ChevronUp size={12} />
                           </button>
-                          <button
-                            onClick={() => handleQuantityChange(item._id, "dec")}
-                            className="px-1 hover:bg-gray-200"
-                          >
+                          <button onClick={() => handleQuantityChange(item._id, 'dec', item.quantity)} className="px-1 hover:bg-gray-200">
                             <ChevronDown size={12} />
                           </button>
                         </div>
@@ -283,68 +116,45 @@ const Cart: React.FC = () => {
                     </div>
 
                     {/* Subtotal */}
-                    <div className="text-center font-semibold text-gray-900 mt-2 md:mt-0">
-                      ${item.price * (item.quantity || 1)}
+                    <div className="text-center font-semibold">
+                      ${(item.price * item.quantity).toFixed(2)}
                     </div>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            <div className="text-center py-20 text-gray-500 text-lg">
-              Your cart is empty 😢
-              <br />
-              <Link
-                to="/"
-                className="mt-4 inline-block px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-              >
+            <div className="text-center py-20 text-gray-500">
+              <ShoppingBag size={48} className="mx-auto mb-4 text-gray-300" />
+              <p className="text-lg mb-4">Your cart is empty</p>
+              <Link to="/" className="inline-block px-5 py-2 bg-[#DB4444] text-white rounded-md hover:bg-[#c33d3d] transition">
                 Return to Shop
               </Link>
             </div>
           )}
         </div>
 
-        {/* 💰 Cart Total Box */}
+        {/* Cart Total */}
         <div className="border border-gray-300 rounded-lg p-6 bg-gray-50 h-fit shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">
-            Cart Total
-          </h2>
-
+          <h2 className="text-lg font-semibold mb-4">Cart Total</h2>
           <div className="flex justify-between border-b border-gray-200 py-2">
             <span>Subtotal</span>
-            <span className="font-medium">${subtotal}</span>
+            <span className="font-medium">${totalPrice.toFixed(2)}</span>
           </div>
-
           <div className="flex justify-between border-b border-gray-200 py-2">
             <span>Shipping</span>
             <span className="font-medium text-green-600">Free</span>
           </div>
-
           <div className="flex justify-between text-lg font-semibold py-3">
             <span>Total</span>
-            <span>${orderTotal}</span>
+            <span>${totalPrice.toFixed(2)}</span>
           </div>
-
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={() => cartItems.forEach(item => handleUpdateCart(item._id))}
-              className="flex-1 px-5 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800 transition"
-            >
-              Update Cart
-            </button>
-            <button
-              onClick={handleCheckout}
-              className="flex-1 px-5 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition"
-            >
-              Checkout
-            </button>
-          </div>
-
-          {cartUpdated && (
-            <p className="text-sm text-green-600 mt-2 text-center">
-              ✅ Cart updated successfully!
-            </p>
-          )}
+          <button
+            onClick={handleCheckout}
+            className="w-full mt-4 px-5 py-3 bg-[#DB4444] text-white rounded-md font-medium hover:bg-[#c33d3d] transition"
+          >
+            Proceed to Checkout
+          </button>
         </div>
       </div>
 
@@ -352,18 +162,9 @@ const Cart: React.FC = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 text-center">
-            <h3 className="text-lg font-semibold mb-2 text-gray-800">
-              Your cart is empty!
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Looks like you haven’t added any items yet. Return to the shop and
-              grab your favorite products! 🎉
-            </p>
-            <Link
-              to="/"
-              onClick={() => setShowModal(false)}
-              className="inline-block px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-            >
+            <h3 className="text-lg font-semibold mb-2">Your cart is empty!</h3>
+            <p className="text-gray-600 mb-4">Add some products before checking out.</p>
+            <Link to="/" onClick={() => setShowModal(false)} className="inline-block px-5 py-2 bg-[#DB4444] text-white rounded-md hover:bg-[#c33d3d] transition">
               Return to Shop
             </Link>
           </div>

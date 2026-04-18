@@ -4,8 +4,7 @@ import axios from 'axios';
 const BASE = 
   import.meta.env.VITE_API_BASE_URL     ||
   import.meta.env.VITE_API_FALLBACK_1   ||
-  import.meta.env.VITE_API_FALLBACK_2   ||
-  'http://localhost:5000';
+  import.meta.env.VITE_API_FALLBACK_2   ;
 
 const axiosInstance = axios.create({
   baseURL: `${BASE}/api`,   // → http://192.168.18.40:5000/api

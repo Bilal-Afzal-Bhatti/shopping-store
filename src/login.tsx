@@ -10,7 +10,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_FALLBACK_1 || import.meta.env.VITE_API_FALLBACK_2; // Fallback to localhost if env var is missing
 
  
   // --- MANUAL LOGIN (For Email/Password users) ---

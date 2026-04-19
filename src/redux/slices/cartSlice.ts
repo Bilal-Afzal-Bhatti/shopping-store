@@ -174,16 +174,19 @@ const cartSlice = createSlice({
       .addCase(updateQuantityAsync.pending, (state, action) => {
         state.updatingItemId = action.meta.arg.itemId;
       })
-      .addCase(updateQuantityAsync.fulfilled, (state, action) => {
-        const { itemId, quantity } = action.payload!;
-        const item = state.items.find((i) => i._id === itemId);
-        if (item) item.quantity = quantity;
-        state.updatingItemId = null;
-        Object.assign(state, recalculate(state.items));
-      })
-      .addCase(updateQuantityAsync.rejected, (state) => {
-        state.updatingItemId = null;
-      });
+     // Inside updateQuantityAsync.fulfilled
+.addCase(updateQuantityAsync.fulfilled, (state, action) => {
+  const { itemId, quantity } = action.payload!;
+  // ✅ Check both _id AND productId to be safe
+  const item = state.items.find((i) => i._id === itemId || i.productId === itemId);
+  
+  if (item) {
+    item.quantity = quantity;
+  }
+  
+  state.updatingItemId = null;
+  Object.assign(state, recalculate(state.items));
+})
 
     // ── removeFromCartAsync ──────────────────────────────────────────────
     builder.addCase(removeFromCartAsync.fulfilled, (state, action) => {

@@ -9,8 +9,8 @@ const isVercel = hostname.includes("vercel.app");
 
 // 2. Define your Backend URLs
 // IMPORTANT: Change 5000 to your ACTUAL backend port (check your terminal where backend runs)
-const LOCAL_BACKEND_URL = "http://192.168.18.40:5731"; 
-const VERCEL_BACKEND_URL = "https://shoppingstore-backend.vercel.app";
+const LOCAL_BACKEND_URL = import.meta.env.VITE_API_FALLBACK_1; 
+const VERCEL_BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
 
 // 3. Select the correct base based on the current environment
 const BASE_URL = isVercel ? VERCEL_BACKEND_URL : LOCAL_BACKEND_URL;

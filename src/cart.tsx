@@ -1,23 +1,24 @@
 // src/cart.tsx
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronUp, ChevronDown, Trash2, ShoppingBag } from 'lucide-react';
+import { Trash2, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from './redux/store';
 import {
   fetchCart,
   removeFromCartAsync,
   updateQuantityAsync,
+  setItemQuantity,
 } from './redux/slices/cartSlice';
 
 const Cart: React.FC = () => {
-  const navigate  = useNavigate();
-  const dispatch  = useDispatch<AppDispatch>();
-  const { items, totalPrice, loading, synced } = useSelector((s: RootState) => s.cart);
-
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { items, totalPrice, loading, synced, updatingItemId } = useSelector(
+    (s: RootState) => s.cart
+  );
   const [showModal, setShowModal] = useState(false);
 
-  // Fetch from backend on mount — only if not already synced
   useEffect(() => {
     const token  = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
@@ -25,10 +26,15 @@ const Cart: React.FC = () => {
     if (!synced) dispatch(fetchCart());
   }, []);
 
-  const handleQuantityChange = (itemId: string, type: 'inc' | 'dec', currentQty: number) => {
-    const newQty = type === 'inc' ? currentQty + 1 : currentQty > 1 ? currentQty - 1 : 1;
-    if (newQty === currentQty) return;
-    dispatch(updateQuantityAsync({ itemId, quantity: newQty }));
+  // ── Instant local update — no API call ───────────────────────────────────
+  const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) => {
+    const newQty = type === 'inc' ? current + 1 : current > 1 ? current - 1 : 1;
+    dispatch(setItemQuantity({ itemId, quantity: newQty }));
+  };
+
+  // ── Sync ONE item to backend ──────────────────────────────────────────────
+  const handleUpdate = (itemId: string, quantity: number) => {
+    dispatch(updateQuantityAsync({ itemId, quantity }));
   };
 
   const handleDelete = (itemId: string) => {
@@ -67,56 +73,75 @@ const Cart: React.FC = () => {
         <div className="lg:col-span-2">
           {items.length > 0 ? (
             <>
-              <div className="hidden lg:grid lg:grid-cols-4 bg-gray-100 font-semibold text-gray-700 py-3 px-6 rounded-md">
-                <div>Product</div>
+              {/* Header */}
+              <div className="hidden lg:grid lg:grid-cols-5 bg-gray-100 font-semibold text-gray-700 py-3 px-6 rounded-md text-sm">
+                <div className="col-span-2">Product</div>
                 <div className="text-center">Price</div>
                 <div className="text-center">Quantity</div>
                 <div className="text-center">Subtotal</div>
               </div>
 
-              <div className={`flex flex-col divide-y divide-gray-200 mt-4 ${items.length > 4 ? 'max-h-[400px] overflow-y-auto' : ''}`}>
+              <div className={`flex flex-col divide-y divide-gray-200 mt-4 ${items.length > 4 ? 'max-h-[500px] overflow-y-auto' : ''}`}>
                 {items.map((item) => (
-                  <div key={item._id} className="grid grid-cols-1 md:grid-cols-4 items-center py-4 px-4 md:px-6 hover:bg-gray-50 transition gap-2 md:gap-0">
+                  <div key={item._id} className="grid grid-cols-1 lg:grid-cols-5 items-center py-5 px-4 md:px-6 hover:bg-gray-50 transition gap-3 lg:gap-0">
 
                     {/* Product */}
-                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                    <div className="col-span-2 flex items-center gap-3">
                       <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-20 h-20 object-contain bg-gray-50 rounded-md mx-auto md:mx-0"
-                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80?text=No+Image'; }}
+                        src={item.image} alt={item.name}
+                        className="w-16 h-16 object-contain bg-gray-50 rounded-md shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/64x64?text=?'; }}
                       />
-                      <span className="font-medium text-sm">{item.name}</span>
-                      <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 transition p-1">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-
-                    {/* Price */}
-                    <div className="text-center text-sm">${item.price.toFixed(2)}</div>
-
-                    {/* Quantity */}
-                    <div className="flex justify-center items-center">
-                      <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
-                        <input
-                          type="number"
-                          readOnly
-                          value={item.quantity}
-                          className="w-12 text-center py-1 text-sm outline-none"
-                        />
-                        <div className="flex flex-col border-l border-gray-300">
-                          <button onClick={() => handleQuantityChange(item._id, 'inc', item.quantity)} className="px-1 hover:bg-gray-200">
-                            <ChevronUp size={12} />
-                          </button>
-                          <button onClick={() => handleQuantityChange(item._id, 'dec', item.quantity)} className="px-1 hover:bg-gray-200">
-                            <ChevronDown size={12} />
-                          </button>
-                        </div>
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="font-semibold text-sm truncate">{item.name}</span>
+                        <button
+                          onClick={() => handleDelete(item._id)}
+                          className="text-red-400 hover:text-red-600 transition text-xs flex items-center gap-1 w-fit"
+                        >
+                          <Trash2 size={12} /> Remove
+                        </button>
                       </div>
                     </div>
 
+                    {/* Price */}
+                    <div className="text-center text-sm font-medium">
+                      ${item.price.toFixed(2)}
+                    </div>
+
+                    {/* Quantity + Update button */}
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => handleQtyChange(item._id, 'dec', item.quantity)}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600"
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <span className="w-10 text-center text-sm font-semibold">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => handleQtyChange(item._id, 'inc', item.quantity)}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600"
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+
+                      {/* ✅ Update button — only syncs THIS item */}
+                      <button
+                        onClick={() => handleUpdate(item._id, item.quantity)}
+                        disabled={updatingItemId === item._id}
+                        className="text-[10px] font-bold px-3 py-1 rounded-md border border-gray-300
+                                   hover:bg-gray-900 hover:text-white hover:border-gray-900
+                                   transition disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {updatingItemId === item._id ? 'Saving…' : 'Update'}
+                      </button>
+                    </div>
+
                     {/* Subtotal */}
-                    <div className="text-center font-semibold">
+                    <div className="text-center font-bold text-gray-900">
                       ${(item.price * item.quantity).toFixed(2)}
                     </div>
                   </div>
@@ -135,23 +160,24 @@ const Cart: React.FC = () => {
         </div>
 
         {/* Cart Total */}
-        <div className="border border-gray-300 rounded-lg p-6 bg-gray-50 h-fit shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Cart Total</h2>
-          <div className="flex justify-between border-b border-gray-200 py-2">
+        <div className="border border-gray-300 rounded-xl p-6 bg-gray-50 h-fit shadow-sm">
+          <h2 className="text-lg font-bold mb-4">Cart Total</h2>
+          <div className="flex justify-between border-b border-gray-200 py-2 text-sm">
             <span>Subtotal</span>
             <span className="font-medium">${totalPrice.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between border-b border-gray-200 py-2">
+          <div className="flex justify-between border-b border-gray-200 py-2 text-sm">
             <span>Shipping</span>
             <span className="font-medium text-green-600">Free</span>
           </div>
-          <div className="flex justify-between text-lg font-semibold py-3">
+          <div className="flex justify-between text-base font-bold py-3">
             <span>Total</span>
             <span>${totalPrice.toFixed(2)}</span>
           </div>
           <button
             onClick={handleCheckout}
-            className="w-full mt-4 px-5 py-3 bg-[#DB4444] text-white rounded-md font-medium hover:bg-[#c33d3d] transition"
+            className="w-full mt-4 py-3 bg-[#DB4444] text-white rounded-lg font-semibold
+                       hover:bg-[#c33d3d] active:scale-95 transition"
           >
             Proceed to Checkout
           </button>
@@ -161,10 +187,11 @@ const Cart: React.FC = () => {
       {/* Empty cart modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 text-center">
-            <h3 className="text-lg font-semibold mb-2">Your cart is empty!</h3>
-            <p className="text-gray-600 mb-4">Add some products before checking out.</p>
-            <Link to="/" onClick={() => setShowModal(false)} className="inline-block px-5 py-2 bg-[#DB4444] text-white rounded-md hover:bg-[#c33d3d] transition">
+          <div className="bg-white rounded-xl p-6 w-80 text-center shadow-xl">
+            <h3 className="text-lg font-bold mb-2">Your cart is empty!</h3>
+            <p className="text-gray-500 text-sm mb-4">Add some products before checking out.</p>
+            <Link to="/" onClick={() => setShowModal(false)}
+              className="inline-block px-5 py-2 bg-[#DB4444] text-white rounded-lg hover:bg-[#c33d3d] transition text-sm font-medium">
               Return to Shop
             </Link>
           </div>

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { Heart, ShoppingCart, Zap, Star, ArrowLeft } from "lucide-react";
+import { Heart, ShoppingCart, Star, ArrowLeft } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { addToCartAsync } from "./redux/slices/cartSlice";  // ✅ async thunk
 import { useProduct } from "./hooks/useProducts";
@@ -46,38 +46,26 @@ export const Viewitem: React.FC = () => {
     }
   };
 
-  // ✅ addToCartAsync — hits backend + Redux in one call
-  const handleAddToCart = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) { toast.error("Please login first"); return; }
-    if (!product) return;
-    setIsAdding(true);
-    try {
-      await dispatch(addToCartAsync(product)).unwrap();
-      toast.success(`${product.name} added to cart!`);
-    } catch (err: any) {
-      toast.error(err || "Failed to add to cart");
-    } finally {
-      setIsAdding(false);
-    }
-  };
 
-  // ✅ Buy Now — addToCartAsync then navigate to checkout
-  const handleBuyNow = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) { toast.error("Please login first"); return; }
-    if (!product) return;
-    setIsAdding(true);
-    try {
-      await dispatch(addToCartAsync(product)).unwrap();
-      navigate("/check_out");
-    } catch (err: any) {
-      toast.error(err || "Failed to proceed");
-    } finally {
-      setIsAdding(false);
-    }
-  };
+// src/view_item.tsx - only the buttons section changed
+// Remove Add to Cart, keep only Buy Now + Wishlist
 
+const handleBuyNow = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) { toast.error("Please login first"); return; }
+  if (!product) return;
+  setIsAdding(true);
+  try {
+    // ✅ Cast to any to bypass the strict Product type check 
+    // while including the quantity property
+    await dispatch(addToCartAsync({ ...product, quantity } as any)).unwrap();
+    navigate("/cart");
+  } catch (err: any) {
+    toast.error(err?.message || "Failed to proceed");
+  } finally {
+    setIsAdding(false);
+  }
+};
   const uniqueColors = product?.variants
     ? [...new Map(product.variants.map((v) => [v.color.hex, v.color])).values()]
     : [];
@@ -236,27 +224,26 @@ export const Viewitem: React.FC = () => {
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 flex-wrap">
-            <button onClick={handleAddToCart} disabled={isAdding || stockForSelection === 0}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 border-2 border-gray-900 text-gray-900 font-semibold py-3 px-6 rounded-xl hover:bg-gray-900 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ShoppingCart size={18} />
-              {isAdding ? "Adding…" : "Add to Cart"}
-            </button>
+        {/* Buttons — only Buy Now + Wishlist */}
+<div className="flex gap-3 flex-wrap">
+  <button onClick={handleBuyNow}
+    disabled={isAdding || stockForSelection === 0}
+    className="flex-1 min-w-[140px] flex items-center justify-center gap-2
+               bg-[#DB4444] text-white font-semibold py-3 px-6 rounded-xl
+               hover:bg-[#c33d3d] active:scale-95 transition-all duration-200
+               disabled:opacity-40 disabled:cursor-not-allowed"
+  >
+    <ShoppingCart size={18} />
+    {isAdding ? "Adding…" : "Add to Cart"}
+  </button>
 
-            <button onClick={handleBuyNow} disabled={isAdding || stockForSelection === 0}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2 bg-[#DB4444] text-white font-semibold py-3 px-6 rounded-xl hover:bg-[#c33d3d] active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Zap size={18} />
-              {isAdding ? "Processing…" : "Buy Now"}
-            </button>
-
-            <button onClick={() => setFavorite((p) => !p)}
-              className="w-12 h-12 flex items-center justify-center rounded-xl border-2 border-gray-200 hover:border-red-300 transition"
-            >
-              <Heart size={20} className={favorite ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-400"} />
-            </button>
-          </div>
+  <button onClick={() => setFavorite((p) => !p)}
+    className="w-12 h-12 flex items-center justify-center rounded-xl
+               border-2 border-gray-200 hover:border-red-300 transition"
+  >
+    <Heart size={20} className={favorite ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-400"} />
+  </button>
+</div>
 
           <p className="text-sm text-gray-400">
             Category: <span className="text-gray-600 font-medium">{product.category}</span>

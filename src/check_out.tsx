@@ -6,12 +6,12 @@ import toast, { Toaster } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from './redux/store';
 import { fetchCart, clearCartAsync } from './redux/slices/cartSlice';
+import axiosInstance from './api/axiosInstance'; // ✅ added
 
 const Checkout: React.FC = () => {
-  const navigate  = useNavigate();
-  const dispatch  = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
-  // ✅ Cart comes from Redux — no local fetch needed
   const { items: cartItems, totalPrice, loading, synced } = useSelector((s: RootState) => s.cart);
 
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'cod'>('bank');
@@ -22,7 +22,6 @@ const Checkout: React.FC = () => {
     city: '', phone: '', email: '', zipcode: '',
   });
 
-  // Sync cart if navigated directly to checkout
   useEffect(() => {
     const token  = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
@@ -43,7 +42,7 @@ const Checkout: React.FC = () => {
   };
 
   // ── COD Order ──────────────────────────────────────────────────────────────
-  const handleCODOrder = useCallback(async (token: string, loadId: string) => {
+  const handleCODOrder = useCallback(async (loadId: string) => {
     const userId = localStorage.getItem('userId')!;
     const orderData = {
       items: cartItems.map((item) => ({
@@ -60,31 +59,24 @@ const Checkout: React.FC = () => {
     };
 
     try {
-      const res = await fetch('https://shoppingstore-backend.vercel.app/api/orders/cod', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify(orderData),
-      });
+      // ✅ axiosInstance — no hardcoded URL
+      const res = await axiosInstance.post('/orders/cod', orderData);
 
-      if (!res.ok) throw new Error('COD order failed');
-
-      const data = await res.json();
-      const orderId = data.order?._id || data._id;
+      const orderId = res.data.order?._id || res.data._id;
       if (!orderId) throw new Error('No order ID returned');
 
-      // Clear both backend and Redux
       await dispatch(clearCartAsync());
       toast.success('Order Placed Successfully!', { id: loadId });
       setTimeout(() => navigate(`/orderTracking/${orderId}`), 1500);
 
-    } catch {
-      toast.error('Order failed. Please try again.', { id: loadId });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Order failed. Please try again.', { id: loadId });
       setIsProcessing(false);
     }
   }, [cartItems, billing, saveInfo, subtotal, dispatch, navigate]);
 
   // ── Online Payment ─────────────────────────────────────────────────────────
-  const handleOnlineOrder = useCallback(async (token: string, loadId: string) => {
+  const handleOnlineOrder = useCallback(async (loadId: string) => {
     const userId = localStorage.getItem('userId')!;
     const orderData = {
       items: cartItems.map((item) => ({
@@ -101,36 +93,33 @@ const Checkout: React.FC = () => {
     };
 
     try {
-      const res = await fetch('https://shoppingstore-backend.vercel.app/api/orders/create-checkout-session', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify(orderData),
-      });
+      // ✅ axiosInstance — no hardcoded URL
+      const res = await axiosInstance.post('/orders/create-checkout-session', orderData);
 
-      if (!res.ok) throw new Error('Payment session failed');
-
-      const data = await res.json();
       toast.success('Redirecting to Secure Payment...', { id: loadId });
-      if (data.url) window.location.href = data.url;
+      if (res.data.url) window.location.href = res.data.url;
 
-    } catch {
-      toast.error('Payment redirect failed. Try again.', { id: loadId });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Payment redirect failed. Try again.', { id: loadId });
       setIsProcessing(false);
     }
   }, [cartItems, billing, saveInfo, subtotal]);
 
-  // ── Place Order ────────────────────────────────────────────────────────────
+  // ── Execute Order ──────────────────────────────────────────────────────────
+  // ✅ token no longer passed as param — axiosInstance interceptor handles it
   const executeOrder = useCallback(async () => {
     setIsProcessing(true);
     const loadId = toast.loading('Finalizing your order...');
-    const token  = localStorage.getItem('token');
+
+    const token = localStorage.getItem('token');
     if (!token) {
       toast.error('Session expired. Please login.', { id: loadId });
       setIsProcessing(false);
       return;
     }
-    if (paymentMethod === 'cod') await handleCODOrder(token, loadId);
-    else                         await handleOnlineOrder(token, loadId);
+
+    if (paymentMethod === 'cod') await handleCODOrder(loadId);
+    else                         await handleOnlineOrder(loadId);
   }, [paymentMethod, handleCODOrder, handleOnlineOrder]);
 
   const handlePlaceOrder = () => {
@@ -195,8 +184,7 @@ const Checkout: React.FC = () => {
                   <div key={key} className={key === 'address' ? 'md:col-span-2' : ''}>
                     <label className="block text-[10px] font-black text-gray-400 uppercase mb-1.5 ml-1">{key}</label>
                     <input
-                      type="text"
-                      name={key}
+                      type="text" name={key}
                       value={(billing as any)[key]}
                       onChange={handleChange}
                       className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm outline-none focus:bg-white focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 transition-all"
@@ -226,9 +214,7 @@ const Checkout: React.FC = () => {
                 {cartItems.map((item) => (
                   <div key={item._id} className="flex gap-4 items-center group">
                     <div className="w-14 h-14 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shrink-0 p-1 group-hover:scale-105 transition-transform">
-                      <img
-                        src={item.image}
-                        alt={item.name}
+                      <img src={item.image} alt={item.name}
                         className="w-full h-full object-contain"
                         onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/56x56?text=?'; }}
                       />
@@ -256,14 +242,12 @@ const Checkout: React.FC = () => {
                 </div>
               </div>
 
-              {/* Payment methods */}
               <div className="mt-6 space-y-3">
                 {[
                   { key: 'bank', label: 'Online Payment', icon: <CreditCard size={16} /> },
                   { key: 'cod',  label: 'Cash on Delivery', icon: <DollarSign size={16} /> },
                 ].map((method) => (
-                  <button
-                    key={method.key}
+                  <button key={method.key}
                     onClick={() => setPaymentMethod(method.key as 'bank' | 'cod')}
                     className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
                       paymentMethod === method.key
@@ -286,9 +270,7 @@ const Checkout: React.FC = () => {
                 ))}
               </div>
 
-              <button
-                disabled={isProcessing}
-                onClick={handlePlaceOrder}
+              <button disabled={isProcessing} onClick={handlePlaceOrder}
                 className={`w-full mt-8 py-4 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 transition-all ${
                   isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-blue-600 hover:shadow-lg active:scale-95'
                 }`}

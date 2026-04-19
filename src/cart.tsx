@@ -1,6 +1,6 @@
 // src/cart.tsx
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // ✅ useLocation added
 import { Trash2, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from './redux/store';
@@ -12,11 +12,17 @@ import {
 } from './redux/slices/cartSlice';
 
 const Cart: React.FC = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const dispatch  = useDispatch<AppDispatch>();
+
   const { items, totalPrice, loading, synced, updatingItemId } = useSelector(
     (s: RootState) => s.cart
   );
+
+  // ✅ highlight the product just added from view_item
+  const addedProductId = (location.state as any)?.addedProductId as string | undefined;
+
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
@@ -26,13 +32,11 @@ const Cart: React.FC = () => {
     if (!synced) dispatch(fetchCart());
   }, []);
 
-  // ── Instant local update — no API call ───────────────────────────────────
   const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) => {
     const newQty = type === 'inc' ? current + 1 : current > 1 ? current - 1 : 1;
     dispatch(setItemQuantity({ itemId, quantity: newQty }));
   };
 
-  // ── Sync ONE item to backend ──────────────────────────────────────────────
   const handleUpdate = (itemId: string, quantity: number) => {
     dispatch(updateQuantityAsync({ itemId, quantity }));
   };
@@ -73,7 +77,6 @@ const Cart: React.FC = () => {
         <div className="lg:col-span-2">
           {items.length > 0 ? (
             <>
-              {/* Header */}
               <div className="hidden lg:grid lg:grid-cols-5 bg-gray-100 font-semibold text-gray-700 py-3 px-6 rounded-md text-sm">
                 <div className="col-span-2">Product</div>
                 <div className="text-center">Price</div>
@@ -83,8 +86,14 @@ const Cart: React.FC = () => {
 
               <div className={`flex flex-col divide-y divide-gray-200 mt-4 ${items.length > 4 ? 'max-h-[500px] overflow-y-auto' : ''}`}>
                 {items.map((item) => (
-                  <div key={item._id} className="grid grid-cols-1 lg:grid-cols-5 items-center py-5 px-4 md:px-6 hover:bg-gray-50 transition gap-3 lg:gap-0">
-
+                  <div
+                    key={item._id}
+                    className={`grid grid-cols-1 lg:grid-cols-5 items-center py-5 px-4 md:px-6 gap-3 lg:gap-0 transition-all duration-500 ${
+                      addedProductId === item.productId
+                        ? 'bg-green-50 border-l-4 border-green-400' // ✅ highlight newly added
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
                     {/* Product */}
                     <div className="col-span-2 flex items-center gap-3">
                       <img
@@ -94,10 +103,8 @@ const Cart: React.FC = () => {
                       />
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="font-semibold text-sm truncate">{item.name}</span>
-                        <button
-                          onClick={() => handleDelete(item._id)}
-                          className="text-red-400 hover:text-red-600 transition text-xs flex items-center gap-1 w-fit"
-                        >
+                        <button onClick={() => handleDelete(item._id)}
+                          className="text-red-400 hover:text-red-600 transition text-xs flex items-center gap-1 w-fit">
                           <Trash2 size={12} /> Remove
                         </button>
                       </div>
@@ -108,27 +115,21 @@ const Cart: React.FC = () => {
                       ${item.price.toFixed(2)}
                     </div>
 
-                    {/* Quantity + Update button */}
+                    {/* Quantity + Update */}
                     <div className="flex flex-col items-center gap-2">
                       <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => handleQtyChange(item._id, 'dec', item.quantity)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600"
-                        >
+                        <button onClick={() => handleQtyChange(item._id, 'dec', item.quantity)}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600">
                           <Minus size={12} />
                         </button>
-                        <span className="w-10 text-center text-sm font-semibold">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => handleQtyChange(item._id, 'inc', item.quantity)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600"
-                        >
+                        <span className="w-10 text-center text-sm font-semibold">{item.quantity}</span>
+                        <button onClick={() => handleQtyChange(item._id, 'inc', item.quantity)}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600">
                           <Plus size={12} />
                         </button>
                       </div>
 
-                      {/* ✅ Update button — only syncs THIS item */}
+                      {/* ✅ Update button — syncs only this item */}
                       <button
                         onClick={() => handleUpdate(item._id, item.quantity)}
                         disabled={updatingItemId === item._id}
@@ -174,11 +175,9 @@ const Cart: React.FC = () => {
             <span>Total</span>
             <span>${totalPrice.toFixed(2)}</span>
           </div>
-          <button
-            onClick={handleCheckout}
+          <button onClick={handleCheckout}
             className="w-full mt-4 py-3 bg-[#DB4444] text-white rounded-lg font-semibold
-                       hover:bg-[#c33d3d] active:scale-95 transition"
-          >
+                       hover:bg-[#c33d3d] active:scale-95 transition">
             Proceed to Checkout
           </button>
         </div>

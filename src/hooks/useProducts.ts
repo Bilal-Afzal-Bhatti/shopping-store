@@ -89,7 +89,7 @@ export const useProduct = (id: string | undefined) => {
       const { data } = await axiosInstance.get(`/customer/products/${id}`);
 
       // ✅ log the product returned
-      console.log('🔍 [useProduct] response:', data);
+      // console.log('🔍 [useProduct] response:', data);
 
       return data.data;
     },

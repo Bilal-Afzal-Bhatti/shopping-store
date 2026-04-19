@@ -20,7 +20,6 @@ interface CartState {
   totalPrice: number;
   loading: boolean;
   synced: boolean;
-  // ✅ tracks which item is currently being updated
   updatingItemId: string | null;
 }
 
@@ -46,7 +45,6 @@ export const fetchCart = createAsyncThunk(
     const token  = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     if (!token || !userId) return rejectWithValue('Not authenticated');
-
     const res = await axiosInstance.get(`/cart/showcart?userId=${userId}`);
     return (res.data.items || []) as CartItem[];
   }
@@ -55,29 +53,29 @@ export const fetchCart = createAsyncThunk(
 // ─── addToCartAsync ───────────────────────────────────────────────────────────
 export const addToCartAsync = createAsyncThunk(
   'cart/addToCartAsync',
-  async (product: Product, { rejectWithValue }) => {
-    const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId'); // 👈 Get userId from storage
-    
+  async (
+    { product, quantity = 1 }: { product: Product; quantity?: number },
+    { rejectWithValue }
+  ) => {
+    const token  = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
     if (!token || !userId) return rejectWithValue('Not authenticated');
 
     const res = await axiosInstance.post('/cart/add', {
-      userId, // 👈 MUST send userId to the backend
+      userId,
       productId: product._id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1,
+      name:      product.name,
+      price:     product.price,
+      image:     product.image,
+      quantity,
     });
 
-    if (!res.data.success) return rejectWithValue(res.data.message);
-    return product;
+    if (!res.data.success) return rejectWithValue(res.data.message ?? 'Failed');
+    return { product, quantity };
   }
 );
 
 // ─── updateQuantityAsync ──────────────────────────────────────────────────────
-// ✅ PATCH-style optimization — only sends itemId + new quantity
-// No need to send the whole cart — backend updates one subdocument
 export const updateQuantityAsync = createAsyncThunk(
   'cart/updateQuantityAsync',
   async (
@@ -86,7 +84,6 @@ export const updateQuantityAsync = createAsyncThunk(
   ) => {
     const userId = localStorage.getItem('userId');
     if (!userId) return rejectWithValue('Not authenticated');
-
     const res = await axiosInstance.put(`/cart/update/${userId}/${itemId}`, { quantity });
     if (!res.data.success) return rejectWithValue(res.data.message);
     return { itemId, quantity };
@@ -99,7 +96,6 @@ export const removeFromCartAsync = createAsyncThunk(
   async (itemId: string, { rejectWithValue }) => {
     const userId = localStorage.getItem('userId');
     if (!userId) return rejectWithValue('Not authenticated');
-
     const res = await axiosInstance.delete(`/cart/delete/${userId}/${itemId}`);
     if (!res.data.success) return rejectWithValue('Delete failed');
     return itemId;
@@ -128,11 +124,11 @@ const cartSlice = createSlice({
       state.synced        = false;
     },
 
-    // ✅ optimistic local quantity change — instant UI, no spinner
-    // Call this on every +/- click, then call updateQuantityAsync on "Update" button
+    // ✅ instant local update — no API, called on every +/- click
     setItemQuantity(state, action: { payload: { itemId: string; quantity: number } }) {
       const { itemId, quantity } = action.payload;
-      const item = state.items.find((i) => i._id === itemId);
+      // match by _id or productId — backend subdoc uses _id
+      const item = state.items.find((i) => i._id === itemId || i.productId === itemId);
       if (item && quantity >= 1) item.quantity = quantity;
       Object.assign(state, recalculate(state.items));
     },
@@ -152,12 +148,12 @@ const cartSlice = createSlice({
 
     // ── addToCartAsync ───────────────────────────────────────────────────
     builder.addCase(addToCartAsync.fulfilled, (state, action) => {
-      const product      = action.payload as Product;
+      const { product, quantity } = action.payload as { product: Product; quantity: number };
       const existingItem = state.items.find(
         (i) => i.productId === product._id || i._id === product._id
       );
       if (existingItem) {
-        existingItem.quantity++;
+        existingItem.quantity += quantity; // ✅ add selected quantity not just 1
       } else {
         state.items.push({
           _id:       product._id,
@@ -165,7 +161,7 @@ const cartSlice = createSlice({
           name:      product.name,
           price:     product.price,
           image:     product.image,
-          quantity:  1,
+          quantity,
           stock:     product.stock,
           category:  product.category,
         });
@@ -173,10 +169,9 @@ const cartSlice = createSlice({
       Object.assign(state, recalculate(state.items));
     });
 
-    // ── updateQuantityAsync — only updates the one item ──────────────────
+    // ── updateQuantityAsync ──────────────────────────────────────────────
     builder
       .addCase(updateQuantityAsync.pending, (state, action) => {
-        // ✅ track which specific item is saving — show spinner only on that row
         state.updatingItemId = action.meta.arg.itemId;
       })
       .addCase(updateQuantityAsync.fulfilled, (state, action) => {

@@ -191,7 +191,7 @@ export default function Flash_sales() {
     }
     setAddingId(product._id);
     try {
-      await dispatch(addToCartAsync(product)).unwrap();
+    await dispatch(addToCartAsync({ product, quantity: 1 })).unwrap();
       setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
       setIsModalOpen(true);
     } catch (err: any) {

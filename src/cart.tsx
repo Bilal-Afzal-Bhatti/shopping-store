@@ -16,7 +16,7 @@ const Cart: React.FC = () => {
   const location  = useLocation();
   const dispatch  = useDispatch<AppDispatch>();
 
-  const { items, totalPrice, loading, synced, updatingItemId } = useSelector(
+  const { items, totalPrice, loading, updatingItemId } = useSelector(
     (s: RootState) => s.cart
   );
 
@@ -25,21 +25,42 @@ const Cart: React.FC = () => {
 
   const [showModal, setShowModal] = useState(false);
 
+  // useEffect(() => {
+  //   const token  = localStorage.getItem('token');
+  //   const userId = localStorage.getItem('userId');
+  //   if (!token || !userId) { navigate('/login'); return; }
+  //   if (!synced) dispatch(fetchCart());
+  // }, []);
   useEffect(() => {
-    const token  = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
-    if (!token || !userId) { navigate('/login'); return; }
-    if (!synced) dispatch(fetchCart());
-  }, []);
+  const token = localStorage.getItem('token');
+  if (!token) { navigate('/login'); return; }
 
-  const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) => {
-    const newQty = type === 'inc' ? current + 1 : current > 1 ? current - 1 : 1;
-    dispatch(setItemQuantity({ itemId, quantity: newQty }));
-  };
+  // Force fetch every time we enter the cart to sync with backend
+  dispatch(fetchCart());
+}, [dispatch]);
+// cart.tsx — add inside useEffect
+useEffect(() => {
+  console.log('🛒 items from backend:', items);
+}, [items]);
+  // const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) => {
+  //   const newQty = type === 'inc' ? current + 1 : current > 1 ? current - 1 : 1;
+  //   dispatch(setItemQuantity({ itemId, quantity: newQty }));
+  // };
+  // cart.tsx
+const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) => {
+  const newQty = type === 'inc' ? current + 1 : current > 1 ? current - 1 : 1;
+  if (newQty === current) return;
 
-  const handleUpdate = (itemId: string, quantity: number) => {
-    dispatch(updateQuantityAsync({ itemId, quantity }));
-  };
+  // ✅ update UI instantly
+  dispatch(setItemQuantity({ itemId, quantity: newQty }));
+
+  // ✅ sync to backend immediately — no Update button needed
+  dispatch(updateQuantityAsync({ itemId, quantity: newQty }));
+};
+
+  // const handleUpdate = (itemId: string, quantity: number) => {
+  //   dispatch(updateQuantityAsync({ itemId, quantity }));
+  // };
 
   const handleDelete = (itemId: string) => {
     dispatch(removeFromCartAsync(itemId));
@@ -115,32 +136,32 @@ const Cart: React.FC = () => {
                       ${item.price.toFixed(2)}
                     </div>
 
-                    {/* Quantity + Update */}
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                        <button onClick={() => handleQtyChange(item._id, 'dec', item.quantity)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600">
-                          <Minus size={12} />
-                        </button>
-                        <span className="w-10 text-center text-sm font-semibold">{item.quantity}</span>
-                        <button onClick={() => handleQtyChange(item._id, 'inc', item.quantity)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600">
-                          <Plus size={12} />
-                        </button>
-                      </div>
-
-                      {/* ✅ Update button — syncs only this item */}
-                      <button
-                        onClick={() => handleUpdate(item._id, item.quantity)}
-                        disabled={updatingItemId === item._id}
-                        className="text-[10px] font-bold px-3 py-1 rounded-md border border-gray-300
-                                   hover:bg-gray-900 hover:text-white hover:border-gray-900
-                                   transition disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {updatingItemId === item._id ? 'Saving…' : 'Update'}
-                      </button>
-                    </div>
-
+                  {/* Quantity — auto syncs on every click */}
+<div className="flex flex-col items-center gap-1">
+  <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+    <button
+      onClick={() => handleQtyChange(item._id, 'dec', item.quantity)}
+      disabled={updatingItemId === item._id}
+      className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 disabled:opacity-40"
+    >
+      <Minus size={12} />
+    </button>
+    <span className="w-10 text-center text-sm font-semibold">
+      {item.quantity}
+    </span>
+    <button
+      onClick={() => handleQtyChange(item._id, 'inc', item.quantity)}
+      disabled={updatingItemId === item._id}
+      className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 disabled:opacity-40"
+    >
+      <Plus size={12} />
+    </button>
+  </div>
+  {/* ✅ show saving indicator instead of Update button */}
+  {updatingItemId === item._id && (
+    <span className="text-[10px] text-gray-400 font-medium">Saving…</span>
+  )}
+</div>
                     {/* Subtotal */}
                     <div className="text-center font-bold text-gray-900">
                       ${(item.price * item.quantity).toFixed(2)}

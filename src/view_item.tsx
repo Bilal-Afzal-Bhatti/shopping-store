@@ -213,7 +213,7 @@ const handleBuyNow = async () => {
             </div>
           )}
 
-          {/* Quantity */}
+          Quantity
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-2">Quantity</p>
             <div className="flex items-center w-fit border border-gray-300 rounded-lg overflow-hidden">

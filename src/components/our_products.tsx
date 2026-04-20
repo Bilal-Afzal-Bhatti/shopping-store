@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Heart, Eye, Star } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -15,7 +15,6 @@ import { useProducts } from "../hooks/useProducts";
 import type { Product } from "../api/productsApi";
 import { productsApi } from "../api/productsApi";
 
-// Helper for beautiful discount rendering
 const formatDiscount = (discount?: string) => {
   if (!discount || discount === 'No Discount') return null;
   const num = discount.match(/\d+/);
@@ -23,15 +22,12 @@ const formatDiscount = (discount?: string) => {
 };
 
 export default function Our_products() {
-
   const navigate = useNavigate();
-
-  // Fetch dynamic data
- // wherever our_products.tsx calls useProducts
   const dispatch = useDispatch<AppDispatch>();
-  // Fetch true bestselling data from our new backend endpoint!
-const { data, isLoading, isError } = useProducts({ category: 'bestselling' });
-const products: Product[] = data?.products ?? [];
+
+  // 🔴 Updated the category to match your backend exactly
+  const { data, isLoading, isError } = useProducts({ category: 'Our Products' });
+  const products: Product[] = data?.products ?? [];
 
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [currentPage, setCurrentPage] = useState(0);
@@ -41,32 +37,37 @@ const products: Product[] = data?.products ?? [];
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
   const [isAdding, setIsAdding] = useState(false);
 
+  // Reset to first page if products change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [products.length]);
+
   const totalPages = Math.ceil(products.length / productsPerPage) || 1;
 
   const toggleLike = (id: string) => {
     setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
- const handleAddToCart = async (product: Product) => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    setModalConfig({ message: "Please log in first.", type: "error" });
-    setIsModalOpen(true);
-    return;
-  }
+  const handleAddToCart = async (product: Product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setModalConfig({ message: "Please log in first.", type: "error" });
+      setIsModalOpen(true);
+      return;
+    }
 
-  setIsAdding(true);
-  try {
-    await dispatch(addToCartAsync(product)).unwrap();
-    setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
-    setIsModalOpen(true);
-  } catch (err: any) {
-    setModalConfig({ message: err || "Failed to add to cart.", type: "error" });
-    setIsModalOpen(true);
-  } finally {
-    setIsAdding(false);
-  }
-};
+    setIsAdding(true);
+    try {
+      await dispatch(addToCartAsync({ product })).unwrap();
+      setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
+      setIsModalOpen(true);
+    } catch (err: any) {
+      setModalConfig({ message: err || "Failed to add to cart.", type: "error" });
+      setIsModalOpen(true);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   const handleRateProduct = async (product: Product, ratingValue: number) => {
     try {
@@ -80,37 +81,32 @@ const products: Product[] = data?.products ?? [];
   };
 
   const handleNext = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(prev => prev + 1);
-    }
+    if (currentPage < totalPages - 1) setCurrentPage(prev => prev + 1);
   };
 
   const handlePrev = () => {
-    if (currentPage > 0) {
-      setCurrentPage(prev => prev - 1);
-    }
+    if (currentPage > 0) setCurrentPage(prev => prev - 1);
   };
 
   const currentProducts = useMemo(() => {
     const startIdx = currentPage * productsPerPage;
     return products.slice(startIdx, startIdx + productsPerPage);
-  }, [products, currentPage, productsPerPage]);
+  }, [products, currentPage]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-10 sm:mt-20 font-sans">
       
-      {/* 🔴 Label */}
+      {/* Label */}
       <div className="flex items-center gap-4 mb-4">
         <div className="w-5 h-10 bg-[#DB4444] rounded-sm"></div>
         <span className="text-[#DB4444] font-bold text-sm md:text-base uppercase tracking-wider">Our Products</span>
       </div>
 
-      {/* Header Row: Inline and Arrows on the Right */}
+      {/* Header Row */}
       <div className="flex flex-row items-center justify-between w-full mb-8">
         <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-black tracking-tight">
           Explore Our Products
         </h2>
-        
         <div className="shrink-0">
           <SliderArrows onPrev={handlePrev} onNext={handleNext} />
         </div>
@@ -135,7 +131,7 @@ const products: Product[] = data?.products ?? [];
         </div>
       )}
 
-      {/* 🛍️ Grid */}
+      {/* Product Grid */}
       {!isLoading && !isError && currentProducts.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
           {currentProducts.map((product: Product) => (
@@ -156,7 +152,11 @@ const products: Product[] = data?.products ?? [];
                   </Link>
                 </div>
 
-                <img src={product.image || 'https://via.placeholder.com/150'} alt={product.name} className="w-3/4 h-3/4 object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-110" />
+                <img 
+                  src={product.image || 'https://via.placeholder.com/150'} 
+                  alt={product.name} 
+                  className="w-3/4 h-3/4 object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-110" 
+                />
 
                 <button 
                   onClick={() => handleAddToCart(product)}
@@ -183,7 +183,7 @@ const products: Product[] = data?.products ?? [];
                            <button 
                              key={i} 
                              onClick={() => handleRateProduct(product, starValue)}
-                             className="focus:outline-hidden hover:scale-110 active:scale-95 transition-transform"
+                             className="focus:outline-none hover:scale-110 active:scale-95 transition-transform"
                            >
                              <Star 
                                size={15} 
@@ -209,7 +209,7 @@ const products: Product[] = data?.products ?? [];
       {/* Empty State */}
       {!isLoading && !isError && products.length === 0 && (
          <div className="w-full text-center py-10 mt-10 text-gray-500 font-medium">
-            No products found right now.
+            No products found in "Our Products".
          </div>
       )}
 

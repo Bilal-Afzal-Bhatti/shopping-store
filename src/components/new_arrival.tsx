@@ -210,3 +210,17 @@ function New_arrival() {
 }
 
 export default New_arrival;
+
+
+
+// import { toSlug } from '../utils/slug';
+
+// // anywhere you navigate to product detail:
+// navigate(`/product/${toSlug(product.name)}`, {
+//   state: { productId: product._id }
+// })
+
+// // or as Link:
+// <Link to={`/product/${toSlug(product.name)}`} state={{ productId: product._id }}>
+//   Shop Now
+// </Link>

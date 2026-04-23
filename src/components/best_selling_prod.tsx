@@ -58,7 +58,7 @@ const handleAddToCart = async (product: Product) => {
 
   setIsAdding(true);
   try {
-    await dispatch(addToCartAsync(product)).unwrap();
+    await dispatch(addToCartAsync({ product })).unwrap();
     setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
     setIsModalOpen(true);
   } catch (err: any) {
@@ -147,7 +147,7 @@ const handleAddToCart = async (product: Product) => {
                   <img
                     src={product.image || 'https://via.placeholder.com/150'}
                     alt={product.name}
-                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
+                    className="w-3/4 h-6/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
                   />
 
                   {/* Action Icons */}

@@ -7,15 +7,15 @@ import axios from "axios";
 import { useDispatch } from "react-redux";
 import { toast } from "react-hot-toast";
 
-import SliderArrows      from "../components/arrow";
-import Line              from "./line";
-import CartModal         from "../components/modal";
+import SliderArrows from "../components/arrow";
+import Line from "./line";
+import CartModal from "../components/modal";
 import { addToCartAsync } from "../redux/slices/cartSlice";
-import { useProducts }   from "../hooks/useProducts";
-import type { Product }  from "../api/productsApi";
-import { productsApi }   from "../api/productsApi";
+import { useProducts } from "../hooks/useProducts";
+import type { Product } from "../api/productsApi";
+import { productsApi } from "../api/productsApi";
 import type { AppDispatch } from "../redux/store";
-
+import { toSlug } from '../utils/slug';
 const SALE_END_DATE = new Date();
 SALE_END_DATE.setDate(SALE_END_DATE.getDate() + 3);
 
@@ -97,7 +97,7 @@ function ProductCard({ product, isLiked, isAdding, isPending, onWishlist, onAddT
         <img
           src={product.image || "https://placehold.co/300x300?text=No+Image"}
           alt={product.name} loading="lazy"
-          className="w-3/4 h-3/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply select-none pointer-events-none"
+          className="w-3/4 h-6/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply select-none pointer-events-none"
           onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/300x300?text=No+Image"; }}
         />
         <button onClick={onAddToCart} disabled={isAdding || product.stock === 0}
@@ -130,28 +130,28 @@ function ProductCard({ product, isLiked, isAdding, isPending, onWishlist, onAddT
 
 // ─── Flash_sales ──────────────────────────────────────────────────────────────
 export default function Flash_sales() {
-  const dispatch  = useDispatch<AppDispatch>();  // ✅ typed
-  const navigate  = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();  // ✅ typed
+  const navigate = useNavigate();
 
-  const { data, isLoading, isError } =useProducts({ category: 'Flash Sales', limit: 20 })
+  const { data, isLoading, isError } = useProducts({ category: 'Flash Sales', limit: 20 })
   const products: Product[] = data?.products ?? [];
 
-  const [timeLeft,    setTimeLeft]    = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState<{ message: string; type: "success" | "error" }>({ message: "", type: "success" });
-  const [addingId,    setAddingId]    = useState<string | null>(null);
-  const [isLiked,     setLiked]       = useState<Record<string, boolean>>({});
-  const [isPending,   startTransition] = useTransition();
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [isLiked, setLiked] = useState<Record<string, boolean>>({});
+  const [isPending, startTransition] = useTransition();
   const carousel = useRef<HTMLDivElement>(null);
-  const dragX    = useMotionValue(0);
+  const dragX = useMotionValue(0);
 
   useEffect(() => {
     const tick = () => {
       const distance = SALE_END_DATE.getTime() - Date.now();
       if (distance <= 0) return;
       setTimeLeft({
-        days:    Math.floor(distance / 86_400_000),
-        hours:   Math.floor((distance / 3_600_000) % 24),
+        days: Math.floor(distance / 86_400_000),
+        hours: Math.floor((distance / 3_600_000) % 24),
         minutes: Math.floor((distance / 60_000) % 60),
         seconds: Math.floor((distance / 1_000) % 60),
       });
@@ -191,7 +191,7 @@ export default function Flash_sales() {
     }
     setAddingId(product._id);
     try {
-    await dispatch(addToCartAsync({ product, quantity: 1 })).unwrap();
+      await dispatch(addToCartAsync({ product, quantity: 1 })).unwrap();
       setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
       setIsModalOpen(true);
     } catch (err: any) {
@@ -244,10 +244,10 @@ export default function Flash_sales() {
           <h2 className="text-2xl md:text-4xl font-bold text-black tracking-tight">Flash Sales</h2>
           <div className="flex items-end gap-1">
             {[
-              { label: "Days",  value: timeLeft.days },
-              { label: "Hrs",   value: timeLeft.hours },
-              { label: "Mins",  value: timeLeft.minutes },
-              { label: "Secs",  value: timeLeft.seconds },
+              { label: "Days", value: timeLeft.days },
+              { label: "Hrs", value: timeLeft.hours },
+              { label: "Mins", value: timeLeft.minutes },
+              { label: "Secs", value: timeLeft.seconds },
             ].map((unit, i) => (
               <div key={unit.label} className="flex items-end">
                 <CountdownUnit label={unit.label} value={unit.value} />
@@ -280,7 +280,10 @@ export default function Flash_sales() {
                   onWishlist={() => handleWishlistToggle(product)}
                   onAddToCart={() => handleAddToCart(product)}
                   onRate={(v) => handleRateProduct(product, v)}
-                  onView={() => navigate(`/view_item/${product._id}`)}
+                  // onView={() => navigate(`/view_item/${product._id}`)}
+                  onView={() => navigate(`/product/${toSlug(product.name)}`, {
+                    state: { productId: product._id }
+                  })}
                 />
               </div>
             ))}

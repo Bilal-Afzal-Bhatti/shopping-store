@@ -39,7 +39,8 @@ export default function App() {
         <Route path="/myaccount" element={<MyAccount />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/check_out" element={<Checkout />} />
-        <Route path="/view_item/:id" element={<Viewitem />} />
+        {/* <Route path="/view_item/:id" element={<Viewitem />} /> */}
+        <Route path="/product/:slug" element={<Viewitem />} />
         <Route path="/success" element={<PaymentSuccess />} />
         <Route path="/orderTracking/:id" element ={<OrderTracking/>}/>
         <Route path="/myOrder" element ={<MyOrders/>}/>

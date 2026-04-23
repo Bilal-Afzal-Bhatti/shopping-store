@@ -1,6 +1,6 @@
 // src/view_item.tsx
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { Heart, ShoppingCart, Star, ArrowLeft } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -10,11 +10,17 @@ import axiosInstance from "./api/axiosInstance";
 import type { AppDispatch } from "./redux/store";
 
 export const Viewitem: React.FC = () => {
-  const { id }   = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
+  // const { id }   = useParams<{ id: string }>();
 
-  const { data: product, isLoading, isError } = useProduct(id);
+  const dispatch = useDispatch<AppDispatch>();
+const { slug: _slug } = useParams<{ slug: string }>(); // ← prefix _ to suppress unused warning
+const navigate        = useNavigate();                  // ← uncomment this
+const location        = useLocation();
+const productId       = (location.state as any)?.productId as string | undefined;
+const { data: product, isLoading, isError } = useProduct(productId);
+
+  // const { data: product, isLoading, isError } = useProduct(id);
+// ✅ new — read id from navigation state, slug from URL
 
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);

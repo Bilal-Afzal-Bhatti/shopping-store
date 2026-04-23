@@ -1,7 +1,7 @@
 // src/orderTracking.tsx
 import React, { useEffect, useState, useCallback, useRef, useTransition } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Truck, Clock, ShieldCheck, MapPin, Info, RefreshCw, Copy, Check } from 'lucide-react';
+import { Truck, Clock, ShieldCheck, MapPin, Info, RefreshCw,   } from 'lucide-react';
 import Swal from 'sweetalert2';
 import axiosInstance from './api/axiosInstance';
 
@@ -35,17 +35,12 @@ const OrderTracking: React.FC = () => {
 
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+ 
   const [isPending, startTransition] = useTransition();
   const orderStatusRef = useRef<string | null>(null);
 
-  // ✅ copy order ID to clipboard
-  const handleCopyId = () => {
-    if (!order) return;
-    navigator.clipboard.writeText(order.orderId ?? order._id);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  
+
   const fetchOrder = useCallback(async (isSilent = false) => {
     if (!orderId) return;
     try {
@@ -164,9 +159,7 @@ const OrderTracking: React.FC = () => {
               <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
                 {order.orderId ?? order._id}
               </span>
-              <button onClick={handleCopyId} className="text-gray-400 hover:text-black transition" title="Copy">
-                {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
-              </button>
+            
             </div>
             <p className="text-[10px] text-gray-400 font-medium mt-1">
               Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {

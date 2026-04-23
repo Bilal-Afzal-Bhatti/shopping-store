@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 import type { AppDispatch } from "./redux/store";
 import { clearCartAsync } from "./redux/slices/cartSlice";
 import axiosInstance from "./api/axiosInstance";
-import Swal from 'sweetalert2';
+// import Swal from 'sweetalert2';
 
 const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
@@ -15,28 +15,28 @@ const PaymentSuccess: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const verificationStarted = useRef(false);
 
-  // ─── 1. CHROME BACK BUTTON TRAP ──────────────────────────────────────────
-  useEffect(() => {
-    // Push dummy state to create the history trap
-    window.history.pushState(null, "", window.location.href);
+  // // ─── 1. CHROME BACK BUTTON TRAP ──────────────────────────────────────────
+  // useEffect(() => {
+  //   // Push dummy state to create the history trap
+  //   window.history.pushState(null, "", window.location.href);
 
-    const handlePopState = () => {
-      // Re-trap the user
-      window.history.pushState(null, "", window.location.href);
+  //   const handlePopState = () => {
+  //     // Re-trap the user
+  //     window.history.pushState(null, "", window.location.href);
       
-      Swal.fire({
-        title: 'PAYMENT COMPLETED',
-        text: 'Your order is confirmed. Navigation is restricted during processing.',
-        icon: 'warning',
-        confirmButtonColor: '#000',
-        background: '#fff',
-        color: '#000'
-      });
-    };
+  //     Swal.fire({
+  //       title: 'PAYMENT COMPLETED',
+  //       text: 'Your order is confirmed. Navigation is restricted during processing.',
+  //       icon: 'warning',
+  //       confirmButtonColor: '#000',
+  //       background: '#fff',
+  //       color: '#000'
+  //     });
+  //   };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  //   window.addEventListener('popstate', handlePopState);
+  //   return () => window.removeEventListener('popstate', handlePopState);
+  // }, []);
 
   // ─── 2. VERIFICATION LOGIC ────────────────────────────────────────────────
   useEffect(() => {

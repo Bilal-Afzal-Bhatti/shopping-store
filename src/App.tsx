@@ -42,7 +42,9 @@ export default function App() {
         {/* <Route path="/view_item/:id" element={<Viewitem />} /> */}
         <Route path="/product/:slug" element={<Viewitem />} />
         <Route path="/success" element={<PaymentSuccess />} />
-        <Route path="/orderTracking/:id" element ={<OrderTracking/>}/>
+       
+        <Route path="/order/tracking" element={<OrderTracking />} />
+         {/* <Route path="/orderTracking/:id" element ={<OrderTracking/>}/> */}
         <Route path="/myOrder" element ={<MyOrders/>}/>
         <Route path="/OAuthLogin" element={<OAuthLogin/>}/>
         <Route path="/wishlist" element={<Wishlist/>}/> 

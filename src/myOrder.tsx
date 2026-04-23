@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'; // 🏃 Install this: npm install framer
 const MyOrders: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  
+
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
@@ -43,18 +43,18 @@ const MyOrders: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
-        
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
             <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter text-black italic">My Orders</h1>
             <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-2">Personal Purchase Vault</p>
           </div>
-          <button 
-            onClick={() => navigate('/')} 
+          <button
+            onClick={() => navigate('/')}
             className="w-fit flex items-center gap-2 text-xs font-black uppercase border-4 border-black px-6 py-3 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
           >
-            <ArrowLeft size={16} strokeWidth={3}/> Continue Shopping
+            <ArrowLeft size={16} strokeWidth={3} /> Continue Shopping
           </button>
         </div>
 
@@ -66,7 +66,7 @@ const MyOrders: React.FC = () => {
         ) : (
           <div className="grid gap-8">
             {orders.map((order) => (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 key={order._id}
@@ -76,9 +76,8 @@ const MyOrders: React.FC = () => {
                   {/* Status Bar */}
                   <div className="flex flex-wrap justify-between items-center gap-4 mb-6 border-b-2 border-gray-100 pb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`px-4 py-1 text-[10px] font-black uppercase italic ${
-                        order.orderStatus === 'delivered' ? 'bg-green-400' : 'bg-yellow-400'
-                      } border-2 border-black`}>
+                      <div className={`px-4 py-1 text-[10px] font-black uppercase italic ${order.orderStatus === 'delivered' ? 'bg-green-400' : 'bg-yellow-400'
+                        } border-2 border-black`}>
                         {order.orderStatus || 'processing'}
                       </div>
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">ID: {order._id.slice(-10)}</span>
@@ -90,19 +89,19 @@ const MyOrders: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-8">
-                    
+
                     {/* 🖼️ INDUSTRIAL SLIDER GALLERY */}
                     <div className="w-full md:w-2/3">
                       <p className="text-[10px] text-gray-400 font-black uppercase mb-3 tracking-widest">Package Contents ({order.items?.length})</p>
                       <div className="relative">
-                        <motion.div 
+                        <motion.div
                           drag="x"
                           dragConstraints={{ right: 0, left: -100 }}
                           className="flex gap-3 overflow-x-auto no-scrollbar pb-2 cursor-grab active:cursor-grabbing"
                         >
                           {order.items?.map((item: any, i: number) => (
                             <div key={i} className="group/item relative shrink-0">
-                              <img 
+                              <img
                                 className="h-20 w-20 rounded-none border-2 border-black object-contain bg-gray-50 p-2"
                                 src={item.image?.startsWith('http') ? item.image : `https://shopping-store-blond-one.vercel.app${item.image}`}
                                 alt={item.name}
@@ -126,12 +125,30 @@ const MyOrders: React.FC = () => {
                           ${Number(order.totalPrice || 0).toFixed(2)}
                         </p>
                       </div>
-                  
-                      <button 
+// orderTracking.tsx — replace the Order ID display section
+<div className="flex items-center gap-2 mt-2">
+  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+    Order ID:
+  </span>
+  {/* ✅ show custom orderId not MongoDB _id */}
+  <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+    {order.orderId ?? order._id}
+  </span>
+  <button onClick={handleCopyId} className="text-gray-400 hover:text-black transition" title="Copy">
+    {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+  </button>
+</div>
+                      {/* <button 
                         onClick={() => navigate(`/orderTracking/${order._id}`)}
                         className="bg-black text-white px-8 py-4 font-black uppercase text-xs flex items-center gap-3 hover:bg-red-600 transition-all active:scale-95 shadow-[4px_4px_0px_0px_rgba(255,0,0,0.5)] md:shadow-none"
                       >
                         Track <ChevronRight size={18} strokeWidth={4}/>
+                      </button> */}
+                      <button
+                        onClick={() => navigate('/order/tracking', { state: { orderId: order._id } })}
+                        className="bg-black text-white px-8 py-4 font-black uppercase text-xs flex items-center gap-3 hover:bg-red-600 transition-all active:scale-95 shadow-[4px_4px_0px_0px_rgba(255,0,0,0.5)] md:shadow-none"
+                      >
+                        Track <ChevronRight size={18} strokeWidth={4} />
                       </button>
                     </div>
                   </div>

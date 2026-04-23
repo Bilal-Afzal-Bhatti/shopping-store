@@ -1,11 +1,13 @@
+// src/orderTracking.tsx
 import React, { useEffect, useState, useCallback, useRef, useTransition } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Truck, Clock, ShieldCheck, MapPin, Info, RefreshCw } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Truck, Clock, ShieldCheck, MapPin, Info, RefreshCw, Copy, Check } from 'lucide-react';
 import Swal from 'sweetalert2';
+import axiosInstance from './api/axiosInstance';
 
-// --- INTERFACES ---
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 interface OrderItem {
+
   productId: string | number;
   name: string;
   price: number;
@@ -14,6 +16,7 @@ interface OrderItem {
 }
 
 interface OrderData {
+  orderId: string;        // ✅ add this
   cancellationRequested: boolean;
   _id: string;
   orderStatus: 'processing' | 'shipped' | 'delivered' | 'cancelled';
@@ -25,22 +28,37 @@ interface OrderData {
 }
 
 const OrderTracking: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  // ✅ read orderId from location state — not from URL params
+  const location = useLocation();
   const navigate = useNavigate();
+  const orderId = (location.state as any)?.orderId as string | undefined;
+
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isPending, startTransition] = useTransition(); // React 19 Transition
+  const [copied, setCopied] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const orderStatusRef = useRef<string | null>(null);
 
+  // ✅ copy order ID to clipboard
+  const handleCopyId = () => {
+    if (!order) return;
+    navigator.clipboard.writeText(order.orderId ?? order._id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   const fetchOrder = useCallback(async (isSilent = false) => {
+    if (!orderId) return;
     try {
       if (!isSilent) setLoading(true);
-      const { data } = await axios.get(`https://shoppingstore-backend.vercel.app/api/orders/track/${id}`);
+      const { data } = await axiosInstance.get(`/orders/track/${orderId}`);
       const newOrder = data.order || data;
 
-      // React 19 Optimization: Update state inside a transition to avoid UI blocking
       startTransition(() => {
-        if (orderStatusRef.current && orderStatusRef.current !== 'cancelled' && newOrder.orderStatus === 'cancelled') {
+        if (
+          orderStatusRef.current &&
+          orderStatusRef.current !== 'cancelled' &&
+          newOrder.orderStatus === 'cancelled'
+        ) {
           Swal.fire({
             title: 'REQUEST ACCEPTED',
             text: 'Your order has been cancelled. Redirecting...',
@@ -54,17 +72,21 @@ const OrderTracking: React.FC = () => {
         setOrder(newOrder);
       });
     } catch (err) {
-      console.error("Order tracking error:", err);
+      console.error('Order tracking error:', err);
     } finally {
       if (!isSilent) setLoading(false);
     }
-  }, [id, navigate]);
+  }, [orderId, navigate]);
 
   useEffect(() => {
+    if (!orderId) {
+      navigate('/');
+      return;
+    }
     fetchOrder();
-    const interval = setInterval(() => fetchOrder(true), 5000); 
+    const interval = setInterval(() => fetchOrder(true), 5000);
     return () => clearInterval(interval);
-  }, [fetchOrder]);
+  }, [fetchOrder, orderId, navigate]);
 
   const handleCancelOrder = async () => {
     const { value: reason } = await Swal.fire({
@@ -73,22 +95,20 @@ const OrderTracking: React.FC = () => {
       inputOptions: {
         'Changed my mind': 'Changed my mind',
         'Ordered by mistake': 'Ordered by mistake',
-        'Other': 'Other'
+        'Other': 'Other',
       },
       showCancelButton: true,
       confirmButtonColor: '#000',
     });
 
     if (reason) {
-      // Use Transition for the network request
       startTransition(async () => {
         try {
-          const res = await axios.post(
-            `https://shoppingstore-backend.vercel.app/api/ordercancel/${id}/cancel`,
-            { reason, additionalNotes: "Requested via Tracking Page" },
-            { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+          const res = await axiosInstance.post(
+            `/ordercancel/${orderId}/cancel`,
+            { reason, additionalNotes: 'Requested via Tracking Page' }
           );
-          if (res.status === 201 || res.status === 200) {
+          if (res.status === 200 || res.status === 201) {
             Swal.fire('REQUEST SENT', 'Admin is reviewing your request.', 'success');
             fetchOrder(true);
           }
@@ -105,7 +125,11 @@ const OrderTracking: React.FC = () => {
     </div>
   );
 
-  if (!order) return <div className="h-screen flex items-center justify-center font-black uppercase">Order Not Found</div>;
+  if (!order) return (
+    <div className="h-screen flex items-center justify-center font-black uppercase">
+      Order Not Found
+    </div>
+  );
 
   const steps = [
     { id: 'processing', label: 'Processing', icon: Clock },
@@ -117,34 +141,56 @@ const OrderTracking: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#fafafa] py-12 px-4 font-sans">
       <div className="max-w-5xl mx-auto">
-        {/* HEADER */}
+
+        {/* ── Header ────────────────────────────────────────────────── */}
         <div className="bg-white border-2 border-black p-8 mb-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[10px] font-black px-2 py-0.5 uppercase tracking-widest ${order.orderStatus === 'cancelled' ? 'bg-red-600 text-white' : 'bg-black text-white'}`}>
+              <span className={`text-[10px] font-black px-2 py-0.5 uppercase tracking-widest ${order.orderStatus === 'cancelled' ? 'bg-red-600 text-white' : 'bg-black text-white'
+                }`}>
                 {order.orderStatus}
               </span>
             </div>
-            <h1 className="text-4xl font-black uppercase tracking-tighter leading-none">Track Order</h1>
+            <h1 className="text-4xl font-black uppercase tracking-tighter leading-none mb-3">
+              Track Order
+            </h1>
+
+
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                Order ID:
+              </span>
+              {/* ✅ show custom orderId not MongoDB _id */}
+              <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                {order.orderId ?? order._id}
+              </span>
+              <button onClick={handleCopyId} className="text-gray-400 hover:text-black transition" title="Copy">
+                {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-400 font-medium mt-1">
+              Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+              })}
+            </p>
           </div>
+
           <div className="text-right">
             <p className="text-4xl font-black text-black">${order.totalPrice.toFixed(2)}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase mt-1">{order.paymentMethod}</p>
           </div>
         </div>
 
-        {/* STEPPER SECTION WITH CONNECTING LINE */}
+        {/* ── Stepper ───────────────────────────────────────────────── */}
         <div className="bg-white border-2 border-black p-10 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-black"></div>
-          
+          <div className="absolute top-0 left-0 w-2 h-full bg-black" />
           <div className="relative max-w-2xl mx-auto py-4">
-            {/* THE CONNECTING LINE */}
-           <div className="absolute top-1/2 left-8 right-8 h-1 bg-gray-100 -translate-y-[180%] md:-translate-y-[210%]">
-                <div 
-                    className="h-full bg-black transition-all duration-1000 ease-in-out" 
-                    style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}
-                ></div>
+            <div className="absolute top-1/2 left-8 right-8 h-1 bg-gray-100 -translate-y-[180%] md:-translate-y-[210%]">
+              <div
+                className="h-full bg-black transition-all duration-1000 ease-in-out"
+                style={{ width: `${(currentIdx / (steps.length - 1)) * 100}%` }}
+              />
             </div>
-
             <div className="flex justify-between items-center relative z-10">
               {steps.map((step, index) => {
                 const Icon = step.icon;
@@ -154,27 +200,29 @@ const OrderTracking: React.FC = () => {
                   <div key={step.id} className="flex flex-col items-center">
                     <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center border-4 transition-all duration-700
                       ${isActive ? 'bg-black text-white border-black' : 'bg-white text-gray-200 border-gray-100'}
-                      ${isCurrent ? 'ring-4 ring-gray-100 scale-110 animate-pulse' : ''}`}>
+                      ${isCurrent ? 'ring-4 ring-gray-100 scale-110 animate-pulse' : ''}`}
+                    >
                       <Icon size={24} />
                     </div>
                     <p className={`text-[10px] font-black uppercase mt-3 tracking-widest ${isActive ? 'text-black' : 'text-gray-300'}`}>
                       {step.label}
                     </p>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
         </div>
 
+        {/* ── Items + Sidebar ───────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
             <h3 className="font-black uppercase tracking-widest text-sm mb-4">Items in Package</h3>
             {order.items.map((item, i) => (
               <div key={i} className="bg-white border-2 border-black p-4 flex items-center justify-between shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gray-50 border border-gray-100 p-2">
-                    <img src={item.image} alt="" className="w-full h-full object-contain" />
+                  <div className="w-16 h-16 bg-gray-50 border border-gray-100 p-2 shrink-0">
+                    <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
                   </div>
                   <div>
                     <p className="font-black uppercase text-sm">{item.name}</p>
@@ -193,6 +241,7 @@ const OrderTracking: React.FC = () => {
               </h3>
               <p className="text-sm font-black uppercase text-white">{order.billingInfo.name}</p>
               <p className="text-xs text-gray-400 mt-1 leading-relaxed">{order.billingInfo.address}</p>
+              <p className="text-xs text-gray-400">{order.billingInfo.city}, {order.billingInfo.zipcode}</p>
             </div>
 
             <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -208,7 +257,7 @@ const OrderTracking: React.FC = () => {
                 </div>
               ) : order.orderStatus === 'shipped' || order.orderStatus === 'delivered' ? (
                 <button disabled className="w-full py-4 border-2 border-gray-200 bg-gray-50 text-gray-300 font-black uppercase cursor-not-allowed">
-                   Cancellation Locked ({order.orderStatus})
+                  Cancellation Locked ({order.orderStatus})
                 </button>
               ) : (
                 <button

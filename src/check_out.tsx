@@ -67,7 +67,10 @@ const Checkout: React.FC = () => {
 
       await dispatch(clearCartAsync());
       toast.success('Order Placed Successfully!', { id: loadId });
-      setTimeout(() => navigate(`/orderTracking/${orderId}`), 1500);
+      // setTimeout(() => navigate(`/orderTracking/${orderId}`), 1500);
+    setTimeout(() => navigate('/order/tracking', {
+  state: { orderId }
+}), 1500);
 
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Order failed. Please try again.', { id: loadId });

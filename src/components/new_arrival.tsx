@@ -1,10 +1,11 @@
 // src/components/new_arrival.tsx
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useProducts } from "../hooks/useProducts";
 import type { Product } from "../api/productsApi";
+import { toSlug } from '../utils/slug';
 
 function New_arrival() {
-  // ✅ matches exact DB category "New Arrival"
+  const navigate = useNavigate();
   const { data, isLoading, isError } = useProducts({ category: 'New Arrival' });
   const products: Product[] = data?.products ?? [];
 
@@ -13,7 +14,12 @@ function New_arrival() {
   const bottomLeftProduct  = products[2];
   const bottomRightProduct = products[3];
 
-  // ── Skeleton ──────────────────────────────────────────────────────────────
+  // ── helper — navigate with slug + hidden id ───────────────────────────────
+  const goToProduct = (product: Product) =>
+    navigate(`/product/${toSlug(product.name)}`, {
+      state: { productId: product._id }
+    });
+
   if (isLoading) return (
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 mb-20">
       <div className="flex items-center gap-4 mb-4">
@@ -43,39 +49,37 @@ function New_arrival() {
         <span className="text-[#DB4444] font-bold text-sm uppercase tracking-wider">Featured</span>
       </div>
 
-      {/* Header */}
       <h2 className="text-2xl sm:text-4xl font-bold text-black tracking-tight mb-8">
         New Arrival
       </h2>
 
-      {/* Error */}
       {isError && (
         <div className="w-full text-center py-10 text-red-500 font-medium bg-red-50 rounded-md">
           Failed to load new arrivals. Please try again later.
         </div>
       )}
 
-      {/* Empty */}
       {!isLoading && !isError && products.length === 0 && (
         <div className="w-full text-center py-10 text-gray-500 font-medium">
           No new arrivals found.
         </div>
       )}
 
-      {/* Grid */}
       {!isLoading && !isError && products.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
 
-          {/* ── Left: Main product ────────────────────────────────────── */}
+          {/* ── Main product ─────────────────────────────────────────── */}
           {mainProduct ? (
-            <div className="relative group bg-black rounded-xl overflow-hidden h-[350px] sm:h-[450px] md:h-[600px]">
+            <div
+              onClick={() => goToProduct(mainProduct)}
+              className="relative group bg-black rounded-xl overflow-hidden h-[350px] sm:h-[450px] md:h-[600px] cursor-pointer"
+            >
               <img
                 src={mainProduct.image || 'https://placehold.co/600x600?text=No+Image'}
                 alt={mainProduct.name}
                 className="w-full h-full object-contain md:object-cover mt-10 md:mt-0 transition-transform duration-500 group-hover:scale-105"
                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x600?text=No+Image'; }}
               />
-              {/* Discount badge */}
               {mainProduct.discount && mainProduct.discount !== 'No Discount' && (
                 <span className="absolute top-4 left-4 bg-[#DB4444] text-white text-xs font-bold px-2.5 py-1 rounded-md z-10">
                   -{mainProduct.discount.match(/\d+/)?.[0]}%
@@ -89,12 +93,9 @@ function New_arrival() {
                     <span className="text-gray-400 line-through text-sm">${mainProduct.originalPrice.toFixed(2)}</span>
                   )}
                 </div>
-                <Link
-                  to={`/view_item/${mainProduct._id}`}
-                  className="text-white font-medium underline underline-offset-8 hover:text-gray-300 transition-colors"
-                >
+                <span className="text-white font-medium underline underline-offset-8 hover:text-gray-300 transition-colors">
                   Shop Now
-                </Link>
+                </span>
               </div>
             </div>
           ) : (
@@ -103,12 +104,15 @@ function New_arrival() {
             </div>
           )}
 
-          {/* ── Right: 3 products ─────────────────────────────────────── */}
+          {/* ── Right 3 products ─────────────────────────────────────── */}
           <div className="flex flex-col gap-6">
 
             {/* Top */}
             {topProduct ? (
-              <div className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72">
+              <div
+                onClick={() => goToProduct(topProduct)}
+                className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72 cursor-pointer"
+              >
                 <img
                   src={topProduct.image || 'https://placehold.co/400x300?text=No+Image'}
                   alt={topProduct.name}
@@ -128,12 +132,9 @@ function New_arrival() {
                       <span className="text-gray-400 line-through text-xs">${topProduct.originalPrice.toFixed(2)}</span>
                     )}
                   </div>
-                  <Link
-                    to={`/view_item/${topProduct._id}`}
-                    className="text-white font-medium underline underline-offset-8 hover:text-gray-300 transition-colors"
-                  >
+                  <span className="text-white font-medium underline underline-offset-8 hover:text-gray-300 transition-colors">
                     Shop Now
-                  </Link>
+                  </span>
                 </div>
               </div>
             ) : (
@@ -145,7 +146,10 @@ function New_arrival() {
 
               {/* Bottom Left */}
               {bottomLeftProduct ? (
-                <div className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center">
+                <div
+                  onClick={() => goToProduct(bottomLeftProduct)}
+                  className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center cursor-pointer"
+                >
                   <img
                     src={bottomLeftProduct.image}
                     alt={bottomLeftProduct.name}
@@ -159,13 +163,10 @@ function New_arrival() {
                   )}
                   <div className="absolute bottom-0 left-0 p-4 w-full bg-linear-to-t from-black/70 to-transparent">
                     <h3 className="text-white text-base font-bold mb-1 truncate">{bottomLeftProduct.name}</h3>
-                    <span className="text-[#DB4444] font-bold text-sm">${bottomLeftProduct.price.toFixed(2)}</span>
-                    <Link
-                      to={`/view_item/${bottomLeftProduct._id}`}
-                      className="block text-white text-xs font-medium underline underline-offset-4 hover:text-gray-300 transition-colors mt-1"
-                    >
+                    <span className="text-[#DB4444] font-bold text-sm block mb-1">${bottomLeftProduct.price.toFixed(2)}</span>
+                    <span className="text-white text-xs font-medium underline underline-offset-4 hover:text-gray-300 transition-colors">
                       Shop Now
-                    </Link>
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -174,7 +175,10 @@ function New_arrival() {
 
               {/* Bottom Right */}
               {bottomRightProduct ? (
-                <div className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center">
+                <div
+                  onClick={() => goToProduct(bottomRightProduct)}
+                  className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center cursor-pointer"
+                >
                   <img
                     src={bottomRightProduct.image}
                     alt={bottomRightProduct.name}
@@ -188,13 +192,10 @@ function New_arrival() {
                   )}
                   <div className="absolute bottom-0 left-0 p-4 w-full bg-linear-to-t from-black/70 to-transparent">
                     <h3 className="text-white text-base font-bold mb-1 truncate">{bottomRightProduct.name}</h3>
-                    <span className="text-[#DB4444] font-bold text-sm">${bottomRightProduct.price.toFixed(2)}</span>
-                    <Link
-                      to={`/view_item/${bottomRightProduct._id}`}
-                      className="block text-white text-xs font-medium underline underline-offset-4 hover:text-gray-300 transition-colors mt-1"
-                    >
+                    <span className="text-[#DB4444] font-bold text-sm block mb-1">${bottomRightProduct.price.toFixed(2)}</span>
+                    <span className="text-white text-xs font-medium underline underline-offset-4 hover:text-gray-300 transition-colors">
                       Shop Now
-                    </Link>
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -210,17 +211,3 @@ function New_arrival() {
 }
 
 export default New_arrival;
-
-
-
-// import { toSlug } from '../utils/slug';
-
-// // anywhere you navigate to product detail:
-// navigate(`/product/${toSlug(product.name)}`, {
-//   state: { productId: product._id }
-// })
-
-// // or as Link:
-// <Link to={`/product/${toSlug(product.name)}`} state={{ productId: product._id }}>
-//   Shop Now
-// </Link>

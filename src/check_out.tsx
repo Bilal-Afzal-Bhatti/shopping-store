@@ -6,13 +6,15 @@ import toast, { Toaster } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from './redux/store';
 import { fetchCart, clearCartAsync } from './redux/slices/cartSlice';
-import axiosInstance from './api/axiosInstance'; // ✅ added
+import axiosInstance from './api/axiosInstance';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { items: cartItems, totalPrice, loading, synced } = useSelector((s: RootState) => s.cart);
+  const { items: cartItems, totalPrice, loading, synced } = useSelector(
+    (s: RootState) => s.cart
+  );
 
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'cod'>('bank');
   const [isProcessing,  setIsProcessing]  = useState(false);
@@ -22,11 +24,21 @@ const Checkout: React.FC = () => {
     city: '', phone: '', email: '', zipcode: '',
   });
 
+  // ── Auth + cart sync ────────────────────────────────────────────────────────
   useEffect(() => {
     const token  = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
-    if (!token || !userId) { navigate('/login'); return; }
+    if (!token || !userId) { navigate('/login', { replace: true }); return; }
     if (!synced) dispatch(fetchCart());
+  }, []);
+
+  // ── Block checkout if already paid (back button from payment success) ───────
+  useEffect(() => {
+    const justPaid = sessionStorage.getItem('justPaid');
+    if (justPaid) {
+      sessionStorage.removeItem('justPaid');
+      navigate('/', { replace: true });
+    }
   }, []);
 
   const isFormComplete = useMemo(() =>
@@ -41,9 +53,10 @@ const Checkout: React.FC = () => {
     setBilling((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // ── COD Order ──────────────────────────────────────────────────────────────
+  // ── COD ─────────────────────────────────────────────────────────────────────
   const handleCODOrder = useCallback(async (loadId: string) => {
     const userId = localStorage.getItem('userId')!;
+
     const orderData = {
       items: cartItems.map((item) => ({
         productId: item.productId || item._id,
@@ -59,18 +72,19 @@ const Checkout: React.FC = () => {
     };
 
     try {
-      // ✅ axiosInstance — no hardcoded URL
       const res = await axiosInstance.post('/orders/cod', orderData);
 
       const orderId = res.data.order?._id || res.data._id;
       if (!orderId) throw new Error('No order ID returned');
 
+      // ✅ COD — clear cart immediately, payment is on delivery
       await dispatch(clearCartAsync());
       toast.success('Order Placed Successfully!', { id: loadId });
-      // setTimeout(() => navigate(`/orderTracking/${orderId}`), 1500);
-    setTimeout(() => navigate('/order/tracking', {
-  state: { orderId }
-}), 1500);
+
+      setTimeout(() => navigate('/order/tracking', {
+        state:   { orderId },
+        replace: true, // ✅ back button skips checkout
+      }), 1500);
 
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Order failed. Please try again.', { id: loadId });
@@ -78,9 +92,10 @@ const Checkout: React.FC = () => {
     }
   }, [cartItems, billing, saveInfo, subtotal, dispatch, navigate]);
 
-  // ── Online Payment ─────────────────────────────────────────────────────────
+  // ── Stripe ──────────────────────────────────────────────────────────────────
   const handleOnlineOrder = useCallback(async (loadId: string) => {
     const userId = localStorage.getItem('userId')!;
+
     const orderData = {
       items: cartItems.map((item) => ({
         productId: item.productId || item._id,
@@ -96,20 +111,18 @@ const Checkout: React.FC = () => {
     };
 
     try {
-      // ✅ axiosInstance — no hardcoded URL
       const res = await axiosInstance.post('/orders/create-checkout-session', orderData);
-
       toast.success('Redirecting to Secure Payment...', { id: loadId });
+      // ✅ DO NOT clear cart here — cart cleared only after Stripe confirms payment
       if (res.data.url) window.location.href = res.data.url;
 
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Payment redirect failed. Try again.', { id: loadId });
+      toast.error(err.response?.data?.message || 'Payment redirect failed.', { id: loadId });
       setIsProcessing(false);
     }
   }, [cartItems, billing, saveInfo, subtotal]);
 
-  // ── Execute Order ──────────────────────────────────────────────────────────
-  // ✅ token no longer passed as param — axiosInstance interceptor handles it
+  // ── Execute ─────────────────────────────────────────────────────────────────
   const executeOrder = useCallback(async () => {
     setIsProcessing(true);
     const loadId = toast.loading('Finalizing your order...');
@@ -125,21 +138,28 @@ const Checkout: React.FC = () => {
     else                         await handleOnlineOrder(loadId);
   }, [paymentMethod, handleCODOrder, handleOnlineOrder]);
 
+  // ── Confirm dialog ──────────────────────────────────────────────────────────
   const handlePlaceOrder = () => {
     if (!isFormComplete || isProcessing) {
-      if (!isFormComplete) toast.error('Please fill all shipping details.');
+      if (!isFormComplete) toast.error('Please fill all required shipping details.');
       return;
     }
     toast((t) => (
       <div className="flex flex-col gap-3 p-1">
-        <p className="font-bold text-gray-800">Confirm purchase of ${subtotal.toFixed(2)}?</p>
+        <p className="font-bold text-gray-800">
+          Confirm purchase of ${subtotal.toFixed(2)}?
+        </p>
         <div className="flex gap-2">
-          <button onClick={() => { toast.dismiss(t.id); if (!isProcessing) executeOrder(); }}
-            className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold">
+          <button
+            onClick={() => { toast.dismiss(t.id); if (!isProcessing) executeOrder(); }}
+            className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold"
+          >
             Confirm
           </button>
-          <button onClick={() => toast.dismiss(t.id)}
-            className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-xs font-bold">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-xs font-bold"
+          >
             Cancel
           </button>
         </div>
@@ -147,17 +167,24 @@ const Checkout: React.FC = () => {
     ), { duration: 5000 });
   };
 
+  // ── Loading ─────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="flex justify-center items-center h-screen">
       <Loader2 size={32} className="animate-spin text-gray-400" />
     </div>
   );
 
+  // ── Empty cart ──────────────────────────────────────────────────────────────
   if (!loading && synced && cartItems.length === 0 && !isProcessing) return (
-    <div className="flex flex-col items-center justify-center h-screen bg-white">
-      <ShoppingBag size={60} className="text-gray-200 mb-4" />
-      <h2 className="text-xl font-bold text-gray-300">Your cart is empty</h2>
-      <button onClick={() => navigate('/')} className="mt-4 text-blue-600 font-bold hover:underline">
+    <div className="flex flex-col items-center justify-center h-screen bg-white gap-3">
+      <ShoppingBag size={60} className="text-gray-200" />
+      <h2 className="text-xl font-bold text-gray-400">Your cart is empty</h2>
+      <p className="text-sm text-gray-400">Add items before checking out.</p>
+      <button
+        onClick={() => navigate('/', { replace: true })}
+        className="mt-2 px-8 py-3 bg-[#DB4444] text-white rounded-xl font-bold
+                   hover:bg-[#c33d3d] active:scale-95 transition"
+      >
         Start Shopping
       </button>
     </div>
@@ -170,7 +197,9 @@ const Checkout: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         <header className="mb-10">
           <h1 className="text-3xl font-black tracking-tight">Checkout</h1>
-          <p className="text-gray-500 text-sm mt-1">Review your items and provide shipping details.</p>
+          <p className="text-gray-500 text-sm mt-1">
+            Review your items and provide shipping details.
+          </p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -180,30 +209,45 @@ const Checkout: React.FC = () => {
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <div className="flex items-center gap-2 mb-8">
                 <div className="h-6 w-1.5 bg-blue-600 rounded-full" />
-                <h2 className="text-lg font-bold uppercase tracking-wider text-gray-700">Shipping Details</h2>
+                <h2 className="text-lg font-bold uppercase tracking-wider text-gray-700">
+                  Shipping Details
+                </h2>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.keys(billing).map((key) => (
                   <div key={key} className={key === 'address' ? 'md:col-span-2' : ''}>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-1.5 ml-1">{key}</label>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-1.5 ml-1">
+                      {key}
+                      {['name','address','city','phone','email','zipcode'].includes(key) && (
+                        <span className="text-red-400 ml-0.5">*</span>
+                      )}
+                    </label>
                     <input
-                      type="text" name={key}
+                      type={key === 'email' ? 'email' : key === 'phone' ? 'tel' : 'text'}
+                      name={key}
                       value={(billing as any)[key]}
                       onChange={handleChange}
-                      className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm outline-none focus:bg-white focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 transition-all"
+                      className="w-full bg-gray-50 border border-transparent rounded-xl px-4 py-3 text-sm outline-none
+                                 focus:bg-white focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 transition-all"
                       placeholder={`Enter ${key}...`}
                     />
                   </div>
                 ))}
               </div>
+
               <div
                 className="mt-8 flex items-center gap-3 p-4 bg-gray-50 rounded-2xl cursor-pointer hover:bg-gray-100 transition"
                 onClick={() => setSaveInfo(!saveInfo)}
               >
-                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${saveInfo ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'}`}>
+                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                  saveInfo ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'
+                }`}>
                   {saveInfo && <CheckCircle2 size={14} className="text-white" />}
                 </div>
-                <span className="text-xs font-bold text-gray-600">Save this information for faster checkout</span>
+                <span className="text-xs font-bold text-gray-600">
+                  Save this information for faster checkout
+                </span>
               </div>
             </div>
           </div>
@@ -217,7 +261,8 @@ const Checkout: React.FC = () => {
                 {cartItems.map((item) => (
                   <div key={item._id} className="flex gap-4 items-center group">
                     <div className="w-14 h-14 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shrink-0 p-1 group-hover:scale-105 transition-transform">
-                      <img src={item.image} alt={item.name}
+                      <img
+                        src={item.image} alt={item.name}
                         className="w-full h-full object-contain"
                         onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/56x56?text=?'; }}
                       />
@@ -245,12 +290,14 @@ const Checkout: React.FC = () => {
                 </div>
               </div>
 
+              {/* Payment methods */}
               <div className="mt-6 space-y-3">
                 {[
                   { key: 'bank', label: 'Online Payment', icon: <CreditCard size={16} /> },
                   { key: 'cod',  label: 'Cash on Delivery', icon: <DollarSign size={16} /> },
                 ].map((method) => (
-                  <button key={method.key}
+                  <button
+                    key={method.key}
                     onClick={() => setPaymentMethod(method.key as 'bank' | 'cod')}
                     className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
                       paymentMethod === method.key
@@ -259,10 +306,16 @@ const Checkout: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${paymentMethod === method.key ? 'bg-blue-600 text-white' : 'bg-white text-gray-400 shadow-sm'}`}>
+                      <div className={`p-2 rounded-lg ${
+                        paymentMethod === method.key
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-gray-400 shadow-sm'
+                      }`}>
                         {method.icon}
                       </div>
-                      <span className={`text-sm font-bold ${paymentMethod === method.key ? 'text-blue-900' : 'text-gray-500'}`}>
+                      <span className={`text-sm font-bold ${
+                        paymentMethod === method.key ? 'text-blue-900' : 'text-gray-500'
+                      }`}>
                         {method.label}
                       </span>
                     </div>
@@ -273,12 +326,19 @@ const Checkout: React.FC = () => {
                 ))}
               </div>
 
-              <button disabled={isProcessing} onClick={handlePlaceOrder}
+              <button
+                disabled={isProcessing}
+                onClick={handlePlaceOrder}
                 className={`w-full mt-8 py-4 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 transition-all ${
-                  isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-blue-600 hover:shadow-lg active:scale-95'
+                  isProcessing
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gray-900 hover:bg-blue-600 hover:shadow-lg active:scale-95'
                 }`}
               >
-                {isProcessing ? <Loader2 size={20} className="animate-spin" /> : 'COMPLETE PURCHASE'}
+                {isProcessing
+                  ? <><Loader2 size={20} className="animate-spin" /> Processing...</>
+                  : 'COMPLETE PURCHASE'
+                }
               </button>
 
               <div className="mt-6 flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">

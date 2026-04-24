@@ -5,8 +5,9 @@ import successAnim from "./assets/success.json";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "./redux/store";
-import { clearCartAsync } from "./redux/slices/cartSlice";
+
 import axiosInstance from "./api/axiosInstance";
+import { fetchCart } from "./redux/slices/cartSlice";
 // import Swal from 'sweetalert2';
 
 const PaymentSuccess: React.FC = () => {
@@ -39,58 +40,58 @@ const PaymentSuccess: React.FC = () => {
   // }, []);
 
   // ─── 2. VERIFICATION LOGIC ────────────────────────────────────────────────
-  useEffect(() => {
-    const verifyPayment = async () => {
-      if (verificationStarted.current) return;
-      verificationStarted.current = true;
+// PaymentSuccess.tsx
+useEffect(() => {
+  const verifyPayment = async () => {
+    if (verificationStarted.current) return;
+    verificationStarted.current = true;
 
-      const params = new URLSearchParams(window.location.search);
-      const sessionId = params.get("session_id");
-      const userId = localStorage.getItem("userId");
+    const params    = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    const userId    = localStorage.getItem("userId");
 
-      if (!sessionId || !userId) {
-        navigate('/', { replace: true });
-        return;
-      }
+    if (!sessionId || !userId) {
+      navigate('/', { replace: true });
+      return;
+    }
 
-      try {
-        const res = await axiosInstance.put('/orders/update-payment', {
-          session_id: sessionId,
-          userId,
-        });
+    try {
+      const res = await axiosInstance.put('/orders/update-payment', {
+        session_id: sessionId,
+        userId,
+      });
 
-        if (res.data) {
-          // Atomic cleanup
-          await dispatch(clearCartAsync());
-          localStorage.setItem("cartCount", "0");
-          window.dispatchEvent(new Event("cartUpdated"));
+      if (res.data.success) {
+        const orderId = res.data.order?._id;
 
-          const orderId = res.data.order?._id || res.data._id;
-          toast.success("Payment Verified!");
+        // ✅ backend already cleared cart in DB
+        // just re-fetch so Redux reflects empty cart
+        await dispatch(fetchCart());
 
-          setTimeout(() => {
-            if (orderId) {
-              // 'replace: true' effectively deletes this page from history
-              navigate('/order/tracking', { 
-                state: { orderId }, 
-                replace: true 
-              });
-            } else {
-              navigate('/', { replace: true });
-            }
-          }, 3000); // Give the Lottie time to shine
-        }
-      } catch (err: any) {
-        console.error("Verification error:", err);
-        toast.error("Verification failed.");
-        navigate('/', { replace: true });
-      } finally {
+        // ✅ clear legacy UI counter
+        localStorage.setItem("cartCount", "0");
+        window.dispatchEvent(new Event("cartUpdated"));
+
+        toast.success("Payment Verified!");
         setIsProcessing(false);
-      }
-    };
 
-    verifyPayment();
-  }, [dispatch, navigate]);
+        setTimeout(() => {
+          navigate('/order/tracking', {
+            state:   { orderId },
+            replace: true,
+          });
+        }, 2000);
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Verification failed.");
+      setIsProcessing(false);
+      setTimeout(() => navigate('/', { replace: true }), 2000);
+    }
+  };
+
+  verifyPayment();
+}, [dispatch, navigate]);
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#F0FDF4] px-4 font-sans">

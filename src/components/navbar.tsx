@@ -3,15 +3,10 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   ShoppingCart,
-  User,
-  Heart,
-
-  Package,
-
-
-  LogOut,
-
+  User, Heart, Package, LogOut,
 } from "lucide-react";
+  import { useSelector } from 'react-redux';
+import type { RootState } from '../redux/store';
 
 function Navbar() {
   const menuItems = ["Home", "Contact", "About", "Sign Up"];
@@ -19,7 +14,10 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [heartActive, setHeartActive] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
+
+
+// inside your navbar component — remove useState + fetchCartCount entirely
+const totalQuantity = useSelector((s: RootState) => s.cart.totalQuantity);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,11 +44,7 @@ function Navbar() {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
 
-    // If no user, reset to 0 immediately
-    if (!token || !userId) {
-      setCartCount(0);
-      return;
-    }
+  
 
     try {
       const res = await fetch(
@@ -67,10 +61,10 @@ function Navbar() {
 
       // Set the count and sync localStorage for backup
       const count = data.items?.length || 0;
-      setCartCount(count);
+    
       localStorage.setItem("cartCount", count.toString());
     } catch (err) {
-      setCartCount(0);
+    
     }
   };
 
@@ -234,13 +228,13 @@ function Navbar() {
                 <Heart className={`w-6 h-6 ${heartActive ? "fill-red-500 text-red-500" : "text-gray-700"}`} />
               </button>
               <Link to="/cart" onClick={() => setMenuOpen(false)} className="p-2 relative">
-                <ShoppingCart className="w-6 h-6 text-gray-700" />
-                {cartCount > 0 && (
-                  <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
+  <ShoppingCart className="w-6 h-6 text-gray-700" />
+  {totalQuantity > 0 && (
+    <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+      {totalQuantity}
+    </span>
+  )}
+</Link>
               <Link to="/myaccount" onClick={() => setMenuOpen(false)} className="p-2">
                 <User className="w-6 h-6 text-gray-700" />
               </Link>
@@ -296,15 +290,14 @@ function Navbar() {
             <button onClick={() => setHeartActive(!heartActive)} className="hover:scale-110 transition">
               <Heart className={`w-6 h-6 ${heartActive ? "fill-red-500 text-red-500" : "text-black"}`} />
             </button>
-
-            <Link to="/cart" className="relative hover:scale-110 transition">
-              <ShoppingCart className="w-6 h-6 text-black" />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
+<Link to="/cart" className="relative hover:scale-110 transition">
+  <ShoppingCart className="w-6 h-6 text-black" />
+  {totalQuantity > 0 && (
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold">
+      {totalQuantity}
+    </span>
+  )}
+</Link>
 
             <div className="relative" ref={dropdownRef}>
               <button onClick={() => setDropdownOpen(!dropdownOpen)} className="hover:scale-110 transition flex items-center">

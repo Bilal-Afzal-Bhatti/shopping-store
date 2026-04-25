@@ -1,7 +1,7 @@
 import React, { useEffect, Suspense, useTransition } from 'react';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-
+import Chatbot from './components/Chatbot';
 // Lazy loading components
 const SideMenu = React.lazy(() => import('./components/sidemenu'));
 const Flash_sales = React.lazy(() => import('./components/flash_sales'));
@@ -54,7 +54,7 @@ function Home() {
       <Suspense fallback={<div className="h-96 animate-pulse bg-gray-100" />}>
         <SideMenu />
       </Suspense>
-
+   <Chatbot />
       <div className="space-y-10 md:space-y-20">
         
         <motion.div 

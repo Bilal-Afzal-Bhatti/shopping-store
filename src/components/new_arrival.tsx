@@ -148,7 +148,7 @@ function New_arrival() {
               {bottomLeftProduct ? (
                 <div
                   onClick={() => goToProduct(bottomLeftProduct)}
-                  className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center cursor-pointer"
+                  className="relative group bg-[#C7CED4] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center cursor-pointer"
                 >
                   <img
                     src={bottomLeftProduct.image}
@@ -177,7 +177,7 @@ function New_arrival() {
               {bottomRightProduct ? (
                 <div
                   onClick={() => goToProduct(bottomRightProduct)}
-                  className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center cursor-pointer"
+                  className="relative group bg-[#C7CED4] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center cursor-pointer"
                 >
                   <img
                     src={bottomRightProduct.image}

@@ -134,9 +134,7 @@ const MyOrders: React.FC = () => {
   <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
     {order.orderId ?? order._id}
   </span>
-  <button onClick={handleCopyId} className="text-gray-400 hover:text-black transition" title="Copy">
-    {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
-  </button>
+ 
 </div>
                       {/* <button 
                         onClick={() => navigate(`/orderTracking/${order._id}`)}

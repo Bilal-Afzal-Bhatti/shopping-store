@@ -136,7 +136,7 @@ export default function Our_products() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
           {currentProducts.map((product: Product) => (
             <div key={product._id} className="group">
-              <div className="relative bg-[#F5F5F5] aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
+              <div className="relative bg-[#B3BCC1] aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
                 {formatDiscount(product.discount) && (
                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[12px] font-bold px-3 py-1 rounded-sm z-10 shadow-sm">
                      {formatDiscount(product.discount)}
@@ -155,13 +155,13 @@ export default function Our_products() {
                 <img 
                   src={product.image || 'https://via.placeholder.com/150'} 
                   alt={product.name} 
-                  className="w-3/4 h-3/4 object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-110" 
+                  className="w-3/4 h-6/4 object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-110" 
                 />
 
                 <button 
                   onClick={() => handleAddToCart(product)}
                   disabled={isAdding}
-                  className="absolute bottom-0 w-full z-10 bg-slate-600 text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all disabled:bg-gray-600"
+                  className="absolute bottom-0 w-full z-10 bg-slate-600  text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all disabled:bg-gray-600"
                 >
                   {isAdding ? "Adding..." : "Add to Cart"}
                 </button>

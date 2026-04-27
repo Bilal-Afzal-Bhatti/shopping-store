@@ -111,7 +111,7 @@ export default function Chatbot() {
         onClick={() => setOpen(o => !o)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#DB4444] text-white
+        className="fixed bottom-26 right-6 z-50 w-14 h-14 bg-[#DB4444] text-white
                    rounded-full shadow-lg flex items-center justify-center
                    hover:bg-[#c33d3d] transition-colors"
       >

@@ -8,7 +8,7 @@ export default function ScrollToTop() {
   // Show button only after scrolling down
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 300) setVisible(true);
+      if (window.scrollY > 900) setVisible(true);
       else setVisible(false);
     };
     window.addEventListener("scroll", handleScroll);

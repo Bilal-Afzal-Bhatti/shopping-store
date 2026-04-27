@@ -15,13 +15,13 @@ import frame_600 from './assets/frame_600.png';
 // 1. FIXED: Explicitly type the variants as 'Variants' to solve the 'ease' error
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
-      duration: 0.6, 
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
       ease: "easeOut" // TypeScript now knows this is a valid Easing string
-    } 
+    }
   }
 };
 
@@ -45,7 +45,7 @@ function Home() {
 
   return (
     <div className='m-0 p-0 overflow-x-hidden bg-white selection:bg-black selection:text-white'>
-      
+
       {/* 3. OPTIMIZATION: Use isPending for a global loading line (Superior UX) */}
       {isPending && (
         <div className="fixed top-0 left-0 h-1 bg-red-600 z-9999 animate-pulse w-full" />
@@ -54,10 +54,10 @@ function Home() {
       <Suspense fallback={<div className="h-96 animate-pulse bg-gray-100" />}>
         <SideMenu />
       </Suspense>
-   <Chatbot />
+      <Chatbot />
       <div className="space-y-10 md:space-y-20">
-        
-        <motion.div 
+
+        <motion.div
           id="flash-sales"
           initial="hidden"
           whileInView="visible"
@@ -69,7 +69,7 @@ function Home() {
           </Suspense>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           id="search_cartegories"
           initial="hidden"
           whileInView="visible"
@@ -81,7 +81,7 @@ function Home() {
           </Suspense>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           id="best-selling"
           initial="hidden"
           whileInView="visible"
@@ -94,7 +94,7 @@ function Home() {
         </motion.div>
 
         {/* PROMO BANNER */}
-        <motion.div 
+        <motion.div
           className="w-full flex justify-center items-center px-4 sm:px-10 md:px-16"
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -105,14 +105,14 @@ function Home() {
             <img
               src={frame_600}
               alt="Exclusive Promotion"
-              loading="lazy" 
+              loading="lazy"
               decoding="async"
               className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-105"
             />
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
@@ -122,8 +122,8 @@ function Home() {
             <Our_products />
           </Suspense>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
@@ -133,7 +133,7 @@ function Home() {
             <New_arrival />
           </Suspense>
         </motion.div>
-        
+
         <div className="pb-10 md:pb-20"></div>
       </div>
     </div>

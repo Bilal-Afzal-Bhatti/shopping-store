@@ -135,15 +135,23 @@ const Checkout: React.FC = () => {
     }
 
     if (paymentMethod === 'cod') await handleCODOrder(loadId);
-    else                         await handleOnlineOrder(loadId);
+    else                         
+      await handleOnlineOrder(loadId);
   }, [paymentMethod, handleCODOrder, handleOnlineOrder]);
 
   // ── Confirm dialog ──────────────────────────────────────────────────────────
+ // ── Confirm dialog ──────────────────────────────────────────────────────────
   const handlePlaceOrder = () => {
+    // 1. Validation Guard
     if (!isFormComplete || isProcessing) {
       if (!isFormComplete) toast.error('Please fill all required shipping details.');
       return;
     }
+
+    // 2. Clear all existing toasts to prevent "double-up" UI issues
+    toast.dismiss(); 
+
+    // 3. Trigger Confirmation
     toast((t) => (
       <div className="flex flex-col gap-3 p-1">
         <p className="font-bold text-gray-800">
@@ -151,22 +159,28 @@ const Checkout: React.FC = () => {
         </p>
         <div className="flex gap-2">
           <button
-            onClick={() => { toast.dismiss(t.id); if (!isProcessing) executeOrder(); }}
-            className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold"
+            onClick={() => { 
+              toast.dismiss(t.id); 
+              // Added check to ensure we don't execute multiple times
+              if (!isProcessing) executeOrder(); 
+            }}
+            className="bg-black text-white px-4 py-1.5 rounded-none text-[10px] font-black uppercase tracking-widest border border-black hover:bg-white hover:text-black transition-all"
           >
             Confirm
           </button>
           <button
             onClick={() => toast.dismiss(t.id)}
-            className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-lg text-xs font-bold"
+            className="bg-white text-gray-400 px-4 py-1.5 rounded-none text-[10px] font-black uppercase tracking-widest border border-gray-200"
           >
             Cancel
           </button>
         </div>
       </div>
-    ), { duration: 5000 });
+    ), { 
+      duration: 5000,
+      id: "place-order-confirm" // ✅ Setting a unique ID prevents duplicates automatically
+    });
   };
-
   // ── Loading ─────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="flex justify-center items-center h-screen">

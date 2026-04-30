@@ -125,7 +125,7 @@ const MyOrders: React.FC = () => {
                           ${Number(order.totalPrice || 0).toFixed(2)}
                         </p>
                       </div>
-// orderTracking.tsx — replace the Order ID display section
+
 <div className="flex items-center gap-2 mt-2">
   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
     Order ID:

@@ -10,11 +10,9 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const backendUrl =
-  import.meta.env.VITE_API_BASE_URL   ||
-  import.meta.env.VITE_API_FALLBACK_1 ||
-  import.meta.env.VITE_API_FALLBACK_2 ||
-  'http://localhost:5731';
+ 
+     const backendUrl = import.meta.env.VITE_BACKEND_URL;
+ 
   
 
  

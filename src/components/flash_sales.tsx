@@ -76,7 +76,7 @@ function ProductCard({ product, isLiked, isAdding, isPending, onWishlist, onAddT
   const badge = formatDiscount(product.discount);
   return (
     <div className="flex flex-col w-full">
-      <div className="group relative  rounded-xl aspect-square flex items-center justify-center p-6 overflow-hidden">
+      <div className="group relative bg-[#E5E9EA] rounded-xl aspect-square flex items-center justify-center p-6 overflow-hidden">
         {badge && (
           <span className="absolute top-3 left-3 z-10 bg-[#DB4444] text-white text-[11px] font-bold px-2.5 py-1 rounded-md shadow">
             {badge}

@@ -76,7 +76,7 @@ function ProductCard({ product, isLiked, isAdding, isPending, onWishlist, onAddT
   const badge = formatDiscount(product.discount);
   return (
     <div className="flex flex-col w-full">
-      <div className="group relative bg-[#E5E9EA] rounded-xl aspect-square flex items-center justify-center p-6 overflow-hidden">
+      <div className="group relative  rounded-xl aspect-square flex items-center justify-center p-6 overflow-hidden">
         {badge && (
           <span className="absolute top-3 left-3 z-10 bg-[#DB4444] text-white text-[11px] font-bold px-2.5 py-1 rounded-md shadow">
             {badge}
@@ -97,7 +97,7 @@ function ProductCard({ product, isLiked, isAdding, isPending, onWishlist, onAddT
         <img
           src={product.image || "https://placehold.co/300x300?text=No+Image"}
           alt={product.name} loading="lazy"
-          className="w-3/4 h-6/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply select-none pointer-events-none"
+          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply select-none pointer-events-none"
           onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/300x300?text=No+Image"; }}
         />
         <button onClick={onAddToCart} disabled={isAdding || product.stock === 0}
@@ -219,7 +219,7 @@ export default function Flash_sales() {
   const Skeleton = () => (
     <div className="flex gap-4 sm:gap-6 overflow-hidden">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="min-w-[85%] sm:min-w-[270px] flex flex-col gap-3 animate-pulse">
+        <div key={i} className="min-w-[85%] sm:min-w-67.5 flex flex-col gap-3 animate-pulse">
           <div className="w-full aspect-square bg-gray-200 rounded-xl" />
           <div className="h-3.5 bg-gray-200 rounded w-3/4" />
           <div className="h-3 bg-gray-200 rounded w-1/4" />
@@ -271,7 +271,7 @@ export default function Flash_sales() {
         <div ref={carousel} className="overflow-x-auto scroll-smooth scrollbar-hide cursor-grab active:cursor-grabbing" style={{ scrollbarWidth: "none" }}>
           <motion.div style={{ x: dragX }} drag="x" dragConstraints={carousel} dragElastic={0.1} className="flex gap-4 sm:gap-6 w-max">
             {products.map((product) => (
-              <div key={product._id} className="snap-start min-w-[80vw] sm:min-w-[260px] md:min-w-[270px] max-w-[270px]">
+              <div key={product._id} className="snap-start min-w-[80vw] sm:min-w-65 md:min-w-67.5 max-w-67.5">
                 <ProductCard
                   product={product}
                   isLiked={!!isLiked[product._id]}

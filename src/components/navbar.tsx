@@ -123,7 +123,7 @@ const totalQuantity = useSelector((s: RootState) => s.cart.totalQuantity);
       className={`bg-white z-50 w-full transition-all duration-300 ${isSticky ? "fixed top-0 left-0 shadow-md" : "relative border-b border-gray-100"
         }`}
     >
-      <nav className="max-w-[1440px] mx-auto flex items-center justify-between px-6 py-4 md:px-12">
+      <nav className="max-w-360 mx-auto flex items-center justify-between px-6 py-4 md:px-12">
 
         {/* 1. Logo */}
         <Link to="/" className="z-1">
@@ -152,7 +152,7 @@ const totalQuantity = useSelector((s: RootState) => s.cart.totalQuantity);
           onClick={() => setMenuOpen(false)}
         >
           <aside
-            className={`absolute top-0 left-0 h-full w-[280px] bg-white shadow-xl p-6 flex flex-col transition-transform duration-300 ease-in-out ${menuOpen ? "translate-x-0" : "-translate-x-full"
+            className={`absolute top-0 left-0 h-full w-70 bg-white shadow-xl p-6 flex flex-col transition-transform duration-300 ease-in-out ${menuOpen ? "translate-x-0" : "-translate-x-full"
               }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -168,7 +168,7 @@ const totalQuantity = useSelector((s: RootState) => s.cart.totalQuantity);
               <img src={searchIcon} alt="" className="w-5 h-5 opacity-60" onClick={() => handleSearch()} />
             </form>
 {/* Mobile Nav Links */}
-<ul className="flex flex-col gap-5 border-b border-gray-100 pb-6">
+<ul className="flex flex-col gap-5 border-box border-gray-100 pb-6">
   {menuItems.map((item, index) => (
     <li key={index}>
       <Link
@@ -305,7 +305,7 @@ const totalQuantity = useSelector((s: RootState) => s.cart.totalQuantity);
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-4 w-56 border border-gray-100 shadow-xl rounded-lg py-2 bg-white transform origin-top-right animate-in fade-in zoom-in duration-200">
+                <div className="absolute right-0 mt-4 w-56 border border-gray-100 shadow-xl rounded-lg py-2 bg-linear-to-r from-pink-400 to-white transform origin-top-right animate-in fade-in zoom-in duration-200">
                   <Link to="/myaccount" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm"><User size={18} /> Manage My Account</Link>
                   <Link to="/myOrder" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm"><Package size={18} /> My Orders</Link>
                   <Link to="/wishlist" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-sm"><Heart size={18} /> Wishlist</Link>

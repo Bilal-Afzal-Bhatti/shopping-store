@@ -1,40 +1,46 @@
 // src/api/axiosInstance.ts
 import axios from 'axios';
-// axiosInstance.ts
 
-// 1. Determine if we are on Vercel or Local
-// 'window.location.hostname' tells us exactly where the user is browsing from
-const hostname = window.location.hostname;
-const isVercel = hostname.includes("vercel.app");
+// 1. Backend port used by Docker (ecommerce_backend container)
+const BACKEND_PORT = 5731;
 
-// 2. Define your Backend URLs
-// IMPORTANT: Change 5000 to your ACTUAL backend port (check your terminal where backend runs)
-const LOCAL_BACKEND_URL = "http://192.168.18.40:5174"; 
-const VERCEL_BACKEND_URL = "https://shoppingstore-backend.vercel.app";
+// 2. Safely get the current browser hostname (handles SSR environments too)
+const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
 
-// 3. Select the correct base based on the current environment
-const BASE_URL = isVercel ? VERCEL_BACKEND_URL : LOCAL_BACKEND_URL;
+// 3. Determine base URL depending on where the app is being accessed from
+let BASE_URL: string;
 
+if (hostname.includes('vercel.app')) {
+  // Production (Vercel)
+  BASE_URL = 'https://shoppingstore-backend.vercel.app';
+} else {
+  // Local + LAN (Docker)
+  // Works for BOTH localhost and LAN IP (e.g. 192.168.18.40),
+  // since Docker publishes the backend port on the host machine
+  BASE_URL = `http://${hostname}:${BACKEND_PORT}`;
+}
+
+// 4. Create axios instance
 const axiosInstance = axios.create({
   baseURL: `${BASE_URL}/api`,
   timeout: 10000,
 });
 
-// Log for debugging (you can remove this later)
+// Debug log — remove once confirmed working
 console.log(`🚀 API is pointing to: ${BASE_URL}/api`);
 
-
+// 5. Request interceptor — attach auth token
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
-    // ✅ log every request so you can see exact URL being hit
     console.log(`🌐 [axios] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// 6. Response interceptor — handle auth errors
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {

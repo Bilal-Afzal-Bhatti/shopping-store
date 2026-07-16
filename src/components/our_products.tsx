@@ -120,7 +120,7 @@ export default function Our_products() {
 
       {/* Loading Skeletons */}
       {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-100">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="flex flex-col gap-4 animate-pulse">
               <div className="w-full aspect-square bg-gray-200 rounded-md"></div>
@@ -133,10 +133,10 @@ export default function Our_products() {
 
       {/* Product Grid */}
       {!isLoading && !isError && currentProducts.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-100">
           {currentProducts.map((product: Product) => (
             <div key={product._id} className="group">
-              <div className="relative bg-[#B3BCC1] aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
+              <div className="relative  aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
                 {formatDiscount(product.discount) && (
                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[12px] font-bold px-3 py-1 rounded-sm z-10 shadow-sm">
                      {formatDiscount(product.discount)}
@@ -155,7 +155,7 @@ export default function Our_products() {
                 <img 
                   src={product.image || 'https://via.placeholder.com/150'} 
                   alt={product.name} 
-                  className="w-3/4 h-6/4 object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-110" 
+                  className="w-full h-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-110" 
                 />
 
                 <button 

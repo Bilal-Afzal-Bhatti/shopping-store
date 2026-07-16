@@ -112,7 +112,7 @@ const handleAddToCart = async (product: Product) => {
       {isLoading && (
         <div className="flex gap-4 sm:gap-6 overflow-hidden">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="min-w-[85%] sm:min-w-[300px] md:min-w-[280px] lg:min-w-[300px] flex flex-col gap-4 animate-pulse">
+            <div key={i} className="min-w-[85%] sm:min-w-70 md:min-w-70 lg:min-w-75 flex flex-col gap-4 animate-pulse">
               <div className="w-full aspect-square bg-gray-200 rounded-md"></div>
               <div className="h-4 bg-gray-200 w-3/4 rounded-md"></div>
               <div className="h-4 bg-gray-200 w-1/4 rounded-md"></div>
@@ -132,9 +132,9 @@ const handleAddToCart = async (product: Product) => {
             {products.map((product: Product) => (
               <motion.div 
                 key={product._id} 
-                className="min-w-[85%] sm:min-w-[300px] md:min-w-[280px] lg:min-w-[300px] pointer-events-none"
+                className="min-w-[85%] sm:min-w-75 md:min-w-70 lg:min-w-75 pointer-events-none"
               >
-                <div className="group relative bg-[#F5F5F5] rounded-md aspect-square flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
+                <div className="group relative rounded-md aspect-square flex items-center justify-center p-8 overflow-hidden pointer-events-auto">
                   
                   {/* Discount / Label */}
                   {formatDiscount(product.discount) && (
@@ -147,7 +147,7 @@ const handleAddToCart = async (product: Product) => {
                   <img
                     src={product.image || 'https://via.placeholder.com/150'}
                     alt={product.name}
-                    className="w-3/4 h-6/4 object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply"
                   />
 
                   {/* Action Icons */}
@@ -159,14 +159,14 @@ const handleAddToCart = async (product: Product) => {
                       <Heart 
                         size={18} 
                         fill={liked[product._id] ? "#DB4444" : "none"} 
-                        className={liked[product._id] ? "text-[#DB4444]" : "text-black"} 
+                        className={liked[product._id] ? "text-[#DB4444]" : "text-gray-500"} 
                       />
                     </button>
                     <Link 
                       to={`/view_item/${product._id}`} 
                       className="p-2 bg-white rounded-full shadow-md hover:text-[#DB4444] transition"
                     >
-                      <Eye size={18} />
+                      <Eye size={18} className="text-gray-500"/>
                     </Link>
                   </div>
 

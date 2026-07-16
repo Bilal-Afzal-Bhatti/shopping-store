@@ -3,39 +3,35 @@ import { useNavigate, Link } from "react-router-dom";
 import Side_image from "./assets/Side_Image.png";
 import axios, { AxiosError } from "axios";
 import { GoogleLogin } from '@react-oauth/google';
-
+import axiosInstance from "./api/axiosInstance";
 function Signup() {
+
+  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-     const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const res = await fetch(`${backendUrl}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("Account created successfully!");
-        navigate("/login");
-      } else {
-        alert(data.message || "Failed to create account");
-      }
-    } catch (error) {
-      alert("Failed to create account");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    await axiosInstance.post("/auth/register", {
+      name,
+      email,
+      password,
+    });
 
+    alert("Account created successfully!");
+    navigate("/login");
+  } catch (error) {
+    const err = error as AxiosError<{ message?: string }>;
+    alert(err.response?.data?.message || "Failed to create account");
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     const timer = setTimeout(() => {
       window.scrollTo({ top: 80, behavior: "smooth" });

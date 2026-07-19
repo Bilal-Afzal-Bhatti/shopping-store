@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: yourdockerhub/ecommerce-frontend:v1.0
+        # Updated to point to your actual repository base image name
+        image: shopping_store:latest 
         ports:
         - containerPort: 80
         resources:

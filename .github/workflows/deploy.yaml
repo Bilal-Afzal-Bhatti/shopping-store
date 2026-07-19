@@ -43,10 +43,12 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          # 1. Update image for frontend deployment inside EKS
+          # 1. Create or update the base deployment resource in the cluster
+          kubectl apply -f k8s/frontend-deployment.yml
+          
+          # 2. Update image for frontend deployment inside EKS with the new tag
           kubectl set image deployment/ecommerce-frontend \
             frontend=${{ secrets.DOCKER_USERNAME }}/shopping_store:${{ github.sha }}
           
-          # 2. Monitor rolling update
+          # 3. Monitor rolling update
           kubectl rollout status deployment/ecommerce-frontend
-          

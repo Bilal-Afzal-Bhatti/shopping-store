@@ -20,7 +20,7 @@ jobs:
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
-          context: . # Since the repo root IS shoppingstore, the context is just the current directory
+          context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/shopping_store:${{ github.sha }}
 

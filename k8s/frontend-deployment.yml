@@ -22,7 +22,7 @@ spec:
         resources:
           requests:
             memory: "64Mi"
-            cpu:    "50m"
+            cpu:     "50m"
           limits:
             memory: "128Mi"
             cpu:    "200m"
@@ -31,6 +31,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ecommerce-frontend-service
+  annotations:
+    # Tells AWS to use the modern AWS Load Balancer Controller
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    # Forces the load balancer to be public-facing on the internet
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    # Routes traffic natively through your EC2 node ports
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
 spec:
   selector:
     app: ecommerce-frontend

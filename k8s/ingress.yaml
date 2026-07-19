@@ -1,4 +1,4 @@
-cat <<EOF > ingress.yaml
+
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -20,4 +20,3 @@ spec:
                 name: ecommerce-frontend-service
                 port:
                   number: 80
-EOF

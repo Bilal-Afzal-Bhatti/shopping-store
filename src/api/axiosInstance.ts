@@ -12,7 +12,7 @@ let BASE_URL: string;
 
 if (hostname.includes('nexcuscart.net') || hostname.includes('vercel.app')) {
   // Production (AWS EKS or Vercel)
-  BASE_URL = 'https://nexcuscart.net/api';
+  BASE_URL = 'https://nexcuscart.net';
 } else {
   // Local + LAN (Docker)
   BASE_URL = `http://${hostname}:${BACKEND_PORT}`;

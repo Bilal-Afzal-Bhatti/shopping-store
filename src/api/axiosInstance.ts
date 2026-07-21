@@ -10,16 +10,13 @@ const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
 // 3. Determine base URL depending on where the app is being accessed from
 let BASE_URL: string;
 
-if (hostname.includes('vercel.app')) {
-  // Production (Vercel)
-  BASE_URL = 'https://nexcuscart.net/';
+if (hostname.includes('nexcuscart.net') || hostname.includes('vercel.app')) {
+  // Production (AWS EKS or Vercel)
+  BASE_URL = 'https://nexcuscart.net/api';
 } else {
   // Local + LAN (Docker)
-  // Works for BOTH localhost and LAN IP (e.g. 192.168.18.40),
-  // since Docker publishes the backend port on the host machine
   BASE_URL = `http://${hostname}:${BACKEND_PORT}`;
 }
-
 // 4. Create axios instance
 const axiosInstance = axios.create({
   baseURL: `${BASE_URL}/api`,

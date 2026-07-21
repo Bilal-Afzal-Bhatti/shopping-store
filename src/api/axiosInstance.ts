@@ -12,7 +12,7 @@ let BASE_URL: string;
 
 if (hostname.includes('vercel.app')) {
   // Production (Vercel)
-  BASE_URL = 'https://shoppingstore-backend.vercel.app';
+  BASE_URL = 'https://nexcuscart.net/';
 } else {
   // Local + LAN (Docker)
   // Works for BOTH localhost and LAN IP (e.g. 192.168.18.40),

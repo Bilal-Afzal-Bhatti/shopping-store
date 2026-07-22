@@ -1,28 +1,32 @@
 // src/api/axiosInstance.ts
 import axios from 'axios';
 
-// 1. Backend port used by Docker (ecommerce_backend container)
+// 1. Backend port for local Docker development ONLY
 const BACKEND_PORT = 5731;
 
-// 2. Safely get the current browser hostname (handles SSR environments too)
+// 2. Get current hostname safely
 const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
 
-// 3. Determine base URL depending on where the app is being accessed from
+// 3. Determine base URL
 let BASE_URL: string;
 
-if (hostname.includes('nexcuscart.net') || hostname.includes('vercel.app')) {
-  // Production (AWS EKS or Vercel)
-  BASE_URL = 'https://nexcuscart.net';
-} else {
-  // Local + LAN (Docker)
+if (import.meta.env.VITE_BACKEND_URL) {
+  // Best practice: Read directly from environment variable if configured
+  BASE_URL = import.meta.env.VITE_BACKEND_URL;
+} else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+  // Local Docker development
   BASE_URL = `http://${hostname}:${BACKEND_PORT}`;
+} else {
+  // Kubernetes / EKS Production (uses standard ingress port 80/443)
+  BASE_URL = 'https://nexcuscart.net'; 
+  // OR dynamically: BASE_URL = `${window.location.protocol}//${hostname}`;
 }
+
 // 4. Create axios instance
 const axiosInstance = axios.create({
-  baseURL: `${BASE_URL}/api`,
+  baseURL: `${BASE_URL.replace(/\/$/, '')}/api`,
   timeout: 10000,
 });
-
 // Debug log — remove once confirmed working
 console.log(`🚀 API is pointing to: ${BASE_URL}/api`);
 

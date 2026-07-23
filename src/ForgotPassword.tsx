@@ -56,7 +56,7 @@ export default function ForgotPassword() {
         // Pass resetToken (if your backend generates one) or pass email in state
         const resetToken = res.data.resetToken || undefined;
         
-        navigate('/reset-password', { 
+        navigate('/ResetPassword', { 
           state: { email, resetToken, verified: true } 
         });
       }

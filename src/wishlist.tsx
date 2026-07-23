@@ -1,7 +1,7 @@
 import React, { useState, useTransition, useCallback, useEffect } from 'react';
 import { Trash2, ShoppingBag, Heart, ArrowLeft, Star, Loader2, Sparkles } from 'lucide-react';
 import { useNavigate,Link } from 'react-router-dom';
-import axios from "axios"; 
+
 import { toast } from "react-hot-toast";
 import axiosInstance from './api/axiosInstance';
 
@@ -59,8 +59,7 @@ const Wishlist: React.FC = () => {
 
     startTransition(async () => {
       try {
-        const response = await axios.delete(
-          `${backendUrl}/api/wishlist/clear`, 
+        const response = await axiosInstance.delete("/wishlist/clear", 
           { 
             headers: { Authorization: `Bearer ${token}` },
             data: { productId } 

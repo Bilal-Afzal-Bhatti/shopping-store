@@ -1,7 +1,7 @@
-import { useState} from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google"; // Import official component
-import axios from "axios"; 
+import axiosInstance from "./api/axiosInstance";
 import Side_image from "./assets/Side_Image.png";
 
 function Login() {
@@ -10,18 +10,12 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
- 
-     const backendUrl = import.meta.env.VITE_BACKEND_URL;
- 
-  
-
- 
   // --- MANUAL LOGIN (For Email/Password users) ---
   const handleManualLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(`${backendUrl}/api/auth/login`, {
+      const res = await axiosInstance.post("/api/auth/login", {
         email,
         password,
       });
@@ -43,7 +37,7 @@ function Login() {
     setLoading(true);
     try {
       // credentialResponse.credential is the ID Token (JWT)
-      const res = await axios.post(`${backendUrl}/api/auth/google`, {
+      const res = await axiosInstance.post("/api/auth/google", {
         token: credentialResponse.credential, 
       });
 

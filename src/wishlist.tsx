@@ -3,6 +3,7 @@ import { Trash2, ShoppingBag, Heart, ArrowLeft, Star, Loader2, Sparkles } from '
 import { useNavigate,Link } from 'react-router-dom';
 import axios from "axios"; 
 import { toast } from "react-hot-toast";
+import axiosInstance from './api/axiosInstance';
 
 interface WishlistItem {
   _id: string;
@@ -34,10 +35,9 @@ const Wishlist: React.FC = () => {
         return;
       }
       try {
-        const response = await axios.get(
-          `${backendUrl}/api/wishlist/show`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const response = await axiosInstance.get("/wishlist/show", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         if (response.data.success) {
           setWishlist(response.data.wishlist);
         }
@@ -88,7 +88,7 @@ const Wishlist: React.FC = () => {
       {/* SMALL COMPACT DELETE MODAL */}
       {deletingId && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px]">
-          <div className="bg-white border-[3px] border-black p-6 max-w-[300px] w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
+          <div className="bg-white border-[3px] border-black p-6 max-w-75 w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
             <h4 className="text-[11px] font-black uppercase tracking-tighter mb-4">Remove from favorites?</h4>
             <div className="flex gap-3">
               <button 

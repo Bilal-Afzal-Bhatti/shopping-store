@@ -32,28 +32,27 @@ function Login() {
     }
   };
 
-  // --- GOOGLE LOGIN (For Google users - NO PASSWORD REQUIRED) ---
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    setLoading(true);
-    try {
-      // credentialResponse.credential is the ID Token (JWT)
-      const res = await axiosInstance.post("/api/auth/google", {
-        token: credentialResponse.credential, 
-      });
+ // --- GOOGLE LOGIN (For Google users) ---
+const handleGoogleSuccess = async (credentialResponse: any) => {
+  setLoading(true);
+  try {
+    // credentialResponse.credential is the ID Token (JWT)
+    const res = await axiosInstance.post("/api/auth/google", {
+      token: credentialResponse.credential, 
+    });
 
-      if (res.data.success) {
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("userId", res.data.user._id);
-        alert("Login Successful!");
-        navigate("/"); 
-      }
-    } catch (err: any) {
-      console.error("Google Login Error:", err.response?.data);
-      alert("This account might require a password. Try manual login or check your email.");
-    } finally {
-      setLoading(false);
+    if (res.data.success) {
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userId", res.data.user._id);
+      navigate("/"); 
     }
-  };
+  } catch (err: any) {
+    console.error("Google Auth Error:", err.response?.data);
+    alert(err.response?.data?.message || "Google Authentication Failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen animate-in fade-in duration-700">

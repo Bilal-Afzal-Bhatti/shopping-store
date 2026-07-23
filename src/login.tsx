@@ -103,7 +103,7 @@ const handleGoogleSuccess = async (credentialResponse: any) => {
               >
                 {loading ? "Processing..." : "Log In"}
               </button>
-              <button type="button" className="text-[#DB4444] text-sm hover:underline text-left w-fit">
+              <button type="button" onClick={() => navigate("/forgotPass")}  className="text-[#DB4444] cursor-pointer text-sm hover:underline text-left w-fit">
                 Forget Password?
               </button>
             </div>

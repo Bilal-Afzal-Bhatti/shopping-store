@@ -63,13 +63,13 @@ function Login() {
         <img
           src={Side_image}
           alt="Shopping Side"
-          className="w-full h-full max-h-[800px] object-contain pt-20"
+          className="w-full h-full max-h-200 object-contain pt-20"
         />
       </div>
 
       {/* Right Form Section */}
       <div className="w-full md:w-[45%] flex items-center justify-center bg-white p-6 sm:p-12 lg:p-20">
-        <div className="w-full max-w-[400px]">
+        <div className="w-full max-w-100">
           <div className="mb-8">
             <h1 className="text-3xl font-medium mb-3 tracking-tight">Log in to Exclusive</h1>
             <p className="text-black text-sm">Enter your details below</p>

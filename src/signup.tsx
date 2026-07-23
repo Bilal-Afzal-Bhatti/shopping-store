@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef} from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Side_image from "./assets/Side_Image.png";
-import axios, { AxiosError } from "axios";
+
 import { GoogleLogin } from '@react-oauth/google';
 import axiosInstance from "./api/axiosInstance";
+import type { AxiosError } from "axios";
 
 function Signup() {
   const navigate = useNavigate();

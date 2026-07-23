@@ -37,7 +37,7 @@ const handleGoogleSuccess = async (credentialResponse: any) => {
   setLoading(true);
   try {
     // credentialResponse.credential is the ID Token (JWT)
-    const res = await axiosInstance.post("/api/auth/google", {
+    const res = await axiosInstance.post("/auth/google", {
       token: credentialResponse.credential, 
     });
 

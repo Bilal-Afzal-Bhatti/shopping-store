@@ -185,7 +185,7 @@ const verifyOtpCode = async (completeOtp: string) => {
                     setLoading(true);
                     try {
                     
-                      const res = await axiosInstance.post("/api/auth/google", {
+                      const res = await axiosInstance.post("/auth/google", {
                         token: credentialResponse.credential, 
                       });
 

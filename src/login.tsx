@@ -123,7 +123,7 @@ function Login() {
               onError={() => alert("Google Login Failed")}
               theme="outline"
               size="large"
-              width="400px" // Makes it look uniform with the form
+              width="200px" // Makes it look uniform with the form
             />
           </div>
 

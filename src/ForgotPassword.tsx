@@ -24,7 +24,7 @@ export default function ForgotPassword() {
     setError('');
 
     try {
-      const res = await axiosInstance.post('/api/auth/forgot-password', { email });
+      const res = await axiosInstance.post('/auth/forgot-password', { email });
       if (res.data.success || res.status === 200) {
         setStep('otp'); // Switch to OTP view on success
       }
@@ -49,7 +49,7 @@ export default function ForgotPassword() {
     setError('');
 
     try {
-      const res = await axiosInstance.post('/api/auth/verify-reset-otp', { email, otp });
+      const res = await axiosInstance.post('/auth/verify-reset-otp', { email, otp });
       
       if (res.data.success || res.status === 200) {
         // Navigate to Reset Password page only when OTP is verified

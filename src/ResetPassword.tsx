@@ -57,12 +57,12 @@ export default function ResetPassword() {
     setLoading(true);
     setError('');
 
-    try {
-      const res = await axiosInstance.post('/auth/reset-password', {
-        email,
-        resetToken,
-        newPassword: password,
-      });
+   try {
+  const res = await axiosInstance.post('/auth/reset-password', {
+    email,
+    otp: resetToken, // 👈 Map resetToken to 'otp'
+    newPassword: password,
+  });
 
       if (res.data.success || res.status === 200) {
         setSuccess(true);

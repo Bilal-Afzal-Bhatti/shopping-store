@@ -183,8 +183,8 @@ const verifyOtpCode = async (completeOtp: string) => {
                   onSuccess={async (credentialResponse) => {
                     setLoading(true);
                     try {
-                      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                      const res = await axios.post(`${backendUrl}/api/auth/google`, {
+                    
+                      const res = await axiosInstance.post("/api/auth/google", {
                         token: credentialResponse.credential, 
                       });
 

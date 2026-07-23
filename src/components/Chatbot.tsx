@@ -29,9 +29,9 @@ const formatText = (text: string) => {
 };
 
 export default function Chatbot() {
-  const [open,    setOpen]    = useState(false);
-  const [input,   setInput]   = useState('');
-  const [loading, setLoading] = useState(false);
+  const [open,     setOpen]     = useState(false);
+  const [input,    setInput]    = useState('');
+  const [loading,  setLoading]  = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id:      '1',
@@ -44,14 +44,35 @@ export default function Chatbot() {
 
   const bottomRef  = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); // Ref for outside click target
   const userId     = localStorage.getItem('userId') ?? undefined;
 
+  // Auto-scroll on new message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Auto-focus input when opened
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 300);
+  }, [open]);
+
+  // Close when clicking outside of chatbot container
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        open &&
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [open]);
 
   const sendMessage = async (text: string) => {
@@ -105,7 +126,7 @@ export default function Chatbot() {
   };
 
   return (
-    <>
+    <div ref={containerRef}>
       {/* ── Floating button ─────────────────────────────────────────── */}
       <motion.button
         onClick={() => setOpen(o => !o)}
@@ -135,12 +156,12 @@ export default function Chatbot() {
             animate={{ opacity: 1, y: 0,  scale: 1 }}
             exit={{    opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.25 }}
-            className="fixed bottom-24 right-6 z-50 w-[360px] sm:w-[400px]
+            className="fixed bottom-24 right-6 z-50 w-90 sm:w-100
                        bg-white rounded-2xl shadow-2xl border border-gray-100
                        flex flex-col overflow-hidden"
             style={{ maxHeight: '75vh' }}
           >
-            {/* Header */}
+            {/* Header with Close (X) Button */}
             <div className="bg-[#DB4444] px-4 py-3 flex items-center gap-3">
               <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
                 <Bot size={18} className="text-white" />
@@ -149,7 +170,19 @@ export default function Chatbot() {
                 <p className="text-white font-bold text-sm leading-none">EXCLUSIVE Assistant</p>
                 <p className="text-red-200 text-xs mt-0.5">Always here to help</p>
               </div>
-              <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+              
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+                
+                {/* Header Close Cross Button */}
+                <button
+                  onClick={() => setOpen(false)}
+                  className="text-white/80 hover:text-white hover:bg-white/10 p-1 rounded-lg transition-colors"
+                  aria-label="Close Chat"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -287,6 +320,6 @@ export default function Chatbot() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }

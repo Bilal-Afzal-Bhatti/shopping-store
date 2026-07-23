@@ -104,7 +104,7 @@ function Login() {
                 {loading ? "Processing..." : "Log In"}
               </button>
               <Link
-                to="/forgotpass"
+                to="/ForgotPassword"
                 className="text-[#DB4444] text-sm hover:underline hover:text-[#c33d3d] text-left w-fit transition-colors"
               >
                 Forgot Password?

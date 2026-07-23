@@ -19,8 +19,8 @@ import OrderTracking from "./orderTracking";
 import MyOrders from "./myOrder";
 import OAuthLogin from "./OAuthLogin";
 import Wishlist from "./wishlist";
-import ForgotPassword from "./forgotpass";
-import ResetPassword from "./resetPass";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
 
 export default function App() {
   return (
@@ -34,8 +34,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/forgotpass" element={<ForgotPassword />} />
-        <Route path="/resetPass" element={<ResetPassword />} /> 
+        <Route path="/forgotPassword" element={<ForgotPassword />} />
+        <Route path="/resetPassword" element={<ResetPassword />} /> 
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/myaccount" element={<MyAccount />} />

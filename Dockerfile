@@ -4,7 +4,7 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 COPY package*.json ./
 RUN npm install
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 COPY . .
 RUN npm run build
 

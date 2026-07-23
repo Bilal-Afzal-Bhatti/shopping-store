@@ -1,4 +1,4 @@
-// src/pages/ForgotPassword.tsx
+// src/ForgotPassword.tsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, Loader2, KeyRound } from 'lucide-react';

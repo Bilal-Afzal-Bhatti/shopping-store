@@ -32,31 +32,31 @@ function Login() {
     }
   };
 
- // --- GOOGLE LOGIN (For Google users) ---
-const handleGoogleSuccess = async (credentialResponse: any) => {
-  setLoading(true);
-  try {
-    // credentialResponse.credential is the ID Token (JWT)
-    const res = await axiosInstance.post("/auth/google", {
-      token: credentialResponse.credential, 
-    });
+  // --- GOOGLE LOGIN (For Google users) ---
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setLoading(true);
+    try {
+      // credentialResponse.credential is the ID Token (JWT)
+      const res = await axiosInstance.post("/auth/google", {
+        token: credentialResponse.credential,
+      });
 
-    if (res.data.success) {
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userId", res.data.user._id);
-      navigate("/"); 
+      if (res.data.success) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("userId", res.data.user._id);
+        navigate("/");
+      }
+    } catch (err: any) {
+      console.error("Google Auth Error:", err.response?.data);
+      alert(err.response?.data?.message || "Google Authentication Failed");
+    } finally {
+      setLoading(false);
     }
-  } catch (err: any) {
-    console.error("Google Auth Error:", err.response?.data);
-    alert(err.response?.data?.message || "Google Authentication Failed");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen animate-in fade-in duration-700">
-      
+
       {/* Left Image Section */}
       <div className="hidden md:block w-full md:w-[55%] bg-[#CBE4E8]">
         <img
@@ -103,12 +103,12 @@ const handleGoogleSuccess = async (credentialResponse: any) => {
               >
                 {loading ? "Processing..." : "Log In"}
               </button>
-    <Link
-  to="/forgot-password"
-  className="text-[#DB4444] text-sm hover:underline hover:text-[#c33d3d] text-left w-fit transition-colors"
->
-  Forgot Password?
-</Link>
+              <Link
+                to="/forgotpass"
+                className="text-[#DB4444] text-sm hover:underline hover:text-[#c33d3d] text-left w-fit transition-colors"
+              >
+                Forgot Password?
+              </Link>
             </div>
           </form>
 

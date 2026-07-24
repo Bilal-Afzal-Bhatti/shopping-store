@@ -1,0 +1,88 @@
+{
+    "cluster": {
+        "name": "nexcuscart-eks",
+        "arn": "arn:aws:eks:us-east-1:277876300047:cluster/nexcuscart-eks",
+        "createdAt": "2026-07-24T18:30:43.379000+05:00",
+        "version": "1.30",
+        "endpoint": "https://64BAF6104E35F5898B6C7AD301EF9F7A.gr7.us-east-1.eks.amazonaws.com",
+        "roleArn": "arn:aws:iam::277876300047:role/nexcuscart-eks-cluster-20260724131616225400000003",
+        "resourcesVpcConfig": {
+            "subnetIds": [
+                "subnet-0dfcd68c304787384",
+                "subnet-01afb4d0b731c18a5"
+            ],
+            "securityGroupIds": [
+                "sg-0914b3d8aeb8922f0"
+            ],
+            "clusterSecurityGroupId": "sg-08e1a08e2b6a33c0d",
+            "vpcId": "vpc-0bcd24d64fdc9c804",
+            "endpointPublicAccess": true,
+            "endpointPrivateAccess": true,
+            "publicAccessCidrs": [
+                "0.0.0.0/0"
+            ],
+            "controlPlaneEgressMode": "AWS_MANAGED"
+        },
+        "kubernetesNetworkConfig": {
+            "serviceIpv4Cidr": "172.20.0.0/16",
+            "ipFamily": "ipv4",
+            "elasticLoadBalancing": {
+                "enabled": false
+            }
+        },
+        "logging": {
+            "clusterLogging": [
+                {
+                    "types": [
+                        "api",
+                        "audit",
+                        "authenticator"
+                    ],
+                    "enabled": true
+                },
+                {
+                    "types": [
+                        "controllerManager",
+                        "scheduler"
+                    ],
+                    "enabled": false
+                }
+            ]
+        },
+        "identity": {
+            "oidc": {
+                "issuer": "https://oidc.eks.us-east-1.amazonaws.com/id/64BAF6104E35F5898B6C7AD301EF9F7A"
+            }
+        },
+        "status": "DELETING",
+        "certificateAuthority": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJVnU5RTB2MG1FU0F3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TmpBM01qUXhNek13TkRoYUZ3MHpOakEzTWpFeE16TTFORGhhTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUURCMDBHR1MxYUFzRmZPam1sN1ZLeGdQQ1lnUXN4NkkyT2d0TTBKTnUxbUJDSTZ0VjdNQUpEd3g0RWQKOGNoZm9RZHVLb09nYXFJdVhPa3RKa1Q3OGtnTXcxQXNGRnZkcElndW00cWpBMjdMZUtsa0hYR1RQK3FReUlMQwpFbWVHaE5xeEk3R1Ywc1VmemdWRU5OS01hekhleE9iTGJUTnFhTVFLTFVmeUF1bTRIY1FxMCtvV0V6NE9nUE8wCkEyS0JJTGEvMVJRRzhMcFNkMEM5RlYrc2U1dEhSZXFXWW5YZFZaSW1WazBZR2Y2ZG9WcVJ6M0ROeW5JMnZrMk0KVmthZWwvdmJJOWxpL2lDaGZzajhxcUZqWHZtUFkvQVI5MUtxU2dxRi9GUS9OcWw2T0k4SmZNQkFXUDRyKytSUwpFTTFZbUVzZmlYTEljbzFMTWg5VStZZnpkM1c1QWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJRZlVOZ1JKcFhVb1IxR3RtYjgvZVpjVXNMM3FqQVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRREF4K2pIRHNndgphRjBIUVk5ZCtYeWtwNXdFdHFMTG1pY25vNXNKOFlQTFFnbkNuZS9YQ1MwVUdrL3NPQzVEMDlYMDI4MFN6dDZwCkE2UmNuRlJhWTFvSHBnQTdpWlFWKzZaWUlzZXZDVGhDbGl3ZWx5UHFFRjltRTJTbEQrZk9CMVF3cXYwL2RLUUkKemVDcDFJbTZqTEhId01NRnpGTWRpVHFQRFBITkQ0eDJiOFZMTGhDS3cwUWdhdU1MWFhlSnNwSXFYK3grU0RTSwpobFk3Qzh0Q2JCOThwL29Bb2tuL2Z6dHlQWXJVL0IrZ1AvRkZZaWxXYW5UT0NrQkhQc3hEMTYwbXhiS1Z6MTBKCk1sM0pHVkhZMlRmSFBZTm40N1RlTDQvbzVaZ25abisxVVJxUDZlVHkwKzJjaFNSSERPWWQ4M1BvQk1CVTdwTTkKMFl3czBwN1UrT2E2Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+        },
+        "platformVersion": "eks.74",
+        "tags": {
+            "Project": "nexcuscart",
+            "Environment": "production",
+            "terraform-aws-modules": "eks"
+        },
+        "encryptionConfig": [
+            {
+                "resources": [
+                    "secrets"
+                ],
+                "provider": {
+                    "keyArn": "arn:aws:kms:us-east-1:277876300047:key/eda77c32-e72a-4ef6-8190-a0e7b6da6eb2"
+                }
+            }
+        ],
+        "accessConfig": {
+            "authenticationMode": "API_AND_CONFIG_MAP"
+        },
+        "upgradePolicy": {
+            "supportType": "EXTENDED"
+        },
+        "deletionProtection": false,
+        "controlPlaneScalingConfig": {
+            "tier": "standard"
+        }
+    }
+}

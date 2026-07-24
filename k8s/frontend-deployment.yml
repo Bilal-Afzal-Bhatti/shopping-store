@@ -46,9 +46,9 @@ kind: Service
 metadata:
   name: ecommerce-frontend-service
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    # 🟢 Standard AWS Cloud Controller annotations for NLB
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
 spec:
   selector:
     app: ecommerce-frontend

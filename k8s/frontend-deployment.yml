@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: shopping_store:latest
+        # 🟢 Updated to full ECR registry image URI
+        image: 277876300047.dkr.ecr.us-east-1.amazonaws.com/shopping_store:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

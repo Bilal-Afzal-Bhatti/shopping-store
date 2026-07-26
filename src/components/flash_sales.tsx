@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useTransition } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useMotionValue } from "framer-motion";
 import { Heart, Eye, ShoppingCart, Zap } from "lucide-react";
-import axios from "axios";
+
 import { useDispatch } from "react-redux";
 import { toast } from "react-hot-toast";
 
@@ -16,6 +16,7 @@ import type { Product } from "../api/productsApi";
 import { productsApi } from "../api/productsApi";
 import type { AppDispatch } from "../redux/store";
 import { toSlug } from '../utils/slug';
+import axiosInstance from "../api/axiosInstance";
 const SALE_END_DATE = new Date();
 SALE_END_DATE.setDate(SALE_END_DATE.getDate() + 3);
 
@@ -163,155 +164,194 @@ export default function Flash_sales() {
 
   const handleWishlistToggle = (product: Product) => {
     const token = localStorage.getItem("token");
-    if (!token) { toast.error("Please login to add to wishlist"); return; }
-    startTransition(async () => {
-      const wasLiked = !!isLiked[product._id];
-      setLiked((prev) => ({ ...prev, [product._id]: !wasLiked }));
-      try {
-        const res = await axios.post(
-          "https://shoppingstore-backend.vercel.app/api/wishlist/add",
-          { productId: product._id, name: product.name, price: product.price, image: product.image },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (res.data.success) { toast.success(res.data.message || "Wishlist updated"); navigate("/wishlist"); }
-      } catch (err: any) {
-        setLiked((prev) => ({ ...prev, [product._id]: wasLiked }));
-        toast.error(err.response?.data?.message || "Could not update wishlist");
-      }
+    if (!token) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    const wasLiked = !!isLiked[product._id];
+    setLiked((prev) => ({ ...prev, [product._id]: !wasLiked }));
+
+    startTransition(() => {
+      (async () => {
+        try {
+          const res = await axiosInstance.post(
+            '/wishlist/add',
+            {
+              productId: product._id,
+              name: product.name,
+              price: product.price,
+              image: product.image,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (res.data.success) {
+            toast.success(res.data.message || "Wishlist updated");
+            navigate("/wishlist");
+          }
+        } catch (err: any) {
+          setLiked((prev) => ({ ...prev, [product._id]: wasLiked }));
+          toast.error(err.response?.data?.message || "Could not update wishlist");
+        }
+      })();
     });
   };
 
-  // ✅ Uses addToCartAsync — hits backend + updates Redux in one dispatch
-  const handleAddToCart = async (product: Product) => {
+// ✅ Uses addToCartAsync — hits backend + updates Redux in one dispatch
+const handleAddToCart = async (product: Product) => {
     const token = localStorage.getItem("token");
     if (!token) {
       setModalConfig({ message: "Please log in first to add items to your cart.", type: "error" });
       setIsModalOpen(true);
       return;
     }
+
+    const defaultVariant = (product as any).variants?.[0];
+    const variantId = defaultVariant?._id || product._id;
+
     setAddingId(product._id);
     try {
-      await dispatch(addToCartAsync({ product, quantity: 1 })).unwrap();
+      await dispatch(
+        addToCartAsync({
+          product: {
+            ...product,
+            productId: product._id,
+            variantId,
+            discount: product.discount || "No Discount",
+          },
+          quantity: 1,
+        })
+      ).unwrap();
+
       setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
       setIsModalOpen(true);
     } catch (err: any) {
-      setModalConfig({ message: err || "Failed to add to cart.", type: "error" });
+      // ✅ SAFELY PARSE ERROR: Extract string message instead of passing error object
+      const errorMessage = typeof err === 'string'
+        ? err
+        : err?.message || err?.data?.message || "Failed to add product to cart.";
+
+      setModalConfig({ message: errorMessage, type: "error" });
       setIsModalOpen(true);
     } finally {
       setAddingId(null);
     }
   };
+const handleRateProduct = async (product: Product, rating: number) => {
+  try {
+    const result = await productsApi.rateProduct(product._id, rating);
+    if (result.success) toast.success("Rating submitted!");
+  } catch {
+    toast.error("Failed to submit rating");
+  }
+};
 
-  const handleRateProduct = async (product: Product, rating: number) => {
-    try {
-      const result = await productsApi.rateProduct(product._id, rating);
-      if (result.success) toast.success("Rating submitted!");
-    } catch {
-      toast.error("Failed to submit rating");
-    }
-  };
+const scroll = (dir: "prev" | "next") => {
+  if (!carousel.current) return;
+  carousel.current.scrollBy({ left: (dir === "next" ? 1 : -1) * (carousel.current.offsetWidth / 2), behavior: "smooth" });
+};
 
-  const scroll = (dir: "prev" | "next") => {
-    if (!carousel.current) return;
-    carousel.current.scrollBy({ left: (dir === "next" ? 1 : -1) * (carousel.current.offsetWidth / 2), behavior: "smooth" });
-  };
+const Skeleton = () => (
+  <div className="flex gap-4 sm:gap-6 overflow-hidden">
+    {[...Array(4)].map((_, i) => (
+      <div key={i} className="min-w-[85%] sm:min-w-67.5 flex flex-col gap-3 animate-pulse">
+        <div className="w-full aspect-square bg-gray-200 rounded-xl" />
+        <div className="h-3.5 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-200 rounded w-1/4" />
+        <div className="h-3 bg-gray-200 rounded w-1/3" />
+      </div>
+    ))}
+  </div>
+);
 
-  const Skeleton = () => (
-    <div className="flex gap-4 sm:gap-6 overflow-hidden">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="min-w-[85%] sm:min-w-67.5 flex flex-col gap-3 animate-pulse">
-          <div className="w-full aspect-square bg-gray-200 rounded-xl" />
-          <div className="h-3.5 bg-gray-200 rounded w-3/4" />
-          <div className="h-3 bg-gray-200 rounded w-1/4" />
-          <div className="h-3 bg-gray-200 rounded w-1/3" />
-        </div>
-      ))}
+return (
+  <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 md:mt-60 lg:mt-20">
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-4 h-9 bg-[#DB4444] rounded-sm" />
+      <div className="flex items-center gap-1.5">
+        <Zap size={14} className="text-[#DB4444]" fill="#DB4444" />
+        <span className="text-[#DB4444] font-bold text-sm uppercase tracking-wider">Today's</span>
+      </div>
     </div>
-  );
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 md:mt-60 lg:mt-20">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-4 h-9 bg-[#DB4444] rounded-sm" />
-        <div className="flex items-center gap-1.5">
-          <Zap size={14} className="text-[#DB4444]" fill="#DB4444" />
-          <span className="text-[#DB4444] font-bold text-sm uppercase tracking-wider">Today's</span>
+    <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+      <div className="flex items-center gap-6 md:gap-12 flex-wrap">
+        <h2 className="text-2xl md:text-4xl font-bold text-black tracking-tight">Flash Sales</h2>
+        <div className="flex items-end gap-1">
+          {[
+            { label: "Days", value: timeLeft.days },
+            { label: "Hrs", value: timeLeft.hours },
+            { label: "Mins", value: timeLeft.minutes },
+            { label: "Secs", value: timeLeft.seconds },
+          ].map((unit, i) => (
+            <div key={unit.label} className="flex items-end">
+              <CountdownUnit label={unit.label} value={unit.value} />
+              {i < 3 && <span className="text-[#E07575] text-xl font-bold mx-1 mb-0.5 leading-none">:</span>}
+            </div>
+          ))}
         </div>
       </div>
-
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <div className="flex items-center gap-6 md:gap-12 flex-wrap">
-          <h2 className="text-2xl md:text-4xl font-bold text-black tracking-tight">Flash Sales</h2>
-          <div className="flex items-end gap-1">
-            {[
-              { label: "Days", value: timeLeft.days },
-              { label: "Hrs", value: timeLeft.hours },
-              { label: "Mins", value: timeLeft.minutes },
-              { label: "Secs", value: timeLeft.seconds },
-            ].map((unit, i) => (
-              <div key={unit.label} className="flex items-end">
-                <CountdownUnit label={unit.label} value={unit.value} />
-                {i < 3 && <span className="text-[#E07575] text-xl font-bold mx-1 mb-0.5 leading-none">:</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-        <SliderArrows onPrev={() => scroll("prev")} onNext={() => scroll("next")} />
-      </div>
-
-      {isError && (
-        <div className="w-full text-center py-10 text-red-500 font-medium bg-red-50 rounded-xl border border-red-100">
-          Failed to load flash sales. Please try again later.
-        </div>
-      )}
-
-      {isLoading && <Skeleton />}
-
-      {!isLoading && !isError && products.length > 0 && (
-        <div ref={carousel} className="overflow-x-auto scroll-smooth scrollbar-hide cursor-grab active:cursor-grabbing" style={{ scrollbarWidth: "none" }}>
-          <motion.div style={{ x: dragX }} drag="x" dragConstraints={carousel} dragElastic={0.1} className="flex gap-4 sm:gap-6 w-max">
-            {products.map((product) => (
-              <div key={product._id} className="snap-start min-w-[80vw] sm:min-w-65 md:min-w-67.5 max-w-67.5">
-                <ProductCard
-                  product={product}
-                  isLiked={!!isLiked[product._id]}
-                  isAdding={addingId === product._id}
-                  isPending={isPending}
-                  onWishlist={() => handleWishlistToggle(product)}
-                  onAddToCart={() => handleAddToCart(product)}
-                  onRate={(v) => handleRateProduct(product, v)}
-                  // onView={() => navigate(`/view_item/${product._id}`)}
-                  onView={() => navigate(`/product/${toSlug(product.name)}`, {
-                    state: { productId: product._id }
-                  })}
-                />
-              </div>
-            ))}
-          </motion.div>
-        </div>
-      )}
-
-      {!isLoading && !isError && products.length === 0 && (
-        <div className="text-center py-16 text-gray-400 font-medium">
-          No active flash sales right now. Check back later!
-        </div>
-      )}
-
-      <div className="flex justify-center mt-12">
-        <Link to="/products" className="bg-[#DB4444] text-white px-10 py-3 rounded-lg font-medium hover:bg-[#c33d3d] active:scale-95 transition-all duration-200 inline-block">
-          View All Products
-        </Link>
-      </div>
-
-      <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
-
-      <CartModal
-        isOpen={isModalOpen}
-        type={modalConfig.type}
-        message={modalConfig.message}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={() => { setIsModalOpen(false); if (modalConfig.type === "success") navigate("/cart"); }}
-      />
+      <SliderArrows onPrev={() => scroll("prev")} onNext={() => scroll("next")} />
     </div>
-  );
+
+    {isError && (
+      <div className="w-full text-center py-10 text-red-500 font-medium bg-red-50 rounded-xl border border-red-100">
+        Failed to load flash sales. Please try again later.
+      </div>
+    )}
+
+    {isLoading && <Skeleton />}
+
+    {!isLoading && !isError && products.length > 0 && (
+      <div ref={carousel} className="overflow-x-auto scroll-smooth scrollbar-hide cursor-grab active:cursor-grabbing" style={{ scrollbarWidth: "none" }}>
+        <motion.div style={{ x: dragX }} drag="x" dragConstraints={carousel} dragElastic={0.1} className="flex gap-4 sm:gap-6 w-max">
+          {products.map((product) => (
+            <div key={product._id} className="snap-start min-w-[80vw] sm:min-w-65 md:min-w-67.5 max-w-67.5">
+              <ProductCard
+                product={product}
+                isLiked={!!isLiked[product._id]}
+                isAdding={addingId === product._id}
+                isPending={isPending}
+                onWishlist={() => handleWishlistToggle(product)}
+                onAddToCart={() => handleAddToCart(product)}
+                onRate={(v) => handleRateProduct(product, v)}
+                // onView={() => navigate(`/view_item/${product._id}`)}
+                onView={() => navigate(`/product/${toSlug(product.name)}`, {
+                  state: { productId: product._id }
+                })}
+              />
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    )}
+
+    {!isLoading && !isError && products.length === 0 && (
+      <div className="text-center py-16 text-gray-400 font-medium">
+        No active flash sales right now. Check back later!
+      </div>
+    )}
+
+    <div className="flex justify-center mt-12">
+      <Link to="/products" className="bg-[#DB4444] text-white px-10 py-3 rounded-lg font-medium hover:bg-[#c33d3d] active:scale-95 transition-all duration-200 inline-block">
+        View All Products
+      </Link>
+    </div>
+
+    <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
+
+    <CartModal
+      isOpen={isModalOpen}
+      type={modalConfig.type}
+      message={modalConfig.message}
+      onClose={() => setIsModalOpen(false)}
+      onConfirm={() => { setIsModalOpen(false); if (modalConfig.type === "success") navigate("/cart"); }}
+    />
+  </div>
+);
 }

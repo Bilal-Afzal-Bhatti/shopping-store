@@ -5,16 +5,31 @@ import { CheckCircle, AlertCircle, X } from "lucide-react";
 interface CartModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void; // Added to handle the primary action (Go to cart)
-  message: string;
+  onConfirm?: () => void; // Made optional to prevent runtime crashes if not provided
+  message?: React.ReactNode | any; // Safe handling for error objects
   type: 'success' | 'error';
 }
 
 const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onConfirm, message, type }) => {
   if (!isOpen) return null;
 
+  // ✅ SAFELY PARSE MESSAGE: Guarantees no raw JS objects crash React rendering
+  const safeMessage = React.isValidElement(message)
+    ? message
+    : typeof message === 'object' && message !== null
+      ? (message as any).message || JSON.stringify(message)
+      : String(message || '');
+
+  const handlePrimaryAction = () => {
+    if (onConfirm) {
+      onConfirm();
+    } else {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
@@ -22,11 +37,12 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onConfirm, messa
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white p-6 md:p-8 rounded-lg shadow-2xl max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
+      <div className="relative bg-white p-6 md:p-8 rounded-lg shadow-2xl max-w-sm w-full text-center animate-in fade-in zoom-in duration-300 z-10">
         
         {/* Close Icon */}
         <button 
           onClick={onClose}
+          aria-label="Close Modal"
           className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
         >
           <X size={20} />
@@ -48,13 +64,13 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onConfirm, messa
           {type === 'success' ? 'Success!' : 'Something went wrong'}
         </h3>
         <p className="mt-3 text-sm text-gray-500 leading-relaxed">
-          {message}
+          {safeMessage}
         </p>
 
         {/* Actions */}
         <div className="mt-8 flex flex-col gap-3">
           <button
-            onClick={onConfirm}
+            onClick={handlePrimaryAction}
             className={`w-full py-3 rounded-md text-white font-medium transition-all active:scale-95 ${
               type === 'success' ? 'bg-[#DB4444] hover:bg-red-600' : 'bg-gray-800 hover:bg-black'
             }`}
@@ -65,7 +81,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onConfirm, messa
           {type === 'success' && (
             <button
               onClick={onClose}
-              className="w-full py-3 rounded-md border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all"
+              className="w-full py-3 rounded-md border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all active:scale-95"
             >
               Continue Shopping
             </button>

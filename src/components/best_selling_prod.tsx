@@ -51,21 +51,37 @@ const products: Product[] = data?.products ?? [];
 const handleAddToCart = async (product: Product) => {
   const token = localStorage.getItem("token");
   if (!token) {
-    setModalConfig({ message: "Please log in first.", type: "error" });
+    setModalConfig({ message: "Please log in first to add items to your cart.", type: "error" });
     setIsModalOpen(true);
     return;
   }
 
-  setIsAdding(true);
+  // Extract or fall back to a valid variant ID
+  const activeVariantId = 
+    product.defaultVariantId || 
+    (product.variants && product.variants.length > 0 ? product.variants[0]._id : product._id);
+
+  setAddingId(product._id);
+
   try {
-    await dispatch(addToCartAsync({ product })).unwrap();
+    await dispatch(
+      addToCartAsync({ 
+        product, 
+        quantity: 1, 
+        variantId: activeVariantId 
+      })
+    ).unwrap();
+
     setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
     setIsModalOpen(true);
   } catch (err: any) {
-    setModalConfig({ message: err || "Failed to add to cart.", type: "error" });
+    setModalConfig({ 
+      message: typeof err === "string" ? err : "Failed to add to cart.", 
+      type: "error" 
+    });
     setIsModalOpen(true);
   } finally {
-    setIsAdding(false);
+    setAddingId(null);
   }
 };
 

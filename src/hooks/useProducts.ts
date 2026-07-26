@@ -7,7 +7,7 @@ interface UseProductsOptions {
   page?: number;
   limit?: number;
   search?: string;
-  sort?: string;
+    sort?: string; // ← this line is missing in your file
 }
 
 interface ProductsResponse {
@@ -32,8 +32,6 @@ export interface Ratings {
 
 export interface Product {
   _id: string;
-  productId?: string; // Optional alias for dispatch/cart actions
-  variantId?: string; // Optional alias for cart actions
   name: string;
   price: number;
   originalPrice?: number | null;
@@ -41,7 +39,7 @@ export interface Product {
   image: string;
   discount?: string;
   category: string;
-  variants?: Variant[]; // Made optional so products without variants don't throw type errors
+  variants: Variant[];
   colors?: { name: string; hex: string; stock: number }[];
   ratings?: Ratings;
   isActive: boolean;
@@ -51,20 +49,21 @@ export interface Product {
 
 // ─── useProducts (list) ───────────────────────────────────────────────────────
 export const useProducts = (options: UseProductsOptions = {}) => {
-  const { category, page = 1, limit = 20, search, sort } = options;
+  const { category, page = 1, limit = 20, search } = options;
 
   return useQuery<ProductsResponse>({
-    queryKey: ['products', { category, page, limit, search, sort }],
+    queryKey: ['products', { category, page, limit, search }],
     queryFn: async () => {
       const params: Record<string, any> = { page, limit };
       if (category) params.category = category;
       if (search)   params.search   = search;
-      if (sort)     params.sort     = sort;
 
+      // ✅ log the full URL + params before hitting API
       console.log('📦 [useProducts] hitting:', '/customer/products', '| params:', params);
 
       const { data } = await axiosInstance.get('/customer/products', { params });
 
+      // ✅ log what came back
       console.log('📦 [useProducts] response:', data);
 
       return {
@@ -83,10 +82,14 @@ export const useProduct = (id: string | undefined) => {
   return useQuery<Product>({
     queryKey: ['products', 'detail', id],
     queryFn: async () => {
+      // ✅ log the id being passed
       console.log('🔍 [useProduct] fetching id:', id);
       console.log('🔍 [useProduct] full URL:', `/customer/products/${id}`);
 
       const { data } = await axiosInstance.get(`/customer/products/${id}`);
+
+      // ✅ log the product returned
+      // console.log('🔍 [useProduct] response:', data);
 
       return data.data;
     },

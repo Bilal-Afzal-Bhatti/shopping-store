@@ -105,7 +105,7 @@ const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) =
                 <div className="text-center">Subtotal</div>
               </div>
 
-              <div className={`flex flex-col divide-y divide-gray-200 mt-4 ${items.length > 4 ? 'max-h-[500px] overflow-y-auto' : ''}`}>
+              <div className={`flex flex-col divide-y divide-gray-200 mt-4 ${items.length > 4 ? 'max-h-125 overflow-y-auto' : ''}`}>
                 {items.map((item) => (
                   <div
                     key={item._id}

@@ -48,7 +48,7 @@ export default function Our_products() {
     setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleAddToCart = async (product: Product) => {
+const handleAddToCart = async (product: Product) => {
     const token = localStorage.getItem("token");
     if (!token) {
       setModalConfig({ message: "Please log in first.", type: "error" });
@@ -56,9 +56,21 @@ export default function Our_products() {
       return;
     }
 
+    // Determine the variantId matching Flash Sales pattern
+    const activeVariantId = 
+      product.defaultVariantId || 
+      (product.variants && product.variants.length > 0 ? product.variants[0]._id : product._id);
+
     setIsAdding(true);
     try {
-      await dispatch(addToCartAsync({ product })).unwrap();
+      await dispatch(
+        addToCartAsync({ 
+          product, 
+          quantity: 1, 
+          variantId: activeVariantId 
+        })
+      ).unwrap();
+
       setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
       setIsModalOpen(true);
     } catch (err: any) {
@@ -68,7 +80,6 @@ export default function Our_products() {
       setIsAdding(false);
     }
   };
-
   const handleRateProduct = async (product: Product, ratingValue: number) => {
     try {
       const result = await productsApi.rateProduct(product._id, ratingValue);

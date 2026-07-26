@@ -48,7 +48,20 @@ const products: Product[] = data?.products ?? [];
   };
 
 
-const handleAddToCart = async (product: Product) => {
+
+  const handleRateProduct = async (product: Product, ratingValue: number) => {
+    try {
+      const result = await productsApi.rateProduct(product._id, ratingValue);
+      if (result.success) {
+        // You'll likely see a native toast library in future, but assuming they have a modal
+        setModalConfig({ message: result.message || 'Rating submitted!', type: 'success' });
+        setIsModalOpen(true);
+      }
+    } catch (err: any) {
+      setModalConfig({ message: err.response?.data?.message || 'Failed to submit rating', type: 'error' });
+      setIsModalOpen(true);
+    }
+  };const handleAddToCart = async (product: Product) => {
   const token = localStorage.getItem("token");
   if (!token) {
     setModalConfig({ message: "Please log in first to add items to your cart.", type: "error" });
@@ -61,7 +74,7 @@ const handleAddToCart = async (product: Product) => {
     product.defaultVariantId || 
     (product.variants && product.variants.length > 0 ? product.variants[0]._id : product._id);
 
-  setAddingId(product._id);
+  setIsAdding(true);
 
   try {
     await dispatch(
@@ -81,23 +94,9 @@ const handleAddToCart = async (product: Product) => {
     });
     setIsModalOpen(true);
   } finally {
-    setAddingId(null);
+    setIsAdding(false);
   }
 };
-
-  const handleRateProduct = async (product: Product, ratingValue: number) => {
-    try {
-      const result = await productsApi.rateProduct(product._id, ratingValue);
-      if (result.success) {
-        // You'll likely see a native toast library in future, but assuming they have a modal
-        setModalConfig({ message: result.message || 'Rating submitted!', type: 'success' });
-        setIsModalOpen(true);
-      }
-    } catch (err: any) {
-      setModalConfig({ message: err.response?.data?.message || 'Failed to submit rating', type: 'error' });
-      setIsModalOpen(true);
-    }
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 mb-10">

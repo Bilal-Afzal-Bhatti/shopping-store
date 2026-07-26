@@ -1,8 +1,6 @@
 // src/api/productsApi.ts
 import axiosInstance from './axiosInstance';
-import type { Product } from '../hooks/useProducts'; // ✅ single type definition
-
-export type { Product };  // re-export so other files don't break
+import type { Product as BaseProduct } from '../hooks/useProducts';
 
 export interface Variant {
   _id: string;
@@ -17,6 +15,12 @@ export interface Ratings {
   stars: Record<string, number>;
 }
 
+// ✅ Matches BaseProduct's required variants property
+export interface Product extends BaseProduct {
+  variants: Variant[];
+  defaultVariantId?: string;
+}
+
 export const productsApi = {
   rateProduct: async (productId: string, rating: number) => {
     console.log(`Rating product ${productId} with ${rating} stars...`);
@@ -24,6 +28,6 @@ export const productsApi = {
       `/customer/products/${productId}/rate`,
       { rating }
     );
-    return data; // { success, message, average, count }
+    return data;
   },
 };

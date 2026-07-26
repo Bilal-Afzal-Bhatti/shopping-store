@@ -4,14 +4,16 @@ import axiosInstance from '../../api/axiosInstance';
 import type { Product } from '../../api/productsApi';
 
 export interface CartItem {
-  _id: string;
+  _id?: string;
   productId: string;
+  variantId: string; // 👈 Added variantId support
   name: string;
   price: number;
   image: string;
   quantity: number;
-  stock: number;
-  category: string;
+  stock?: number;
+  category?: string;
+  discount?: number;
 }
 
 interface CartState {
@@ -35,16 +37,17 @@ const initialState: CartState = {
 // ─── Recalculate totals ───────────────────────────────────────────────────────
 const recalculate = (items: CartItem[]) => ({
   totalQuantity: items.reduce((s, i) => s + i.quantity, 0),
-  totalPrice:    items.reduce((s, i) => s + i.price * i.quantity, 0),
+  totalPrice: items.reduce((s, i) => s + (i.price - (i.discount || 0)) * i.quantity, 0),
 });
 
 // ─── fetchCart ────────────────────────────────────────────────────────────────
 export const fetchCart = createAsyncThunk(
   'cart/fetchCart',
   async (_, { rejectWithValue }) => {
-    const token  = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     if (!token || !userId) return rejectWithValue('Not authenticated');
+    
     const res = await axiosInstance.get(`/cart/showcart?userId=${userId}`);
     return (res.data.items || []) as CartItem[];
   }
@@ -54,27 +57,50 @@ export const fetchCart = createAsyncThunk(
 export const addToCartAsync = createAsyncThunk(
   'cart/addToCartAsync',
   async (
-    { product, quantity = 1 }: { product: Product; quantity?: number },
+    { 
+      product, 
+      variantId, 
+      quantity = 1,
+      discount = 0 
+    }: { 
+      product: Product; 
+      variantId: string; 
+      quantity?: number;
+      discount?: number;
+    },
     { rejectWithValue }
   ) => {
-    const token  = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     if (!token || !userId) return rejectWithValue('Not authenticated');
 
-    const res = await axiosInstance.post('/cart/add', {
+    const payload = {
       userId,
       productId: product._id,
-      name:      product.name,
-      price:     product.price,
-      image:     product.image,
+      variantId,
+      name: product.name,
+      price: product.price,
+      image: product.image,
       quantity,
-    });
+      discount
+    };
 
-    if (!res.data.success) return rejectWithValue(res.data.message ?? 'Failed');
-    return { product, quantity };
+    const res = await axiosInstance.post('/cart/add', payload);
+
+    if (!res.data.success) {
+      return rejectWithValue(res.data.message ?? 'Failed to add item');
+    }
+    
+    // Return backend response data or structured fallback object
+    return { 
+      cartData: res.data.data, // Contains full cart document from backend if returned
+      product, 
+      variantId, 
+      quantity, 
+      discount 
+    };
   }
 );
-
 // ─── updateQuantityAsync ──────────────────────────────────────────────────────
 export const updateQuantityAsync = createAsyncThunk(
   'cart/updateQuantityAsync',
@@ -84,8 +110,10 @@ export const updateQuantityAsync = createAsyncThunk(
   ) => {
     const userId = localStorage.getItem('userId');
     if (!userId) return rejectWithValue('Not authenticated');
+    
     const res = await axiosInstance.put(`/cart/update/${userId}/${itemId}`, { quantity });
     if (!res.data.success) return rejectWithValue(res.data.message);
+    
     return { itemId, quantity };
   }
 );
@@ -96,8 +124,10 @@ export const removeFromCartAsync = createAsyncThunk(
   async (itemId: string, { rejectWithValue }) => {
     const userId = localStorage.getItem('userId');
     if (!userId) return rejectWithValue('Not authenticated');
+    
     const res = await axiosInstance.delete(`/cart/delete/${userId}/${itemId}`);
     if (!res.data.success) return rejectWithValue('Delete failed');
+    
     return itemId;
   }
 );
@@ -108,6 +138,7 @@ export const clearCartAsync = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     const userId = localStorage.getItem('userId');
     if (!userId) return rejectWithValue('Not authenticated');
+    
     await axiosInstance.delete(`/cart/clear/${userId}`);
   }
 );
@@ -118,18 +149,29 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     clearCart(state) {
-      state.items         = [];
+      state.items = [];
       state.totalQuantity = 0;
-      state.totalPrice    = 0;
-      state.synced        = false;
+      state.totalPrice = 0;
+      state.synced = false;
     },
 
-    // ✅ instant local update — no API, called on every +/- click
-    setItemQuantity(state, action: { payload: { itemId: string; quantity: number } }) {
-      const { itemId, quantity } = action.payload;
-      // match by _id or productId — backend subdoc uses _id
-      const item = state.items.find((i) => i._id === itemId || i.productId === itemId);
-      if (item && quantity >= 1) item.quantity = quantity;
+    // ✅ Instant local update for +/- quantity buttons
+    setItemQuantity(
+      state, 
+      action: { payload: { itemId: string; variantId?: string; quantity: number } }
+    ) {
+      const { itemId, variantId, quantity } = action.payload;
+      
+      const item = state.items.find((i) => {
+        if (variantId) {
+          return (i._id === itemId || i.productId === itemId) && i.variantId === variantId;
+        }
+        return i._id === itemId || i.productId === itemId;
+      });
+
+      if (item && quantity >= 1) {
+        item.quantity = quantity;
+      }
       Object.assign(state, recalculate(state.items));
     },
   },
@@ -137,33 +179,38 @@ const cartSlice = createSlice({
   extraReducers: (builder) => {
     // ── fetchCart ────────────────────────────────────────────────────────
     builder
-      .addCase(fetchCart.pending,   (state) => { state.loading = true; })
+      .addCase(fetchCart.pending, (state) => { state.loading = true; })
       .addCase(fetchCart.fulfilled, (state, action) => {
-        state.items   = action.payload;
+        state.items = action.payload;
         state.loading = false;
-        state.synced  = true;
+        state.synced = true;
         Object.assign(state, recalculate(state.items));
       })
-      .addCase(fetchCart.rejected,  (state) => { state.loading = false; });
+      .addCase(fetchCart.rejected, (state) => { state.loading = false; });
 
     // ── addToCartAsync ───────────────────────────────────────────────────
     builder.addCase(addToCartAsync.fulfilled, (state, action) => {
-      const { product, quantity } = action.payload as { product: Product; quantity: number };
+      const { product, variantId, quantity, discount } = action.payload;
+      
+      // Look for duplicate (Exact Product ID + Exact Variant ID match)
       const existingItem = state.items.find(
-        (i) => i.productId === product._id || i._id === product._id
+        (i) => i.productId === product._id && i.variantId === variantId
       );
+
       if (existingItem) {
-        existingItem.quantity += quantity; // ✅ add selected quantity not just 1
+        existingItem.quantity += quantity;
       } else {
         state.items.push({
-          _id:       product._id,
+          _id: product._id,
           productId: product._id,
-          name:      product.name,
-          price:     product.price,
-          image:     product.image,
+          variantId, // 👈 Added here
+          name: product.name,
+          price: product.price,
+          image: product.image,
           quantity,
-          stock:     product.stock,
-          category:  product.category,
+          discount,
+          stock: product.stock,
+          category: product.category,
         });
       }
       Object.assign(state, recalculate(state.items));
@@ -193,10 +240,10 @@ const cartSlice = createSlice({
 
     // ── clearCartAsync ───────────────────────────────────────────────────
     builder.addCase(clearCartAsync.fulfilled, (state) => {
-      state.items         = [];
+      state.items = [];
       state.totalQuantity = 0;
-      state.totalPrice    = 0;
-      state.synced        = false;
+      state.totalPrice = 0;
+      state.synced = false;
     });
   },
 });

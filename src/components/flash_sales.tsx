@@ -210,13 +210,30 @@ const handleAddToCart = async (product: Product) => {
     setIsModalOpen(true);
     return;
   }
+
+  // Automatically select the first available variant ID or fallback to product._id
+  const activeVariantId = 
+    product.defaultVariantId || 
+    (product.variants && product.variants.length > 0 ? product.variants[0]._id : product._id);
+
   setAddingId(product._id);
+
   try {
-    await dispatch(addToCartAsync({ product, quantity: 1 })).unwrap();
+    await dispatch(
+      addToCartAsync({ 
+        product, 
+        quantity: 1, 
+        variantId: activeVariantId 
+      })
+    ).unwrap();
+
     setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
     setIsModalOpen(true);
   } catch (err: any) {
-    setModalConfig({ message: err || "Failed to add to cart.", type: "error" });
+    setModalConfig({ 
+      message: typeof err === "string" ? err : "Failed to add to cart.", 
+      type: "error" 
+    });
     setIsModalOpen(true);
   } finally {
     setAddingId(null);

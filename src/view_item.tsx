@@ -10,39 +10,56 @@ import axiosInstance from "./api/axiosInstance";
 import type { AppDispatch } from "./redux/store";
 
 export const Viewitem: React.FC = () => {
-  // const { id }   = useParams<{ id: string }>();
-
   const dispatch = useDispatch<AppDispatch>();
-const { slug: _slug } = useParams<{ slug: string }>(); // ← prefix _ to suppress unused warning
-const navigate        = useNavigate();                  // ← uncomment this
-const location        = useLocation();
-const productId       = (location.state as any)?.productId as string | undefined;
-const { data: product, isLoading, isError } = useProduct(productId);
-
-  // const { data: product, isLoading, isError } = useProduct(id);
-// ✅ new — read id from navigation state, slug from URL
+  const { slug: _slug } = useParams<{ slug: string }>(); 
+  const navigate = useNavigate(); 
+  const location = useLocation();
+  const productId = (location.state as any)?.productId as string | undefined;
+  const { data: product, isLoading, isError } = useProduct(productId);
 
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedSize,  setSelectedSize]  = useState<string>('');
-  const [quantity,      setQuantity]      = useState(1);
-  const [favorite,      setFavorite]      = useState(false);
-  const [isAdding,      setIsAdding]      = useState(false);
-  const [hoveredStar,   setHoveredStar]   = useState<number | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [quantity, setQuantity] = useState(1);
+  const [favorite, setFavorite] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [hoveredStar, setHoveredStar] = useState<number | null>(null);
 
   useEffect(() => {
     if (!product) return;
     if (product.image) setSelectedImage(product.image);
-    if (product.variants?.length > 0) {
+    if (product.variants && product.variants.length > 0) {
       setSelectedColor(product.variants[0].color.hex);
       setSelectedSize(product.variants[0].size);
     }
   }, [product]);
 
-  const handleQuantity = (type: "inc" | "dec") =>
-    setQuantity((prev) => type === "inc" ? prev + 1 : prev > 1 ? prev - 1 : 1);
+  // Find the selected variant or variant ID
+  const activeVariant = product?.variants?.find(
+    (v) => v.color.hex === selectedColor && v.size === selectedSize
+  );
 
-  // ✅ customer route
+  const activeVariantId = 
+    activeVariant?._id || 
+    
+    (product?.variants && product.variants.length > 0 ? product.variants[0]._id : product?._id || "");
+
+  // Determine actual stock from variant or base product
+  const stockForSelection = activeVariant?.stock ?? product?.stock ?? 0;
+
+  const handleQuantity = (type: "inc" | "dec") => {
+    setQuantity((prev) => {
+      if (type === "inc") {
+        if (prev >= stockForSelection) {
+          toast.error(`Only ${stockForSelection} items available in stock`);
+          return prev;
+        }
+        return prev + 1;
+      }
+      return prev > 1 ? prev - 1 : 1;
+    });
+  };
+
   const handleRateProduct = async (ratingValue: number) => {
     if (!product) return;
     try {
@@ -56,21 +73,39 @@ const { data: product, isLoading, isError } = useProduct(productId);
     }
   };
 
-  // ✅ passes quantity, navigates to cart with highlight state
-const handleAddToCart = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) { toast.error("Please login first"); return; }
-  if (!product) return;
-  setIsAdding(true);
-  try {
-    await dispatch(addToCartAsync({ product, quantity })).unwrap();
-    navigate("/cart", { state: { addedProductId: product._id } });
-  } catch (err: any) {
-    toast.error(err?.message || "Failed to add to cart");
-  } finally {
-    setIsAdding(false);
-  }
-};
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) { 
+      toast.error("Please login first"); 
+      return; 
+    }
+    if (!product) return;
+
+    // 🛑 BLOCK ADD TO CART IF OUT OF STOCK OR QUANTITY EXCEEDS STOCK
+    if (stockForSelection <= 0) {
+      toast.error("This item is currently out of stock!");
+      return;
+    }
+
+    if (quantity > stockForSelection) {
+      toast.error(`Cannot add more than ${stockForSelection} items available in stock.`);
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      await dispatch(addToCartAsync({
+        product, 
+        quantity,
+        variantId: activeVariantId
+      })).unwrap();
+      navigate("/cart", { state: { addedProductId: product._id } });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to add to cart");
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   const uniqueColors = product?.variants
     ? [...new Map(product.variants.map((v) => [v.color.hex, v.color])).values()]
@@ -79,10 +114,6 @@ const handleAddToCart = async () => {
   const sizesForColor = product?.variants
     ? product.variants.filter((v) => v.color.hex === selectedColor).map((v) => v.size)
     : [];
-
-  const stockForSelection = product?.variants?.find(
-    (v) => v.color.hex === selectedColor && v.size === selectedSize
-  )?.stock ?? product?.stock ?? 0;
 
   if (isLoading) return (
     <div className="max-w-7xl mx-auto px-4 py-10 animate-pulse">
@@ -123,7 +154,7 @@ const handleAddToCart = async () => {
           <div className="bg-[#F5F5F5] rounded-2xl aspect-square flex items-center justify-center p-8 overflow-hidden">
             <img
               src={selectedImage || product.image} alt={product.name}
-              className="w-full h-full object-contain transition-all duration-300"
+              className={`w-full h-full object-contain transition-all duration-300 ${stockForSelection === 0 ? "opacity-50" : ""}`}
               onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=No+Image"; }}
             />
           </div>
@@ -188,15 +219,15 @@ const handleAddToCart = async () => {
             )}
           </div>
 
-          {/* Stock */}
+          {/* Stock Indicator */}
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${stockForSelection > 0 ? "bg-green-500" : "bg-red-500"}`} />
-            <span className={`text-sm font-medium ${stockForSelection > 0 ? "text-green-600" : "text-red-500"}`}>
+            <div className={`w-2.5 h-2.5 rounded-full ${stockForSelection > 0 ? "bg-green-500" : "bg-red-500"}`} />
+            <span className={`text-sm font-semibold ${stockForSelection > 0 ? "text-green-600" : "text-red-500"}`}>
               {stockForSelection > 0 ? `${stockForSelection} in stock` : "Out of stock"}
             </span>
           </div>
 
-          {/* Color */}
+          {/* Color Selection */}
           {uniqueColors.length > 0 && (
             <div>
               <p className="text-sm font-semibold text-gray-700 mb-2">
@@ -226,7 +257,7 @@ const handleAddToCart = async () => {
             </div>
           )}
 
-          {/* Size */}
+          {/* Size Selection */}
           {sizesForColor.length > 0 && (
             <div>
               <p className="text-sm font-semibold text-gray-700 mb-2">Size</p>
@@ -246,33 +277,35 @@ const handleAddToCart = async () => {
             </div>
           )}
 
-          {/* Quantity */}
+          {/* Quantity Selector */}
           <div>
             <p className="text-sm font-semibold text-gray-700 mb-2">Quantity</p>
             <div className="flex items-center w-fit border border-gray-300 rounded-lg overflow-hidden">
               <button onClick={() => handleQuantity("dec")}
-                className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition text-lg font-medium">
+                disabled={stockForSelection === 0}
+                className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition text-lg font-medium disabled:opacity-40">
                 −
               </button>
-              <span className="w-12 text-center font-semibold text-gray-900">{quantity}</span>
+              <span className="w-12 text-center font-semibold text-gray-900">{stockForSelection === 0 ? 0 : quantity}</span>
               <button onClick={() => handleQuantity("inc")}
-                className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition text-lg font-medium">
+                disabled={stockForSelection === 0 || quantity >= stockForSelection}
+                className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition text-lg font-medium disabled:opacity-40">
                 +
               </button>
             </div>
           </div>
 
-          {/* Buttons */}
+          {/* Add to Cart & Wishlist Actions */}
           <div className="flex gap-3 flex-wrap">
             <button onClick={handleAddToCart}
               disabled={isAdding || stockForSelection === 0}
-              className="flex-1 min-w-[140px] flex items-center justify-center gap-2
+              className="flex-1 min-w-35 flex items-center justify-center gap-2
                          bg-[#DB4444] text-white font-semibold py-3 px-6 rounded-xl
                          hover:bg-[#c33d3d] active:scale-95 transition-all duration-200
-                         disabled:opacity-40 disabled:cursor-not-allowed"
+                         disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
             >
               <ShoppingCart size={18} />
-              {isAdding ? "Adding…" : "Add to Cart"}
+              {stockForSelection === 0 ? "Out of Stock" : isAdding ? "Adding…" : "Add to Cart"}
             </button>
 
             <button onClick={() => setFavorite((p) => !p)}

@@ -53,20 +53,26 @@ const Checkout: React.FC = () => {
     setBilling((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  // ── Helper to format cart items safely for backend stock deduction ──────────
+  const formatItemsForOrder = useCallback(() => {
+    return cartItems.map((item: any) => ({
+      productId: item.productId || item._id,
+      variantId: item.variantId || item.selectedVariant?._id || item.variant?._id || undefined,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity || 1,
+      image: item.image,
+    }));
+  }, [cartItems]);
+
   // ── COD ─────────────────────────────────────────────────────────────────────
   const handleCODOrder = useCallback(async (loadId: string) => {
     const userId = localStorage.getItem('userId')!;
 
     const orderData = {
-      items: cartItems.map((item) => ({
-        productId: item.productId || item._id,
-        name:      item.name,
-        price:     item.price,
-        quantity:  item.quantity,
-        image:     item.image,
-      })),
-      billingInfo:   { ...billing, saveInfo },
-      totalPrice:    subtotal,
+      items: formatItemsForOrder(),
+      billingInfo: { ...billing, saveInfo },
+      totalPrice: subtotal,
       userId,
       paymentMethod: 'cod',
     };
@@ -82,7 +88,7 @@ const Checkout: React.FC = () => {
       toast.success('Order Placed Successfully!', { id: loadId });
 
       setTimeout(() => navigate('/order/tracking', {
-        state:   { orderId },
+        state: { orderId },
         replace: true, // ✅ back button skips checkout
       }), 1500);
 
@@ -90,22 +96,16 @@ const Checkout: React.FC = () => {
       toast.error(err.response?.data?.message || 'Order failed. Please try again.', { id: loadId });
       setIsProcessing(false);
     }
-  }, [cartItems, billing, saveInfo, subtotal, dispatch, navigate]);
+  }, [formatItemsForOrder, billing, saveInfo, subtotal, dispatch, navigate]);
 
   // ── Stripe ──────────────────────────────────────────────────────────────────
   const handleOnlineOrder = useCallback(async (loadId: string) => {
     const userId = localStorage.getItem('userId')!;
 
     const orderData = {
-      items: cartItems.map((item) => ({
-        productId: item.productId || item._id,
-        name:      item.name,
-        price:     item.price,
-        quantity:  item.quantity,
-        image:     item.image,
-      })),
-      billingInfo:   { ...billing, saveInfo },
-      totalPrice:    subtotal,
+      items: formatItemsForOrder(),
+      billingInfo: { ...billing, saveInfo },
+      totalPrice: subtotal,
       userId,
       paymentMethod: 'bank',
     };
@@ -113,14 +113,14 @@ const Checkout: React.FC = () => {
     try {
       const res = await axiosInstance.post('/orders/create-checkout-session', orderData);
       toast.success('Redirecting to Secure Payment...', { id: loadId });
-      // ✅ DO NOT clear cart here — cart cleared only after Stripe confirms payment
+      // ✅ Cart will be cleared on callback page after Stripe confirms payment
       if (res.data.url) window.location.href = res.data.url;
 
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Payment redirect failed.', { id: loadId });
       setIsProcessing(false);
     }
-  }, [cartItems, billing, saveInfo, subtotal]);
+  }, [formatItemsForOrder, billing, saveInfo, subtotal]);
 
   // ── Execute ─────────────────────────────────────────────────────────────────
   const executeOrder = useCallback(async () => {
@@ -135,12 +135,10 @@ const Checkout: React.FC = () => {
     }
 
     if (paymentMethod === 'cod') await handleCODOrder(loadId);
-    else                         
-      await handleOnlineOrder(loadId);
+    else                         await handleOnlineOrder(loadId);
   }, [paymentMethod, handleCODOrder, handleOnlineOrder]);
 
   // ── Confirm dialog ──────────────────────────────────────────────────────────
- // ── Confirm dialog ──────────────────────────────────────────────────────────
   const handlePlaceOrder = () => {
     // 1. Validation Guard
     if (!isFormComplete || isProcessing) {
@@ -161,7 +159,6 @@ const Checkout: React.FC = () => {
           <button
             onClick={() => { 
               toast.dismiss(t.id); 
-              // Added check to ensure we don't execute multiple times
               if (!isProcessing) executeOrder(); 
             }}
             className="bg-black text-white px-4 py-1.5 rounded-none text-[10px] font-black uppercase tracking-widest border border-black hover:bg-white hover:text-black transition-all"
@@ -178,9 +175,10 @@ const Checkout: React.FC = () => {
       </div>
     ), { 
       duration: 5000,
-      id: "place-order-confirm" // ✅ Setting a unique ID prevents duplicates automatically
+      id: "place-order-confirm"
     });
   };
+
   // ── Loading ─────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="flex justify-center items-center h-screen">

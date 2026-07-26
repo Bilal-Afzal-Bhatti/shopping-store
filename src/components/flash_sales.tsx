@@ -17,13 +17,13 @@ import { productsApi } from "../api/productsApi";
 import type { AppDispatch } from "../redux/store";
 import { toSlug } from '../utils/slug';
 import axiosInstance from "../api/axiosInstance";
+
 const SALE_END_DATE = new Date();
 SALE_END_DATE.setDate(SALE_END_DATE.getDate() + 3);
 
 const formatDiscount = (discount?: string) => {
   if (!discount || discount === 'No Discount') return null;
   const num = discount.match(/\d+/);
-  // ✅ "10" → "-10%", "10%" → "-10%", "10% OFF" → "-10%"
   return num ? `-${num[0]}%` : discount;
 };
 
@@ -75,14 +75,20 @@ function ProductCard({ product, isLiked, isAdding, isPending, onWishlist, onAddT
   onWishlist: () => void; onAddToCart: () => void; onRate: (v: number) => void; onView: () => void;
 }) {
   const badge = formatDiscount(product.discount);
+  const isOutOfStock = product.stock === 0;
+
   return (
     <div className="flex flex-col w-full">
-      <div className="group relative  rounded-xl aspect-square flex items-center justify-center p-6 overflow-hidden">
+      <div className="group relative rounded-xl aspect-square flex items-center justify-center p-6 overflow-hidden bg-gray-50">
+        
+        {/* Discount Badge */}
         {badge && (
           <span className="absolute top-3 left-3 z-10 bg-[#DB4444] text-white text-[11px] font-bold px-2.5 py-1 rounded-md shadow">
             {badge}
           </span>
         )}
+
+        {/* Wishlist & View Actions */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
           <button onClick={onWishlist} disabled={isPending} aria-label="Add to wishlist"
             className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50 active:scale-90 transition disabled:opacity-40"
@@ -95,34 +101,56 @@ function ProductCard({ product, isLiked, isAdding, isPending, onWishlist, onAddT
             <Eye size={15} className="text-gray-500" />
           </button>
         </div>
+
+        {/* Product Image */}
         <img
           src={product.image || "https://placehold.co/300x300?text=No+Image"}
           alt={product.name} loading="lazy"
-          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply select-none pointer-events-none"
+          className={`w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-multiply select-none pointer-events-none ${
+            isOutOfStock ? "opacity-50" : ""
+          }`}
           onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/300x300?text=No+Image"; }}
         />
-        <button onClick={onAddToCart} disabled={isAdding || product.stock === 0}
+
+        {/* Add to Cart Button */}
+        <button onClick={onAddToCart} disabled={isAdding || isOutOfStock}
           className="absolute bottom-0 left-0 w-full bg-gray-900 text-white text-sm font-medium py-2.5 flex items-center justify-center gap-2 opacity-100 md:opacity-0 md:translate-y-1 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           <ShoppingCart size={15} />
-          {product.stock === 0 ? "Out of Stock" : isAdding ? "Adding…" : "Add To Cart"}
+          {isOutOfStock ? "Out of Stock" : isAdding ? "Adding…" : "Add To Cart"}
         </button>
       </div>
+
+      {/* Details & Stock Label */}
       <div className="mt-3 px-0.5">
         <h3 onClick={onView} className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 cursor-pointer hover:text-[#DB4444] transition-colors">
           {product.name}
         </h3>
+
         <div className="flex items-center gap-2.5 mt-1.5">
           <span className="text-[#DB4444] font-bold text-sm">${product.price.toFixed(2)}</span>
           {product.originalPrice && (
             <span className="text-gray-400 line-through text-xs">${product.originalPrice.toFixed(2)}</span>
           )}
         </div>
-        {product.stock <= 5 && product.stock > 0 && (
-          <span className="inline-block mt-1 text-[10px] font-semibold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
-            Only {product.stock} left
-          </span>
-        )}
+
+        {/* 📦 Stock Status Indicator */}
+        <div className="mt-1.5">
+          {isOutOfStock ? (
+            <span className="inline-block text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-full">
+              Out of Stock
+            </span>
+          ) : product.stock <= 5 ? (
+            <span className="inline-block text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-0.5 rounded-full">
+              Only {product.stock} left
+            </span>
+          ) : (
+            <span className="inline-block text-[10px] font-semibold text-green-600 bg-green-50 border border-green-200 px-2.5 py-0.5 rounded-full">
+              In Stock ({product.stock})
+            </span>
+          )}
+        </div>
+
         <StarRating average={product.ratings?.average} count={product.ratings?.count} onRate={onRate} />
       </div>
     </div>
@@ -131,10 +159,10 @@ function ProductCard({ product, isLiked, isAdding, isPending, onWishlist, onAddT
 
 // ─── Flash_sales ──────────────────────────────────────────────────────────────
 export default function Flash_sales() {
-  const dispatch = useDispatch<AppDispatch>();  // ✅ typed
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const { data, isLoading, isError } = useProducts({ category: 'Flash Sales', limit: 20 })
+  const { data, isLoading, isError } = useProducts({ category: 'Flash Sales', limit: 20 });
   const products: Product[] = data?.products ?? [];
 
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -202,154 +230,151 @@ export default function Flash_sales() {
     });
   };
 
-// ✅ Uses addToCartAsync — hits backend + updates Redux in one dispatch
-const handleAddToCart = async (product: Product) => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    setModalConfig({ message: "Please log in first to add items to your cart.", type: "error" });
-    setIsModalOpen(true);
-    return;
-  }
+  const handleAddToCart = async (product: Product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setModalConfig({ message: "Please log in first to add items to your cart.", type: "error" });
+      setIsModalOpen(true);
+      return;
+    }
 
-  // Automatically select the first available variant ID or fallback to product._id
-  const activeVariantId = 
-    product.defaultVariantId || 
-    (product.variants && product.variants.length > 0 ? product.variants[0]._id : product._id);
+    const activeVariantId = 
+      product.defaultVariantId || 
+      (product.variants && product.variants.length > 0 ? product.variants[0]._id : product._id);
 
-  setAddingId(product._id);
+    setAddingId(product._id);
 
-  try {
-    await dispatch(
-      addToCartAsync({ 
-        product, 
-        quantity: 1, 
-        variantId: activeVariantId 
-      })
-    ).unwrap();
+    try {
+      await dispatch(
+        addToCartAsync({ 
+          product, 
+          quantity: 1, 
+          variantId: activeVariantId 
+        })
+      ).unwrap();
 
-    setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
-    setIsModalOpen(true);
-  } catch (err: any) {
-    setModalConfig({ 
-      message: typeof err === "string" ? err : "Failed to add to cart.", 
-      type: "error" 
-    });
-    setIsModalOpen(true);
-  } finally {
-    setAddingId(null);
-  }
-};
+      setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
+      setIsModalOpen(true);
+    } catch (err: any) {
+      setModalConfig({ 
+        message: typeof err === "string" ? err : "Failed to add to cart.", 
+        type: "error" 
+      });
+      setIsModalOpen(true);
+    } finally {
+      setAddingId(null);
+    }
+  };
 
-const handleRateProduct = async (product: Product, rating: number) => {
-  try {
-    const result = await productsApi.rateProduct(product._id, rating);
-    if (result.success) toast.success("Rating submitted!");
-  } catch {
-    toast.error("Failed to submit rating");
-  }
-};
+  const handleRateProduct = async (product: Product, rating: number) => {
+    try {
+      const result = await productsApi.rateProduct(product._id, rating);
+      if (result.success) toast.success("Rating submitted!");
+    } catch {
+      toast.error("Failed to submit rating");
+    }
+  };
 
-const scroll = (dir: "prev" | "next") => {
-  if (!carousel.current) return;
-  carousel.current.scrollBy({ left: (dir === "next" ? 1 : -1) * (carousel.current.offsetWidth / 2), behavior: "smooth" });
-};
+  const scroll = (dir: "prev" | "next") => {
+    if (!carousel.current) return;
+    carousel.current.scrollBy({ left: (dir === "next" ? 1 : -1) * (carousel.current.offsetWidth / 2), behavior: "smooth" });
+  };
 
-const Skeleton = () => (
-  <div className="flex gap-4 sm:gap-6 overflow-hidden">
-    {[...Array(4)].map((_, i) => (
-      <div key={i} className="min-w-[85%] sm:min-w-67.5 flex flex-col gap-3 animate-pulse">
-        <div className="w-full aspect-square bg-gray-200 rounded-xl" />
-        <div className="h-3.5 bg-gray-200 rounded w-3/4" />
-        <div className="h-3 bg-gray-200 rounded w-1/4" />
-        <div className="h-3 bg-gray-200 rounded w-1/3" />
-      </div>
-    ))}
-  </div>
-);
-
-return (
-  <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 md:mt-60 lg:mt-20">
-    <div className="flex items-center gap-3 mb-4">
-      <div className="w-4 h-9 bg-[#DB4444] rounded-sm" />
-      <div className="flex items-center gap-1.5">
-        <Zap size={14} className="text-[#DB4444]" fill="#DB4444" />
-        <span className="text-[#DB4444] font-bold text-sm uppercase tracking-wider">Today's</span>
-      </div>
+  const Skeleton = () => (
+    <div className="flex gap-4 sm:gap-6 overflow-hidden">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="min-w-[85%] sm:min-w-67.5 flex flex-col gap-3 animate-pulse">
+          <div className="w-full aspect-square bg-gray-200 rounded-xl" />
+          <div className="h-3.5 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 bg-gray-200 rounded w-1/4" />
+          <div className="h-3 bg-gray-200 rounded w-1/3" />
+        </div>
+      ))}
     </div>
+  );
 
-    <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-      <div className="flex items-center gap-6 md:gap-12 flex-wrap">
-        <h2 className="text-2xl md:text-4xl font-bold text-black tracking-tight">Flash Sales</h2>
-        <div className="flex items-end gap-1">
-          {[
-            { label: "Days", value: timeLeft.days },
-            { label: "Hrs", value: timeLeft.hours },
-            { label: "Mins", value: timeLeft.minutes },
-            { label: "Secs", value: timeLeft.seconds },
-          ].map((unit, i) => (
-            <div key={unit.label} className="flex items-end">
-              <CountdownUnit label={unit.label} value={unit.value} />
-              {i < 3 && <span className="text-[#E07575] text-xl font-bold mx-1 mb-0.5 leading-none">:</span>}
-            </div>
-          ))}
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-10 mt-20 md:mt-60 lg:mt-20">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-4 h-9 bg-[#DB4444] rounded-sm" />
+        <div className="flex items-center gap-1.5">
+          <Zap size={14} className="text-[#DB4444]" fill="#DB4444" />
+          <span className="text-[#DB4444] font-bold text-sm uppercase tracking-wider">Today's</span>
         </div>
       </div>
-      <SliderArrows onPrev={() => scroll("prev")} onNext={() => scroll("next")} />
+
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <div className="flex items-center gap-6 md:gap-12 flex-wrap">
+          <h2 className="text-2xl md:text-4xl font-bold text-black tracking-tight">Flash Sales</h2>
+          <div className="flex items-end gap-1">
+            {[
+              { label: "Days", value: timeLeft.days },
+              { label: "Hrs", value: timeLeft.hours },
+              { label: "Mins", value: timeLeft.minutes },
+              { label: "Secs", value: timeLeft.seconds },
+            ].map((unit, i) => (
+              <div key={unit.label} className="flex items-end">
+                <CountdownUnit label={unit.label} value={unit.value} />
+                {i < 3 && <span className="text-[#E07575] text-xl font-bold mx-1 mb-0.5 leading-none">:</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+        <SliderArrows onPrev={() => scroll("prev")} onNext={() => scroll("next")} />
+      </div>
+
+      {isError && (
+        <div className="w-full text-center py-10 text-red-500 font-medium bg-red-50 rounded-xl border border-red-100">
+          Failed to load flash sales. Please try again later.
+        </div>
+      )}
+
+      {isLoading && <Skeleton />}
+
+      {!isLoading && !isError && products.length > 0 && (
+        <div ref={carousel} className="overflow-x-auto scroll-smooth scrollbar-hide cursor-grab active:cursor-grabbing" style={{ scrollbarWidth: "none" }}>
+          <motion.div style={{ x: dragX }} drag="x" dragConstraints={carousel} dragElastic={0.1} className="flex gap-4 sm:gap-6 w-max">
+            {products.map((product) => (
+              <div key={product._id} className="snap-start min-w-[80vw] sm:min-w-65 md:min-w-67.5 max-w-67.5">
+                <ProductCard
+                  product={product}
+                  isLiked={!!isLiked[product._id]}
+                  isAdding={addingId === product._id}
+                  isPending={isPending}
+                  onWishlist={() => handleWishlistToggle(product)}
+                  onAddToCart={() => handleAddToCart(product)}
+                  onRate={(v) => handleRateProduct(product, v)}
+                  onView={() => navigate(`/product/${toSlug(product.name)}`, {
+                    state: { productId: product._id }
+                  })}
+                />
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      )}
+
+      {!isLoading && !isError && products.length === 0 && (
+        <div className="text-center py-16 text-gray-400 font-medium">
+          No active flash sales right now. Check back later!
+        </div>
+      )}
+
+      <div className="flex justify-center mt-12">
+        <Link to="/products" className="bg-[#DB4444] text-white px-10 py-3 rounded-lg font-medium hover:bg-[#c33d3d] active:scale-95 transition-all duration-200 inline-block">
+          View All Products
+        </Link>
+      </div>
+
+      <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
+
+      <CartModal
+        isOpen={isModalOpen}
+        type={modalConfig.type}
+        message={modalConfig.message}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={() => { setIsModalOpen(false); if (modalConfig.type === "success") navigate("/cart"); }}
+      />
     </div>
-
-    {isError && (
-      <div className="w-full text-center py-10 text-red-500 font-medium bg-red-50 rounded-xl border border-red-100">
-        Failed to load flash sales. Please try again later.
-      </div>
-    )}
-
-    {isLoading && <Skeleton />}
-
-    {!isLoading && !isError && products.length > 0 && (
-      <div ref={carousel} className="overflow-x-auto scroll-smooth scrollbar-hide cursor-grab active:cursor-grabbing" style={{ scrollbarWidth: "none" }}>
-        <motion.div style={{ x: dragX }} drag="x" dragConstraints={carousel} dragElastic={0.1} className="flex gap-4 sm:gap-6 w-max">
-          {products.map((product) => (
-            <div key={product._id} className="snap-start min-w-[80vw] sm:min-w-65 md:min-w-67.5 max-w-67.5">
-              <ProductCard
-                product={product}
-                isLiked={!!isLiked[product._id]}
-                isAdding={addingId === product._id}
-                isPending={isPending}
-                onWishlist={() => handleWishlistToggle(product)}
-                onAddToCart={() => handleAddToCart(product)}
-                onRate={(v) => handleRateProduct(product, v)}
-                // onView={() => navigate(`/view_item/${product._id}`)}
-                onView={() => navigate(`/product/${toSlug(product.name)}`, {
-                  state: { productId: product._id }
-                })}
-              />
-            </div>
-          ))}
-        </motion.div>
-      </div>
-    )}
-
-    {!isLoading && !isError && products.length === 0 && (
-      <div className="text-center py-16 text-gray-400 font-medium">
-        No active flash sales right now. Check back later!
-      </div>
-    )}
-
-    <div className="flex justify-center mt-12">
-      <Link to="/products" className="bg-[#DB4444] text-white px-10 py-3 rounded-lg font-medium hover:bg-[#c33d3d] active:scale-95 transition-all duration-200 inline-block">
-        View All Products
-      </Link>
-    </div>
-
-    <Line color="bg-gray-200" width="w-full" height="h-[1px]" margin="mt-16" />
-
-    <CartModal
-      isOpen={isModalOpen}
-      type={modalConfig.type}
-      message={modalConfig.message}
-      onClose={() => setIsModalOpen(false)}
-      onConfirm={() => { setIsModalOpen(false); if (modalConfig.type === "success") navigate("/cart"); }}
-    />
-  </div>
-);
+  );
 }

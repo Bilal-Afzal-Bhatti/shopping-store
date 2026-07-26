@@ -13,7 +13,7 @@ let BASE_URL: string;
 if (import.meta.env.VITE_BACKEND_URL) {
   // Best practice: Read directly from environment variable if configured
   BASE_URL = import.meta.env.VITE_BACKEND_URL;
-} else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+} else if (hostname === 'localhost' || hostname === 'http://192.168.18.40:5173') {
   // Local Docker development
   BASE_URL = `http://${hostname}:${BACKEND_PORT}`;
 } else {

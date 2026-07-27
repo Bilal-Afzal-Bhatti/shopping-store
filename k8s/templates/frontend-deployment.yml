@@ -16,7 +16,6 @@ spec:
     spec:
       containers:
       - name: frontend
-        # 🟢 Updated to full ECR registry image URI
         image: 277876300047.dkr.ecr.us-east-1.amazonaws.com/shopping_store:latest
         imagePullPolicy: Always
         ports:
@@ -46,34 +45,12 @@ kind: Service
 metadata:
   name: ecommerce-frontend-service
   annotations:
-    # 🟢 Standard AWS Cloud Controller annotations for NLB
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
 spec:
+  type: LoadBalancer
   selector:
-    matchLabels:
-      app: {{ .Release.Name }}-frontend  # 🟢 Dynamic string (e.g. "my-release-frontend")
+    app: ecommerce-frontend
   ports:
   - port: 80
     targetPort: 80
-  type: LoadBalancer
-
-
-spec:
-  replicas: {{ .Values.replicaCount }}
-  selector:
-    matchLabels:
-      app: {{ .Release.Name }}-frontend
-  template:
-    metadata:
-      labels:
-        app: {{ .Release.Name }}-frontend
-    spec:
-      {{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
-      {{- end }}
-      containers:
-        - name: frontend
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}

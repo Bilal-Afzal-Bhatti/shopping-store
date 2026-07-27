@@ -1,23 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ecommerce-frontend
+  name: ecommerce-frontend-service
 spec:
   type: ClusterIP
   selector:
     app: ecommerce-frontend
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-      apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Release.Name }}-service
-spec:
-  type: {{ .Values.service.type }}
-  ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
-  selector:
-    app: {{ .Release.Name }}
+  - protocol: TCP
+    port: 80
+    targetPort: 80

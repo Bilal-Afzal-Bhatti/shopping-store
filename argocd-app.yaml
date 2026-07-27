@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shoppingstore
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/BILAL-AFZAL-BHATTI/shoppingstore.git'
+    targetRevision: HEAD
+    path: 'k8s' # Points directly to your k8s folder
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true     # Deletes K8s resources if removed from Git
+      selfHeal: true  # Reverts manual kubectl changes back to match Git
+    syncOptions:
+      - CreateNamespace=true

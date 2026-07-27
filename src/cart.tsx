@@ -1,6 +1,6 @@
 // src/cart.tsx
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // ✅ useLocation added
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Trash2, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from './redux/store';
@@ -20,49 +20,37 @@ const Cart: React.FC = () => {
     (s: RootState) => s.cart
   );
 
-  // ✅ highlight the product just added from view_item
+  // highlight the product just added from view_item
   const addedProductId = (location.state as any)?.addedProductId as string | undefined;
 
   const [showModal, setShowModal] = useState(false);
 
-  // useEffect(() => {
-  //   const token  = localStorage.getItem('token');
-  //   const userId = localStorage.getItem('userId');
-  //   if (!token || !userId) { navigate('/login'); return; }
-  //   if (!synced) dispatch(fetchCart());
-  // }, []);
   useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (!token) { navigate('/login'); return; }
+    const token = localStorage.getItem('token');
+    if (!token) { navigate('/login'); return; }
 
-  // Force fetch every time we enter the cart to sync with backend
-  dispatch(fetchCart());
-}, [dispatch]);
-// cart.tsx — add inside useEffect
-useEffect(() => {
-  console.log('🛒 items from backend:', items);
-}, [items]);
-  // const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) => {
-  //   const newQty = type === 'inc' ? current + 1 : current > 1 ? current - 1 : 1;
-  //   dispatch(setItemQuantity({ itemId, quantity: newQty }));
-  // };
-  // cart.tsx
-const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) => {
-  const newQty = type === 'inc' ? current + 1 : current > 1 ? current - 1 : 1;
-  if (newQty === current) return;
+    // Force fetch every time we enter the cart to sync with backend
+    dispatch(fetchCart());
+  }, [dispatch, navigate]);
 
-  // ✅ update UI instantly
-  dispatch(setItemQuantity({ itemId, quantity: newQty }));
+  useEffect(() => {
+    console.log('🛒 items from backend:', items);
+  }, [items]);
 
-  // ✅ sync to backend immediately — no Update button needed
-  dispatch(updateQuantityAsync({ itemId, quantity: newQty }));
-};
+  const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) => {
+    if (!itemId) return;
+    const newQty = type === 'inc' ? current + 1 : current > 1 ? current - 1 : 1;
+    if (newQty === current) return;
 
-  // const handleUpdate = (itemId: string, quantity: number) => {
-  //   dispatch(updateQuantityAsync({ itemId, quantity }));
-  // };
+    // update UI instantly
+    dispatch(setItemQuantity({ itemId, quantity: newQty }));
+
+    // sync to backend immediately
+    dispatch(updateQuantityAsync({ itemId, quantity: newQty }));
+  };
 
   const handleDelete = (itemId: string) => {
+    if (!itemId) return;
     dispatch(removeFromCartAsync(itemId));
   };
 
@@ -106,68 +94,90 @@ const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) =
               </div>
 
               <div className={`flex flex-col divide-y divide-gray-200 mt-4 ${items.length > 4 ? 'max-h-125 overflow-y-auto' : ''}`}>
-                {items.map((item) => (
-                  <div
-                    key={item._id}
-                    className={`grid grid-cols-1 lg:grid-cols-5 items-center py-5 px-4 md:px-6 gap-3 lg:gap-0 transition-all duration-500 ${
-                      addedProductId === item.productId
-                        ? 'bg-green-50 border-l-4 border-green-400' // ✅ highlight newly added
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {/* Product */}
-                    <div className="col-span-2 flex items-center gap-3">
-                      <img
-                        src={item.image} alt={item.name}
-                        className="w-16 h-16 object-contain bg-gray-50 rounded-md shrink-0"
-                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/64x64?text=?'; }}
-                      />
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="font-semibold text-sm truncate">{item.name}</span>
-                        <button onClick={() => handleDelete(item._id)}
-                          className="text-red-400 hover:text-red-600 transition text-xs flex items-center gap-1 w-fit">
-                          <Trash2 size={12} /> Remove
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Price */}
-                    <div className="text-center text-sm font-medium">
-                      ${item.price.toFixed(2)}
-                    </div>
-
-                  {/* Quantity — auto syncs on every click */}
-<div className="flex flex-col items-center gap-1">
-  <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-    <button
-      onClick={() => handleQtyChange(item._id, 'dec', item.quantity)}
-      disabled={updatingItemId === item._id}
-      className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 disabled:opacity-40"
+               {items.map((item) => {
+  const itemId = item._id || item.productId || '';
+  
+  return (
+    <div
+      key={itemId || Math.random()}
+      className={`grid grid-cols-1 lg:grid-cols-5 items-center py-5 px-4 md:px-6 gap-3 lg:gap-0 transition-all duration-500 ${
+        addedProductId === item.productId
+          ? 'bg-green-50 border-l-4 border-green-400'
+          : 'hover:bg-gray-50'
+      }`}
     >
-      <Minus size={12} />
-    </button>
-    <span className="w-10 text-center text-sm font-semibold">
-      {item.quantity}
-    </span>
-    <button
-      onClick={() => handleQtyChange(item._id, 'inc', item.quantity)}
-      disabled={updatingItemId === item._id}
-      className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 disabled:opacity-40"
-    >
-      <Plus size={12} />
-    </button>
-  </div>
-  {/* ✅ show saving indicator instead of Update button */}
-  {updatingItemId === item._id && (
-    <span className="text-[10px] text-gray-400 font-medium">Saving…</span>
-  )}
-</div>
-                    {/* Subtotal */}
-                    <div className="text-center font-bold text-gray-900">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
+      {/* Product details */}
+      <div className="col-span-2 flex items-center gap-3">
+        <img
+          src={item.image} alt={item.name}
+          className="w-16 h-16 object-contain bg-gray-50 rounded-md shrink-0 border border-gray-100"
+          onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/64x64?text=?'; }}
+        />
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="font-semibold text-sm truncate">{item.name}</span>
+          
+          {/* Variant Selection Display
+          {item.variantId && (
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded w-fit">
+              Variant: {item.variantId}
+            </span>
+          )}
+          {item.variantId && typeof item.variantId === 'object' && (
+            <div className="flex flex-wrap gap-1">
+              {Object.entries(item.variantId).map(([key, val]) => (
+                <span key={key} className="text-[11px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded capitalize">
+                  {key}: {String(val)}
+                </span>
+              ))}
+            </div>
+         */}
+
+          <button onClick={() => handleDelete(itemId)}
+            className="text-red-400 hover:text-red-600 transition text-xs flex items-center gap-1 w-fit mt-0.5">
+            <Trash2 size={12} /> Remove
+          </button>
+        </div>
+      </div>
+
+      {/* Price */}
+      <div className="text-center text-sm font-medium">
+        ${item.price.toFixed(2)}
+      </div>
+
+      {/* Quantity */}
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+          <button
+            onClick={() => handleQtyChange(itemId, 'dec', item.quantity)}
+            disabled={updatingItemId === itemId}
+            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 disabled:opacity-40"
+          >
+            <Minus size={12} />
+          </button>
+          <span className="w-10 text-center text-sm font-semibold">
+            {item.quantity}
+          </span>
+          <button
+            onClick={() => handleQtyChange(itemId, 'inc', item.quantity)}
+            disabled={updatingItemId === itemId}
+            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 transition text-gray-600 disabled:opacity-40"
+          >
+            <Plus size={12} />
+          </button>
+        </div>
+        {updatingItemId === itemId && (
+          <span className="text-[10px] text-gray-400 font-medium">Saving…</span>
+        )}
+      </div>
+
+      {/* Subtotal */}
+      <div className="text-center font-bold text-gray-900">
+        ${(item.price * item.quantity).toFixed(2)}
+      </div>
+    </div>
+  );
+})}
+                 
               </div>
             </>
           ) : (
@@ -181,7 +191,7 @@ const handleQtyChange = (itemId: string, type: 'inc' | 'dec', current: number) =
           )}
         </div>
 
-        {/* Cart Total */}
+        {/* Cart Total Sidebar */}
         <div className="border border-gray-300 rounded-xl p-6 bg-gray-50 h-fit shadow-sm">
           <h2 className="text-lg font-bold mb-4">Cart Total</h2>
           <div className="flex justify-between border-b border-gray-200 py-2 text-sm">

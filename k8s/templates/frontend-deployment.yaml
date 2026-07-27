@@ -51,8 +51,29 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
 spec:
   selector:
-    app: ecommerce-frontend
+    matchLabels:
+      app: {{ .Release.Name }}-frontend  # 🟢 Dynamic string (e.g. "my-release-frontend")
   ports:
   - port: 80
     targetPort: 80
   type: LoadBalancer
+
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-frontend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-frontend
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}

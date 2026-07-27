@@ -1,0 +1,6 @@
+# k8s/.helmignore
+.DS_Store
+.git/
+.gitignore
+*.swp
+*.bak

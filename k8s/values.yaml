@@ -1,0 +1,17 @@
+replicaCount: 2
+
+image:
+  repository: 277876300047.dkr.ecr.us-east-1.amazonaws.com/shopping_store
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: ecr-secret
+
+service:
+  type: LoadBalancer # Or ClusterIP
+  port: 80
+  targetPort: 80
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"

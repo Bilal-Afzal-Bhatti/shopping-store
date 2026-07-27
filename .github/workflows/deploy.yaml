@@ -29,6 +29,9 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/shopping_store:${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/shopping_store:latest
@@ -65,72 +68,3 @@ jobs:
           
           # 3. Monitor rolling update
           kubectl rollout status deployment/ecommerce-frontend
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# name: Build, Push and Deploy Frontend
-
-# on:
-#   push:
-#     branches: [main]
-
-# jobs:
-#   build-and-push:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4.2.2 # Minor bump updates underlying Node runtime
-
-#       - name: Login to Docker Hub
-#         uses: docker/login-action@v3.3.0 # Minor bump updates underlying Node runtime
-#         with:
-#           username: ${{ secrets.DOCKER_USERNAME }}
-#           password: ${{ secrets.DOCKER_PASSWORD }}
-
-#       - name: Build and push Frontend
-#         uses: docker/build-push-action@v6 # Upgraded from v5 to v6 for Node 24 support
-#         with:
-#           context: .
-#           push: true
-#           tags: ${{ secrets.DOCKER_USERNAME }}/shopping_store:${{ github.sha }}
-
-#   deploy:
-#     needs: build-and-push
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4.2.2
-
-#       - name: Configure AWS credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: us-east-1
-
-#       - name: Update kubeconfig
-#         run: aws eks update-kubeconfig --name ecommerce-cluster --region us-east-1
-
-#       - name: Deploy to EKS
-#         run: |
-#           # 1. Create or update the base deployment resource in the cluster
-#           kubectl apply -f k8s/frontend-deployment.yml
-          
-#           # 2. Update image for frontend deployment inside EKS with the new tag
-#           kubectl set image deployment/ecommerce-frontend \
-#             frontend=${{ secrets.DOCKER_USERNAME }}/shopping_store:${{ github.sha }}
-          
-#           # 3. Monitor rolling update
-#           kubectl rollout status deployment/ecommerce-frontend

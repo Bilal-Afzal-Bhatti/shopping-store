@@ -1,15 +1,15 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ecommerce-frontend-ingress  # 👈 Distinct K8s resource name
+  name: ecommerce-frontend-ingress
   namespace: default
   annotations:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/group.name: "ecommerce-alb-group" # 👈 MUST match backend
+    alb.ingress.kubernetes.io/group.name: "ecommerce-alb-group"
     
-    # 🔒 SSL & HTTPS Configuration
+    # SSL & HTTPS Configuration
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:277876300047:certificate/e5caaf3d-8a16-4128-a872-ae5067b2de21
     alb.ingress.kubernetes.io/ssl-redirect: '443'

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
   import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
-
+import axiosInstance from "../api/axiosInstance";
 function Navbar() {
   const menuItems = ["Home", "Contact", "About", "Sign Up"];
   const [isSticky, setIsSticky] = useState(false);
@@ -46,27 +46,24 @@ const totalQuantity = useSelector((s: RootState) => s.cart.totalQuantity);
 
   
 
-    try {
-      const res = await fetch(
-        `https://shoppingstore-backend.vercel.app/api/cart/showcart/?userId=${userId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!res.ok) throw new Error("Failed to fetch cart");
-      const data = await res.json();
+  try {
+    const res = await axiosInstance.get('/cart/showcart/', {
+      params: {
+        userId,
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      // Set the count and sync localStorage for backup
-      const count = data.items?.length || 0;
-    
-      localStorage.setItem("cartCount", count.toString());
-    } catch (err) {
-    
-    }
-  };
+    const data = res.data;
+    return data;
+  } catch (error) {
+ 
+    console.error("Error fetching cart:", error);
+    throw error;
+  }
+};
 
   useEffect(() => {
     // 1. Run immediately when Chrome loads/refreshes the page
@@ -128,7 +125,8 @@ const totalQuantity = useSelector((s: RootState) => s.cart.totalQuantity);
         {/* 1. Logo */}
         <Link to="/" className="z-1">
           <h1 className="text-xl sm:text-2xl font-bold tracking-wider text-black">
-            EXCLUSIVE
+            EXCLUSIV
+            
           </h1>
         </Link>
 

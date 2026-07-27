@@ -11,7 +11,7 @@ const queryClient = new QueryClient();
 
 // ✅ Load the Client ID from your .env file
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
+console.log("Loaded Client ID:", GOOGLE_CLIENT_ID); 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>

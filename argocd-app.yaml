@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/BILAL-AFZAL-BHATTI/shoppingstore.git'
+    repoURL: 'https://github.com/Bilal-Afzal-Bhatti/shopping-store'
     targetRevision: HEAD
     path: 'k8s' # Points directly to your k8s folder
   destination:

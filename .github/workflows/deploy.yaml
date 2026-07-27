@@ -57,7 +57,7 @@ jobs:
       - name: Deploy to EKS
         run: |
           # 1. Apply or update base manifest
-          kubectl apply -f k8s/frontend-deployment.yml
+          kubectl apply -f k8s/templates/frontend-deployment.yml
           
           # 2. Update deployment image to the ECR URI
           kubectl set image deployment/ecommerce-frontend \

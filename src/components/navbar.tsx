@@ -125,8 +125,8 @@ const totalQuantity = useSelector((s: RootState) => s.cart.totalQuantity);
         {/* 1. Logo */}
         <Link to="/" className="z-1">
           <h1 className="text-xl sm:text-2xl font-bold tracking-wider text-black">
-            EXCLUSIV
-            
+            EXCLUSIVE
+
           </h1>
         </Link>
 

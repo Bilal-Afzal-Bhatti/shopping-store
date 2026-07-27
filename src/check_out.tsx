@@ -139,6 +139,7 @@ const Checkout: React.FC = () => {
   }, [paymentMethod, handleCODOrder, handleOnlineOrder]);
 
   // ── Confirm dialog ──────────────────────────────────────────────────────────
+// ── Confirm dialog ──────────────────────────────────────────────────────────
   const handlePlaceOrder = () => {
     // 1. Validation Guard
     if (!isFormComplete || isProcessing) {
@@ -146,13 +147,13 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    // 2. Clear all existing toasts to prevent "double-up" UI issues
+    // 2. Dismiss all active toasts immediately
     toast.dismiss(); 
 
-    // 3. Trigger Confirmation
-    toast((t) => (
-      <div className="flex flex-col gap-3 p-1">
-        <p className="font-bold text-gray-800">
+    // 3. Trigger Confirmation with custom ID
+    toast.custom((t) => (
+      <div className="bg-white p-4 rounded-xl shadow-2xl border border-gray-100 flex flex-col gap-3 min-w-70">
+        <p className="font-bold text-gray-800 text-sm">
           Confirm purchase of ${subtotal.toFixed(2)}?
         </p>
         <div className="flex gap-2">
@@ -175,7 +176,7 @@ const Checkout: React.FC = () => {
       </div>
     ), { 
       duration: 5000,
-      id: "place-order-confirm"
+      id: "place-order-confirm" // Prevent duplicate mounts with matching ID
     });
   };
 

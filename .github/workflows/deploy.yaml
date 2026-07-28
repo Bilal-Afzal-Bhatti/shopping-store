@@ -76,3 +76,7 @@ jobs:
           
           # 3. Monitor rolling update
           kubectl rollout status deployment/ecommerce-frontend
+
+
+
+          

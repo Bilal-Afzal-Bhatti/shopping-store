@@ -5,77 +5,79 @@ import { Lock, Eye, EyeOff, Loader2, CheckCircle2, ShieldAlert } from 'lucide-re
 import axiosInstance from './api/axiosInstance';
 
 export default function ResetPassword() {
-  const location = useLocation();
-  const navigate = useNavigate();
+const location = useLocation();
+const navigate = useNavigate();
 
-  // Retrieve passed parameters from navigate()
-  const email = location.state?.email;
-  const resetToken = location.state?.resetToken;
-  const verified = location.state?.verified;
+// 1. Retrieve email, otp, resetToken, and verified status from state
+const email = location.state?.email;
+const otp = location.state?.otp;
+const resetToken = location.state?.resetToken;
+const verified = location.state?.verified;
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+const [password, setPassword] = useState('');
+const [confirmPassword, setConfirmPassword] = useState('');
+const [showPassword, setShowPassword] = useState(false);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState('');
+const [success, setSuccess] = useState(false);
 
-  // Security check: Redirect away if the user didn't complete OTP verification first
-  if (!email || !verified) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4">
-        <div className="text-center p-8 bg-white rounded-2xl border border-gray-100 shadow-xl max-w-sm">
-          <ShieldAlert size={48} className="text-[#DB4444] mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Please verify your OTP code first before trying to reset your password.
-          </p>
-          <Link
-            to="/forgot-password"
-            className="inline-block px-5 py-2.5 bg-[#DB4444] text-white text-sm font-medium rounded-xl hover:bg-[#c33d3d] transition-colors"
-          >
-            Go to Forgot Password
-          </Link>
-        </div>
+// Security check: Redirect away if OTP wasn't verified or missing required state
+if (!email || !otp || !verified) {
+  return (
+    <div className="min-h-[70vh] flex items-center justify-center px-4">
+      <div className="text-center p-8 bg-white rounded-2xl border border-gray-100 shadow-xl max-w-sm">
+        <ShieldAlert size={48} className="text-[#DB4444] mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Please verify your OTP code first before trying to reset your password.
+        </p>
+        <Link
+          to="/forgotpassword"
+          className="inline-block px-5 py-2.5 bg-[#DB4444] text-white text-sm font-medium rounded-xl hover:bg-[#c33d3d] transition-colors"
+        >
+          Go to Forgot Password
+        </Link>
       </div>
-    );
+    </div>
+  );
+}
+
+const handleResetPassword = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (password.length < 6) {
+    setError('Password must be at least 6 characters long.');
+    return;
   }
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  if (password !== confirmPassword) {
+    setError('Passwords do not match.');
+    return;
+  }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      return;
+  setLoading(true);
+  setError('');
+
+  try {
+    // 2. Send email, otp, and newPassword (plus resetToken if backend needs it)
+    const res = await axiosInstance.post('/auth/reset-password', {
+      email,
+      otp,
+      resetToken, // Optional: sent in case backend validates both token and OTP
+      newPassword: password,
+    });
+
+    if (res.data.success || res.status === 200) {
+      setSuccess(true);
     }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-   try {
-  const res = await axiosInstance.post('/auth/reset-password', {
-    email,
-    otp: resetToken, // 👈 Map resetToken to 'otp'
-    newPassword: password,
-  });
-
-      if (res.data.success || res.status === 200) {
-        setSuccess(true);
-      }
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Failed to reset password. Please try again.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  } catch (err: any) {
+    setError(
+      err.response?.data?.message || 'Failed to reset password. Please try again.'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-gray-50">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8">

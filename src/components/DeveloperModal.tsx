@@ -1,23 +1,34 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Code2, Server, Rocket } from "lucide-react";
+import { X, Code2, Server, Rocket, Mail } from "lucide-react";
 
 export default function DeveloperModal() {
-  const [isOpen, setIsOpen] = useState(false);
+  // Always open on the first mount
+  const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
-    // Check if the user has already seen the modal
-    const hasSeenModal = localStorage.getItem("hasSeenDevModal");
-    if (!hasSeenModal) {
+    // Set up an interval that triggers every 30 seconds (30000ms)
+    const interval = setInterval(() => {
       setIsOpen(true);
-    }
+    }, 30000);
+
+    // Clean up timer on unmount
+    return () => clearInterval(interval);
   }, []);
 
   const handleClose = () => {
-    // Mark as seen so it won't show again on refresh or future visits
-    localStorage.setItem("hasSeenDevModal", "true");
     setIsOpen(false);
   };
+
+  // Pre-filled email parameters
+  const targetEmail = "bilalbhatti.dev@gmail.com";
+  const subject = encodeURIComponent("Project Inquiry - Full-Stack Development");
+  const body = encodeURIComponent(
+    `Hi Bilal,\n\nI saw your platform demo and would like to discuss a potential project.\n\nProject Details:\n- Scope:\n- Target Date:\n\nLooking forward to hearing from you!\n\nBest regards,`
+  );
+
+  // Direct Gmail Web compose URL
+  const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${targetEmail}&su=${subject}&body=${body}`;
 
   return (
     <AnimatePresence>
@@ -33,6 +44,7 @@ export default function DeveloperModal() {
             <button
               onClick={handleClose}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition"
+              aria-label="Close modal"
             >
               <X size={20} />
             </button>
@@ -80,11 +92,14 @@ export default function DeveloperModal() {
             {/* CTA Buttons */}
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <a
-                href="mailto:your-email@example.com" // Replace with your email or contact link
+                href={gmailComposeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={handleClose}
-                className="flex-1 text-center bg-[#DB4444] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#c33d3d] transition active:scale-95 text-sm"
+                className="flex-1 flex items-center justify-center gap-2 bg-[#DB4444] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#c33d3d] transition active:scale-95 text-sm text-center"
               >
-                Hire Me for Your Project bilalafzalbhatti@gmail.com
+                <Mail size={18} />
+                Hire Me for Your Project
               </a>
               <button
                 onClick={handleClose}

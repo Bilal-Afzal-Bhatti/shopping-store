@@ -15,7 +15,9 @@ const Cart: React.FC = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const dispatch  = useDispatch<AppDispatch>();
-
+useEffect(() => {
+  window.scrollTo(0, 10);
+}, []);
   const { items, totalPrice, loading, updatingItemId } = useSelector(
     (s: RootState) => s.cart
   );

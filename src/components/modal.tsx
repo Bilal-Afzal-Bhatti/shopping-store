@@ -8,13 +8,21 @@ interface CartModalProps {
   onConfirm: () => void; // Added to handle the primary action (Go to cart)
   message: string;
   type: 'success' | 'error';
+  isLoggedIn?: boolean; // New prop to track authentication status
 }
 
-const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onConfirm, message, type }) => {
+const CartModal: React.FC<CartModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  message, 
+  type,
+  isLoggedIn = false 
+}) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
@@ -28,6 +36,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onConfirm, messa
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
+          aria-label="Close modal"
         >
           <X size={20} />
         </button>
@@ -47,10 +56,18 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onConfirm, messa
         <h3 className="text-xl font-bold text-gray-900">
           {type === 'success' ? 'Success!' : 'Something went wrong'}
         </h3>
+
         <p className="mt-3 text-sm text-gray-500 leading-relaxed">
           {message}
         </p>
-       <p>click here to <a href="/login" className="text-blue-500 hover:underline">login  </a></p>
+
+        {/* Show login link only on error state when the user is NOT logged in */}
+        {type === 'error' && !isLoggedIn && (
+          <p className="mt-2 text-sm text-gray-600">
+            Click here to <a href="/login" className="text-blue-500 hover:underline font-medium">login</a>
+          </p>
+        )}
+
         {/* Actions */}
         <div className="mt-8 flex flex-col gap-3">
           <button

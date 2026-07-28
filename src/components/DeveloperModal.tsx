@@ -3,13 +3,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Code2, Server, Rocket, Mail } from "lucide-react";
 
 export default function DeveloperModal() {
-  // Always open on the first mount
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Set up an interval that triggers every 30 seconds (30000ms)
-    const interval = setInterval(() => {
+    // Check if the modal was already closed during this browser session
+    const isDismissed = sessionStorage.getItem("developerModalDismissed");
+
+    // Show immediately on first mount ONLY if not previously dismissed
+    if (!isDismissed) {
       setIsOpen(true);
+    }
+
+    // Interval triggers every 30 seconds (30000ms)
+    const interval = setInterval(() => {
+      // Re-check before reopening to prevent showing if user dismissed it
+      const currentlyDismissed = sessionStorage.getItem("developerModalDismissed");
+      if (!currentlyDismissed) {
+        setIsOpen(true);
+      }
     }, 30000);
 
     // Clean up timer on unmount
@@ -17,6 +28,8 @@ export default function DeveloperModal() {
   }, []);
 
   const handleClose = () => {
+    // Save state so page reloads won't show the modal again
+    sessionStorage.setItem("developerModalDismissed", "true");
     setIsOpen(false);
   };
 

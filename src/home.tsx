@@ -9,6 +9,7 @@ const BrowseByCategory = React.lazy(() => import('./components/search_cartegorie
 const Bestselling = React.lazy(() => import('./components/best_selling_prod'));
 const Our_products = React.lazy(() => import('./components/our_products'));
 const New_arrival = React.lazy(() => import('./components/new_arrival'));
+const  DeveloperModal = React.lazy(() => import('./components/DeveloperModal'));
 
 import frame_600 from './assets/frame_600.png';
 
@@ -50,6 +51,9 @@ function Home() {
       {isPending && (
         <div className="fixed top-0 left-0 h-1 bg-red-600 z-9999 animate-pulse w-full" />
       )}
+
+
+       <DeveloperModal />
 
       <Suspense fallback={<div className="h-96 animate-pulse bg-gray-100" />}>
         <SideMenu />

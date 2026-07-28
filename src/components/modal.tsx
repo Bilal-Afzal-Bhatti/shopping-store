@@ -50,7 +50,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onConfirm, messa
         <p className="mt-3 text-sm text-gray-500 leading-relaxed">
           {message}
         </p>
-
+       <p>click here to <a href="/login" className="text-blue-500 hover:underline">login  </a></p>
         {/* Actions */}
         <div className="mt-8 flex flex-col gap-3">
           <button

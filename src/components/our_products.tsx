@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { Heart, Eye, Star } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -14,6 +14,8 @@ import type { AppDispatch } from "../redux/store";
 import { useProducts } from "../hooks/useProducts";
 import type { Product } from "../api/productsApi";
 import { productsApi } from "../api/productsApi";
+import { toSlug } from "../utils/slug";
+import axiosInstance from "../api/axiosInstance";
 
 const formatDiscount = (discount?: string) => {
   if (!discount || discount === 'No Discount') return null;
@@ -25,11 +27,11 @@ export default function Our_products() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
-  // 🔴 Updated the category to match your backend exactly
   const { data, isLoading, isError } = useProducts({ category: 'Our Products' });
   const products: Product[] = data?.products ?? [];
 
   const [liked, setLiked] = useState<Record<string, boolean>>({});
+  const [isPending, startTransition] = useTransition();
   const [currentPage, setCurrentPage] = useState(0);
   const productsPerPage = 8; 
 
@@ -37,18 +39,54 @@ export default function Our_products() {
   const [modalConfig, setModalConfig] = useState({ message: '', type: 'success' as 'success' | 'error' });
   const [isAdding, setIsAdding] = useState(false);
 
-  // Reset to first page if products change
   useEffect(() => {
     setCurrentPage(0);
   }, [products.length]);
 
   const totalPages = Math.ceil(products.length / productsPerPage) || 1;
 
-  const toggleLike = (id: string) => {
-    setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
+  // Integrated Wishlist Handler
+  const handleWishlistToggle = (product: Product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    const wasLiked = !!liked[product._id];
+    setLiked((prev) => ({ ...prev, [product._id]: !wasLiked }));
+
+    startTransition(() => {
+      (async () => {
+        try {
+          const res = await axiosInstance.post(
+            '/wishlist/add',
+            {
+              productId: product._id,
+              name: product.name,
+              price: product.price,
+              image: product.image,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (res.data.success) {
+            toast.success(res.data.message || "Wishlist updated");
+            navigate("/wishlist");
+          }
+        } catch (err: any) {
+          setLiked((prev) => ({ ...prev, [product._id]: wasLiked }));
+          toast.error(err.response?.data?.message || "Could not update wishlist");
+        }
+      })();
+    });
   };
 
-const handleAddToCart = async (product: Product) => {
+  const handleAddToCart = async (product: Product) => {
     const token = localStorage.getItem("token");
     if (!token) {
       setModalConfig({ message: "Please log in first.", type: "error" });
@@ -56,7 +94,6 @@ const handleAddToCart = async (product: Product) => {
       return;
     }
 
-    // Determine the variantId matching Flash Sales pattern
     const activeVariantId = 
       product.defaultVariantId || 
       (product.variants && product.variants.length > 0 ? product.variants[0]._id : product._id);
@@ -74,12 +111,13 @@ const handleAddToCart = async (product: Product) => {
       setModalConfig({ message: `${product.name} added to cart!`, type: "success" });
       setIsModalOpen(true);
     } catch (err: any) {
-      setModalConfig({ message: err || "Failed to add to cart.", type: "error" });
+      setModalConfig({ message: typeof err === "string" ? err : "Failed to add to cart.", type: "error" });
       setIsModalOpen(true);
     } finally {
       setIsAdding(false);
     }
   };
+
   const handleRateProduct = async (product: Product, ratingValue: number) => {
     try {
       const result = await productsApi.rateProduct(product._id, ratingValue);
@@ -147,64 +185,86 @@ const handleAddToCart = async (product: Product) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-100">
           {currentProducts.map((product: Product) => (
             <div key={product._id} className="group">
-              <div className="relative  aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
+              <div className="relative aspect-square rounded-md flex items-center justify-center p-6 overflow-hidden">
                 {formatDiscount(product.discount) && (
                    <span className="absolute top-3 left-3 bg-[#DB4444] text-white text-[12px] font-bold px-3 py-1 rounded-sm z-10 shadow-sm">
                      {formatDiscount(product.discount)}
                    </span>
                 )}
 
+                {/* Wishlist & Eye Icon Integrated */}
                 <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
-                  <button onClick={() => toggleLike(product._id)} className="p-1.5 bg-white rounded-full shadow-sm hover:text-[#DB4444] active:scale-90 transition">
-                    <Heart size={18} className={liked[product._id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-400"} />
+                  <button 
+                    onClick={() => handleWishlistToggle(product)} 
+                    disabled={isPending}
+                    aria-label="Add to wishlist"
+                    className="p-1.5 bg-white rounded-full shadow-sm hover:text-[#DB4444] active:scale-90 transition disabled:opacity-40"
+                  >
+                    <Heart 
+                      size={18} 
+                      className={liked[product._id] ? "fill-[#DB4444] text-[#DB4444]" : "text-gray-400 hover:text-red-400"} 
+                    />
                   </button>
-                  <Link to={`/view_item/${product._id}`} className="p-1.5 bg-white rounded-full shadow-sm hover:text-[#DB4444] transition">
-                    <Eye size={18} className="text-gray-400" />
-                  </Link>
+
+                  <button 
+                    onClick={() => navigate(`/product/${toSlug(product.name)}`, { state: { productId: product._id } })}
+                    aria-label="Quick view product"
+                    className="p-1.5 bg-white rounded-full shadow-sm hover:text-[#DB4444] active:scale-90 transition"
+                  >
+                    <Eye size={18} className="text-gray-400 hover:text-[#DB4444]" />
+                  </button>
                 </div>
 
                 <img 
                   src={product.image || 'https://via.placeholder.com/150'} 
                   alt={product.name} 
                   className="w-full h-full object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-110" 
+                  onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/150"; }}
                 />
 
                 <button 
                   onClick={() => handleAddToCart(product)}
-                  disabled={isAdding}
-                  className="absolute bottom-0 w-full z-10 bg-slate-600  text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all disabled:bg-gray-600"
+                  disabled={isAdding || product.stock === 0}
+                  className="absolute bottom-0 w-full z-10 bg-slate-600 text-white py-2.5 text-sm font-medium opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-gray-800 active:scale-95"
                 >
-                  {isAdding ? "Adding..." : "Add to Cart"}
+                  {product.stock === 0 ? "Out of Stock" : isAdding ? "Adding..." : "Add to Cart"}
                 </button>
               </div>
 
               <div className="mt-4 text-left">
-                <h3 className="font-bold text-gray-900 text-base truncate">{product.name}</h3>
+                <h3 
+                  onClick={() => navigate(`/product/${toSlug(product.name)}`, { state: { productId: product._id } })}
+                  className="font-bold text-gray-900 text-base truncate cursor-pointer hover:text-[#DB4444] transition-colors"
+                >
+                  {product.name}
+                </h3>
                 <div className="flex gap-3 items-center">
                   <p className="text-[#DB4444] font-bold text-lg">${product.price}</p>
                   {product.originalPrice && (
                     <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
                   )}
+                  
+                  {/* Original Interactive Star Rating Restored */}
                   {product.ratings && (
                     <div className="flex items-center ml-2 border-l pl-2 border-gray-300">
                       {[...Array(5)].map((_, i) => {
                         const starValue = i + 1;
                         const avgStr = product.ratings?.average || 0;
                         return (
-                           <button 
-                             key={i} 
-                             onClick={() => handleRateProduct(product, starValue)}
-                             className="focus:outline-none hover:scale-110 active:scale-95 transition-transform"
-                           >
-                             <Star 
-                               size={15} 
-                               className={`transition-colors duration-200 ${
-                                 starValue <= Math.round(avgStr) 
-                                   ? "text-yellow-400 fill-yellow-400 drop-shadow-sm" 
-                                   : "text-gray-300 hover:text-yellow-200"
-                               }`} 
-                             />
-                           </button>
+                          <button 
+                            key={i} 
+                            onClick={() => handleRateProduct(product, starValue)}
+                            className="focus:outline-none hover:scale-110 active:scale-95 transition-transform"
+                          >
+                            <Star 
+                              size={15} 
+                              className={`transition-colors duration-200 ${
+                                starValue <= Math.round(avgStr) 
+                                  ? "text-yellow-400 fill-yellow-400 drop-shadow-sm" 
+                                  : "text-gray-300 hover:text-yellow-200"
+                              }`} 
+                            />
+                          </button>
                         );
                       })}
                       <span className="text-gray-500 text-xs font-semibold ml-1.5 opacity-80">({product.ratings?.count || 0})</span>

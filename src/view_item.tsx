@@ -59,7 +59,10 @@ export const Viewitem: React.FC = () => {
       return prev > 1 ? prev - 1 : 1;
     });
   };
-
+// Add this effect near top of Viewitem component in src/view_item.tsx:
+useEffect(() => {
+  window.scrollTo(0, 10);
+}, [productId]);
   const handleRateProduct = async (ratingValue: number) => {
     if (!product) return;
     try {

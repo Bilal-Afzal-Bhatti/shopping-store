@@ -27,7 +27,7 @@ function New_arrival() {
         <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
       </div>
       <div className="h-8 w-48 bg-gray-200 rounded mb-8 animate-pulse" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[600px] animate-pulse">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-150 animate-pulse">
         <div className="bg-gray-200 rounded-md h-full" />
         <div className="flex flex-col gap-6 h-full">
           <div className="bg-gray-200 rounded-md h-1/2" />
@@ -72,7 +72,7 @@ function New_arrival() {
           {mainProduct ? (
             <div
               onClick={() => goToProduct(mainProduct)}
-              className="relative group bg-black rounded-xl overflow-hidden h-[350px] sm:h-[450px] md:h-[600px] cursor-pointer"
+              className="relative group bg-black rounded-xl overflow-hidden h-87.5 sm:h-112.5 md:h-150 cursor-pointer"
             >
               <img
                 src={mainProduct.image || 'https://placehold.co/600x600?text=No+Image'}
@@ -99,7 +99,7 @@ function New_arrival() {
               </div>
             </div>
           ) : (
-            <div className="bg-gray-100 rounded-xl flex items-center justify-center h-[600px] text-gray-400">
+            <div className="bg-gray-100 rounded-xl flex items-center justify-center h-150 text-gray-400">
               No Product
             </div>
           )}
@@ -111,7 +111,7 @@ function New_arrival() {
             {topProduct ? (
               <div
                 onClick={() => goToProduct(topProduct)}
-                className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-[250px] md:h-72 cursor-pointer"
+                className="relative group bg-[#0D0D0D] rounded-xl overflow-hidden h-62.5 md:h-72 cursor-pointer"
               >
                 <img
                   src={topProduct.image || 'https://placehold.co/400x300?text=No+Image'}
@@ -148,7 +148,7 @@ function New_arrival() {
               {bottomLeftProduct ? (
                 <div
                   onClick={() => goToProduct(bottomLeftProduct)}
-                  className="relative group bg-[#C7CED4] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center cursor-pointer"
+                  className="relative group bg-[#C7CED4] rounded-xl overflow-hidden h-62.5 md:h-72 flex items-center justify-center cursor-pointer"
                 >
                   <img
                     src={bottomLeftProduct.image}
@@ -177,7 +177,7 @@ function New_arrival() {
               {bottomRightProduct ? (
                 <div
                   onClick={() => goToProduct(bottomRightProduct)}
-                  className="relative group bg-[#C7CED4] rounded-xl overflow-hidden h-[250px] md:h-72 flex items-center justify-center cursor-pointer"
+                  className="relative group bg-[#C7CED4] rounded-xl overflow-hidden h-62.5 md:h-72 flex items-center justify-center cursor-pointer"
                 >
                   <img
                     src={bottomRightProduct.image}

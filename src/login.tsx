@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google"; // Import official component
+import { GoogleLogin } from "@react-oauth/google";
+import { AlertCircle, X } from "lucide-react";
 import axiosInstance from "./api/axiosInstance";
 import Side_image from "./assets/Side_Image.png";
 
@@ -8,9 +9,19 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // --- MODAL STATE ---
+  const [modalOpen, setModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const navigate = useNavigate();
 
-  // --- MANUAL LOGIN (For Email/Password users) ---
+  const showError = (msg: string) => {
+    setErrorMessage(msg);
+    setModalOpen(true);
+  };
+
+  // --- MANUAL LOGIN ---
   const handleManualLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -26,17 +37,16 @@ function Login() {
         navigate("/");
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || "Invalid credentials");
+      showError(err.response?.data?.message || "Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- GOOGLE LOGIN (For Google users) ---
+  // --- GOOGLE LOGIN ---
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setLoading(true);
     try {
-      // credentialResponse.credential is the ID Token (JWT)
       const res = await axiosInstance.post("/auth/google", {
         token: credentialResponse.credential,
       });
@@ -48,14 +58,43 @@ function Login() {
       }
     } catch (err: any) {
       console.error("Google Auth Error:", err.response?.data);
-      alert(err.response?.data?.message || "Google Authentication Failed");
+      showError(err.response?.data?.message || "Google Authentication failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen animate-in fade-in duration-700">
+    <div className="flex flex-col md:flex-row min-h-screen animate-in fade-in duration-700 relative">
+      
+      {/* ERROR MODAL */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full border border-gray-100 shadow-2xl relative text-center">
+            
+            <button
+              onClick={() => setModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={28} className="text-[#DB4444]" />
+            </div>
+
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Login Failed</h3>
+            <p className="text-sm text-gray-600 mb-6">{errorMessage}</p>
+
+            <button
+              onClick={() => setModalOpen(false)}
+              className="w-full bg-[#DB4444] text-white py-3 rounded-xl font-medium hover:bg-[#c33d3d] transition-all active:scale-[0.98]"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Left Image Section */}
       <div className="hidden md:block w-full md:w-[55%] bg-[#CBE4E8]">
@@ -79,7 +118,7 @@ function Login() {
             <div className="space-y-4">
               <input
                 type="text"
-                placeholder="Email "
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border-b border-gray-300 py-3 outline-none focus:border-black transition-colors"
@@ -122,10 +161,10 @@ function Login() {
           <div className="w-full flex justify-center">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
-              onError={() => alert("Google Login Failed")}
+              onError={() => showError("Google authentication failed. Please try again.")}
               theme="outline"
               size="large"
-              width="200px" // Makes it look uniform with the form
+              width="200px"
             />
           </div>
 

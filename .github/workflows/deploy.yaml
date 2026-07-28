@@ -24,14 +24,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Debug - check secret is set
-        run: |
-          echo "VITE_API_URL length: ${#VITE_API_URL}"
-          echo "VITE_GOOGLE_CLIENT_ID length: ${#VITE_GOOGLE_CLIENT_ID}"
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-
+      # Single action that correctly builds with ARGs and pushes directly to ECR
       - name: Build, tag, and push Frontend to ECR
         uses: docker/build-push-action@v6
         with:
@@ -76,7 +69,3 @@ jobs:
           
           # 3. Monitor rolling update
           kubectl rollout status deployment/ecommerce-frontend
-
-
-
-          

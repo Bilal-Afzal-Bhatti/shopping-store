@@ -84,7 +84,7 @@ export default function DeveloperModal() {
                 onClick={handleClose}
                 className="flex-1 text-center bg-[#DB4444] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#c33d3d] transition active:scale-95 text-sm"
               >
-                Hire Me for Your Project
+                Hire Me for Your Project bilalafzalbhatti@gmail.com
               </a>
               <button
                 onClick={handleClose}
